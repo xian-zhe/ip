@@ -8,27 +8,40 @@ public class Oz {
                 + "| | | |   / / \n"
                 + "| |_| |  / /_ \n"
                 + " \\___/  /____|\n";
-        String greeting = "____________________________________________________________\n" +
+        String greeting = DIVIDER +
                 banner +
                 "Hello! I'm Oz.\n" +
                 "What can I do for you? ᕙ(  •̀ ᗜ •́  )ᕗ\n";
 
-        String bye = "____________________________________________________________\n" +
+        String bye = DIVIDER +
                 "Bye. Hope to see you again soon! („• ֊ •„)੭\n" +
-                "____________________________________________________________\n";
+                DIVIDER;
 
         System.out.println(greeting);
 
         Scanner scanner = new Scanner(System.in);
         String desc = "";
 
-        while (true) {
+        String[] list = new String[100];
+        int counter = 0;
+
+        while(true) {
             desc = scanner.nextLine();
-            if (desc.equals("bye")){
+            if (desc.equals("bye")) {
                 break;
+            } else if(desc.equals("list")) {
+                System.out.print(DIVIDER);
+                for(int i = 0; i < counter; i++){
+                    System.out.printf("%d. %s%n",i + 1, list[i]);
+                }
+                System.out.print(DIVIDER);
+            } else {
+                String reply = DIVIDER + "added: " + desc + "\n" + DIVIDER;
+                System.out.println(reply);
+                list[counter] = desc;
+                counter++;
             }
-            String reply = DIVIDER + desc + "\n" + DIVIDER;
-            System.out.println(reply);
+
         }
         System.out.println(bye);
     }
