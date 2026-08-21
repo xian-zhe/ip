@@ -4,17 +4,12 @@ import java.util.regex.Pattern;
 
 public class Oz {
     private static final String DIVIDER = "____________________________________________________________\n";
-    //regex patterns
-    private static final Pattern MARK_PATTERN =
-            Pattern.compile("^mark\\s+(?<index>\\d+)$");
-    private static final Pattern UNMARK_PATTERN =
-            Pattern.compile("^unmark\\s+(?<index>\\d+)$");
-    private static final Pattern TODO_PATTERN =
-            Pattern.compile("^todo\\s+(?<desc>.+)$");
-    private static final Pattern DEADLINE_PATTERN =
-            Pattern.compile("^deadline\\s+(?<desc>.+?)\\s+/by\\s+(?<by>.+)$");
-    private static final Pattern EVENT_PATTERN =
-            Pattern.compile("^event\\s+(?<desc>.+?)\\s+/from\\s+(?<from>.+?)\\s+/to\\s+(?<to>.+)$");
+    private static final Pattern COMMAND_PATTERN =
+            Pattern.compile("^(?<command>\\S+)(?:\\s+(?<details>.*))?$");
+    private static final Pattern DEADLINE_ARGUMENTS_PATTERN =
+            Pattern.compile("^(?<desc>.+?)\\s+/by\\s+(?<by>.+)$");
+    private static final Pattern EVENT_ARGUMENTS_PATTERN =
+            Pattern.compile("^(?<desc>.+?)\\s+/from\\s+(?<from>.+?)\\s+/to\\s+(?<to>.+)$");
 
     public static void main(String[] args) {
         String banner = "  ___    ____ \n"
@@ -35,77 +30,150 @@ public class Oz {
 
         Scanner scanner = new Scanner(System.in);
 
-        String desc = "";
-
         Task[] list = new Task[100];
         int counter = 0;
 
-        while(true) {
-            desc = scanner.nextLine();
-            //set up matchers
-            Matcher markMatcher = MARK_PATTERN.matcher(desc);
-            Matcher unmarkMatcher = UNMARK_PATTERN.matcher(desc);
-            Matcher todoMatcher = TODO_PATTERN.matcher(desc);
-            Matcher deadlineMatcher = DEADLINE_PATTERN.matcher(desc);
-            Matcher eventMatcher = EVENT_PATTERN.matcher(desc);
-
-            String reply = "";
+        while (scanner.hasNextLine()) {
+            String desc = scanner.nextLine().trim();
             if (desc.equals("bye")) {
                 break;
-            } else if(desc.equals("list")) {
-                reply += DIVIDER + "Here are the tasks in your list:\n";
-                for(int i = 0; i < counter; i++){
-                    reply += String.format("%d. %s%n",i + 1, list[i]);
-                }
-                reply += DIVIDER;
-            } else if (markMatcher.matches()) {
-
-                int index = Integer.parseInt(markMatcher.group("index")) - 1;
-                list[index].mark();
-                reply += DIVIDER + "Nice! I've marked this task as done:\n  " + list[index] + "\n" + DIVIDER;
-
-            } else if (unmarkMatcher.matches()) {
-
-                int index = Integer.parseInt(unmarkMatcher.group("index")) - 1;
-                list[index].unmark();
-                reply += DIVIDER + "OK, I've marked this task as not done yet:\n  " + list[index] + "\n" + DIVIDER;
-
-            }else if (todoMatcher.matches()) {
-                String taskDesc = todoMatcher.group("desc");
-                list[counter] = new ToDo(taskDesc);
-                counter++;
-                reply += DIVIDER +
-                        String.format("Got it. I've added this task:\n %s \nNow you have %d tasks in the list.\n",
-                        list[counter - 1], counter) +
-                        DIVIDER;
-            } else if (deadlineMatcher.matches()) {
-                String taskDesc = deadlineMatcher.group("desc");
-                String by = deadlineMatcher.group("by");
-                list[counter] = new Deadlines(taskDesc, by);
-                counter++;
-                reply += DIVIDER +
-                        String.format("Got it. I've added this task:\n %s \nNow you have %d tasks in the list.\n",
-                        list[counter - 1], counter) +
-                        DIVIDER;
-            } else if (eventMatcher.matches()) {
-                String taskDesc = eventMatcher.group("desc");
-                String to = eventMatcher.group("to");
-                String from = eventMatcher.group("from");
-                list[counter] = new Event(taskDesc, from, to);
-                counter++;
-                reply += DIVIDER +
-                        String.format("Got it. I've added this task:\n %s \nNow you have %d tasks in the list.\n",
-                        list[counter - 1], counter) +
-                        DIVIDER;
-            } else {
-                reply += DIVIDER + "added: " + desc + "\n" + DIVIDER;
-                list[counter] = new Task(desc);
-                counter++;
             }
 
-            System.out.println(reply);
+            String reply;
+            try {
+                Matcher commandMatcher = COMMAND_PATTERN.matcher(desc);
+                if (!commandMatcher.matches()) {
+                    throw new OzException("I could not understand that input.");
+                }
 
+                String command = commandMatcher.group("command");
+                String details = commandMatcher.group("details");
+                if (details == null) {
+                    details = "";
+                }
+                details = details.trim();
+
+                if (command.equals("list")) {
+                    if (!details.isBlank()) {
+                        throw new OzException("The list command does not take arguments.");
+                    }
+
+                    StringBuilder response =
+                            new StringBuilder(DIVIDER + "Here are the tasks in your list:\n");
+                    for (int i = 0; i < counter; i++) {
+                        response.append(i + 1)
+                                .append(". ")
+                                .append(list[i])
+                                .append("\n");
+                    }
+                    reply = response.append(DIVIDER).toString();
+
+                } else if (command.equals("mark")) {
+                    int index = parseTaskIndex(details, counter);
+                    list[index].mark();
+                    reply = DIVIDER
+                            + "Nice! I've marked this task as done:\n  "
+                            + list[index] + "\n" + DIVIDER;
+
+                } else if (command.equals("unmark")) {
+                    int index = parseTaskIndex(details, counter);
+                    list[index].unmark();
+                    reply = DIVIDER
+                            + "OK! I've marked this task as not done yet:\n  "
+                            + list[index] + "\n" + DIVIDER;
+
+                } else if (command.equals("todo")) {
+                    if (details.isBlank()) {
+                        throw new OzException(
+                                "The description of a todo cannot be empty.");
+                    }
+                    if (counter == list.length) {
+                        throw new OzException("The task list is full.");
+                    }
+
+                    list[counter] = new ToDo(details);
+                    counter++;
+                    reply = DIVIDER
+                            + String.format(
+                                    "Got it. I've added this task:\n%s\n"
+                                            + "Now you have %d tasks in the list.\n",
+                                    list[counter - 1], counter)
+                            + DIVIDER;
+
+                } else if (command.equals("deadline")) {
+                    Matcher deadlineMatcher =
+                            DEADLINE_ARGUMENTS_PATTERN.matcher(details);
+                    if (!deadlineMatcher.matches()) {
+                        throw new OzException(
+                                "Use: deadline <description> /by <date>.");
+                    }
+                    if (counter == list.length) {
+                        throw new OzException("The task list is full.");
+                    }
+
+                    list[counter] = new Deadlines(
+                            deadlineMatcher.group("desc").trim(),
+                            deadlineMatcher.group("by").trim());
+                    counter++;
+                    reply = DIVIDER
+                            + String.format(
+                                    "Got it. I've added this task:\n%s\n"
+                                            + "Now you have %d tasks in the list.\n",
+                                    list[counter - 1], counter)
+                            + DIVIDER;
+
+                } else if (command.equals("event")) {
+                    Matcher eventMatcher =
+                            EVENT_ARGUMENTS_PATTERN.matcher(details);
+                    if (!eventMatcher.matches()) {
+                        throw new OzException(
+                                "Use: event <description> /from <start> /to <end>.");
+                    }
+                    if (counter == list.length) {
+                        throw new OzException("The task list is full.");
+                    }
+
+                    list[counter] = new Event(
+                            eventMatcher.group("desc").trim(),
+                            eventMatcher.group("from").trim(),
+                            eventMatcher.group("to").trim());
+                    counter++;
+                    reply = DIVIDER
+                            + String.format(
+                                    "Got it. I've added this task:\n%s\n"
+                                            + "Now you have %d tasks in the list.\n",
+                                    list[counter - 1], counter)
+                            + DIVIDER;
+
+                } else {
+                    throw new OzException(
+                            "Sorry, I do not understand that command.");
+                }
+            } catch (OzException exception) {
+                reply = DIVIDER + "OOPS! " + exception.getMessage()
+                        + "\n" + DIVIDER;
+            }
+
+            System.out.print(reply);
         }
-        System.out.println(bye);
+
+        System.out.print(bye);
+    }
+
+    private static int parseTaskIndex(String args, int taskCount)
+            throws OzException {
+        if (!args.matches("\\d+")) {
+            throw new OzException("Please provide a valid task number.");
+        }
+
+        try {
+            int taskNumber = Integer.parseInt(args);
+            if (taskNumber < 1 || taskNumber > taskCount) {
+                throw new OzException("That task number does not exist.");
+            }
+            return taskNumber - 1;
+        } catch (NumberFormatException exception) {
+            throw new OzException("That task number is too large.");
+        }
     }
 }
