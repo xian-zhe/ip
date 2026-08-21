@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,11 +13,13 @@ public class Oz {
             Pattern.compile("^(?<desc>.+?)\\s+/from\\s+(?<from>.+?)\\s+/to\\s+(?<to>.+)$");
 
     public static void main(String[] args) {
-        String banner = "  ___    ____ \n"
-                + " / _ \\  |_  /\n"
-                + "| | | |   / / \n"
-                + "| |_| |  / /_ \n"
-                + " \\___/  /____|\n";
+        String banner = """
+                  ___    ____\s
+                 / _ \\  |_  /
+                | | | |   / /\s
+                | |_| |  / /_\s
+                 \\___/  /____|
+                """;
         String greeting = DIVIDER +
                 banner +
                 "Hello! I'm Oz.\n" +
@@ -30,8 +33,7 @@ public class Oz {
 
         Scanner scanner = new Scanner(System.in);
 
-        Task[] list = new Task[100];
-        int counter = 0;
+        ArrayList<Task> list = new ArrayList<>();
 
         while (scanner.hasNextLine()) {
             String desc = scanner.nextLine().trim();
@@ -60,44 +62,43 @@ public class Oz {
 
                     StringBuilder response =
                             new StringBuilder(DIVIDER + "Here are the tasks in your list:\n");
-                    for (int i = 0; i < counter; i++) {
+                    for (int i = 0; i < list.size(); i++) {
                         response.append(i + 1)
                                 .append(". ")
-                                .append(list[i])
+                                .append(list.get(i))
                                 .append("\n");
                     }
                     reply = response.append(DIVIDER).toString();
 
                 } else if (command.equals("mark")) {
-                    int index = parseTaskIndex(details, counter);
-                    list[index].mark();
+                    int index = parseTaskIndex(details, list.size());
+                    list.get(index).mark();
                     reply = DIVIDER
                             + "Nice! I've marked this task as done:\n  "
-                            + list[index] + "\n" + DIVIDER;
+                            + list.get(index) + "\n" + DIVIDER;
 
                 } else if (command.equals("unmark")) {
-                    int index = parseTaskIndex(details, counter);
-                    list[index].unmark();
+                    int index = parseTaskIndex(details, list.size());
+                    list.get(index).unmark();
                     reply = DIVIDER
                             + "OK! I've marked this task as not done yet:\n  "
-                            + list[index] + "\n" + DIVIDER;
+                            + list.get(index) + "\n" + DIVIDER;
 
                 } else if (command.equals("todo")) {
                     if (details.isBlank()) {
                         throw new OzException(
                                 "The description of a todo cannot be empty.");
                     }
-                    if (counter == list.length) {
-                        throw new OzException("The task list is full.");
-                    }
 
-                    list[counter] = new ToDo(details);
-                    counter++;
+                    list.add(new ToDo(details));
                     reply = DIVIDER
                             + String.format(
-                                    "Got it. I've added this task:\n%s\n"
-                                            + "Now you have %d tasks in the list.\n",
-                                    list[counter - 1], counter)
+                            """
+                                    Got it. I've added this task:
+                                    %s
+                                    Now you have %d tasks in the list.
+                                    """,
+                                    list.getLast(), list.size())
                             + DIVIDER;
 
                 } else if (command.equals("deadline")) {
@@ -107,19 +108,18 @@ public class Oz {
                         throw new OzException(
                                 "Use: deadline <description> /by <date>.");
                     }
-                    if (counter == list.length) {
-                        throw new OzException("The task list is full.");
-                    }
 
-                    list[counter] = new Deadlines(
+                    list.add(new Deadlines(
                             deadlineMatcher.group("desc").trim(),
-                            deadlineMatcher.group("by").trim());
-                    counter++;
+                            deadlineMatcher.group("by").trim()));
                     reply = DIVIDER
                             + String.format(
-                                    "Got it. I've added this task:\n%s\n"
-                                            + "Now you have %d tasks in the list.\n",
-                                    list[counter - 1], counter)
+                            """
+                                    Got it. I've added this task:
+                                    %s
+                                    Now you have %d tasks in the list.
+                                    """,
+                            list.getLast(), list.size())
                             + DIVIDER;
 
                 } else if (command.equals("event")) {
@@ -129,20 +129,33 @@ public class Oz {
                         throw new OzException(
                                 "Use: event <description> /from <start> /to <end>.");
                     }
-                    if (counter == list.length) {
-                        throw new OzException("The task list is full.");
-                    }
 
-                    list[counter] = new Event(
+                    list.add(new Event(
                             eventMatcher.group("desc").trim(),
                             eventMatcher.group("from").trim(),
-                            eventMatcher.group("to").trim());
-                    counter++;
+                            eventMatcher.group("to").trim()));
                     reply = DIVIDER
                             + String.format(
-                                    "Got it. I've added this task:\n%s\n"
-                                            + "Now you have %d tasks in the list.\n",
-                                    list[counter - 1], counter)
+                            """
+                                    Got it. I've added this task:
+                                    %s
+                                    Now you have %d tasks in the list.
+                                    """,
+                            list.getLast(), list.size())
+                            + DIVIDER;
+
+                } else if (command.equals("delete")) {
+                    int index = parseTaskIndex(details, list.size());
+                    Task t = list.get(index);
+                    list.remove(index);
+                    reply = DIVIDER
+                            + String.format(
+                            """
+                                    Ok the following task has been removed!:
+                                    %s
+                                    Now you have %d tasks in the list.
+                                    """,
+                            t, list.size())
                             + DIVIDER;
 
                 } else {
