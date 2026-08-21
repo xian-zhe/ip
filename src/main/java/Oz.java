@@ -9,6 +9,13 @@ public class Oz {
             Pattern.compile("^mark\\s+(?<index>\\d+)$");
     private static final Pattern UNMARK_PATTERN =
             Pattern.compile("^unmark\\s+(?<index>\\d+)$");
+    private static final Pattern TODO_PATTERN =
+            Pattern.compile("^todo\\s+(?<desc>.+)$");
+    private static final Pattern DEADLINE_PATTERN =
+            Pattern.compile("^deadline\\s+(?<desc>.+?)\\s+/by\\s+(?<by>.+)$");
+    private static final Pattern EVENT_PATTERN =
+            Pattern.compile("^event\\s+(?<desc>.+?)\\s+/from\\s+(?<from>.+?)\\s+/to\\s+(?<to>.+)$");
+
     public static void main(String[] args) {
         String banner = "  ___    ____ \n"
                 + " / _ \\  |_  /\n"
@@ -24,10 +31,9 @@ public class Oz {
                 "  Bye. Hope to see you again soon! („• ֊ •„)੭\n" +
                 DIVIDER;
 
-        System.out.println(greeting);
+        System.out.print(greeting);
 
         Scanner scanner = new Scanner(System.in);
-
 
         String desc = "";
 
@@ -39,6 +45,10 @@ public class Oz {
             //set up matchers
             Matcher markMatcher = MARK_PATTERN.matcher(desc);
             Matcher unmarkMatcher = UNMARK_PATTERN.matcher(desc);
+            Matcher todoMatcher = TODO_PATTERN.matcher(desc);
+            Matcher deadlineMatcher = DEADLINE_PATTERN.matcher(desc);
+            Matcher eventMatcher = EVENT_PATTERN.matcher(desc);
+
             String reply = "";
             if (desc.equals("bye")) {
                 break;
@@ -60,7 +70,34 @@ public class Oz {
                 list[index].unmark();
                 reply += DIVIDER + "OK, I've marked this task as not done yet:\n  " + list[index] + "\n" + DIVIDER;
 
-            }else {
+            }else if (todoMatcher.matches()) {
+                String taskDesc = todoMatcher.group("desc");
+                list[counter] = new ToDo(taskDesc);
+                counter++;
+                reply += DIVIDER +
+                        String.format("Got it. I've added this task:\n %s \nNow you have %d tasks in the list.\n",
+                        list[counter - 1], counter) +
+                        DIVIDER;
+            } else if (deadlineMatcher.matches()) {
+                String taskDesc = deadlineMatcher.group("desc");
+                String by = deadlineMatcher.group("by");
+                list[counter] = new Deadlines(taskDesc, by);
+                counter++;
+                reply += DIVIDER +
+                        String.format("Got it. I've added this task:\n %s \nNow you have %d tasks in the list.\n",
+                        list[counter - 1], counter) +
+                        DIVIDER;
+            } else if (eventMatcher.matches()) {
+                String taskDesc = eventMatcher.group("desc");
+                String to = eventMatcher.group("to");
+                String from = eventMatcher.group("from");
+                list[counter] = new Event(taskDesc, from, to);
+                counter++;
+                reply += DIVIDER +
+                        String.format("Got it. I've added this task:\n %s \nNow you have %d tasks in the list.\n",
+                        list[counter - 1], counter) +
+                        DIVIDER;
+            } else {
                 reply += DIVIDER + "added: " + desc + "\n" + DIVIDER;
                 list[counter] = new Task(desc);
                 counter++;
