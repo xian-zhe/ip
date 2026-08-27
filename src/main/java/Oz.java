@@ -52,7 +52,7 @@ public class Oz {
         System.out.print(greeting);
 
         try (Scanner scanner = new Scanner(System.in)) {
-            ArrayList<Task> list = this.storage.load();
+            TaskList tasks = new TaskList(this.storage.load());
 
             while (scanner.hasNextLine()) {
                 String desc = scanner.nextLine().trim();
@@ -81,10 +81,10 @@ public class Oz {
 
                         StringBuilder response =
                                 new StringBuilder(DIVIDER + "Here are the tasks in your list:\n");
-                        for (int i = 0; i < list.size(); i++) {
+                        for (int i = 0; i < tasks.size(); i++) {
                             response.append(i + 1)
                                     .append(". ")
-                                    .append(list.get(i))
+                                    .append(tasks.get(i))
                                     .append("\n");
                         }
                         reply = response.append(DIVIDER).toString();
@@ -99,12 +99,7 @@ public class Oz {
                         String dateHeader = targetDate.format(
                                 DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH));
 
-                        ArrayList<Task> matchingTasks = new ArrayList<>();
-                        for (Task task : list) {
-                            if (task.occursOn(targetDate)) {
-                                matchingTasks.add(task);
-                            }
-                        }
+                        ArrayList<Task> matchingTasks = tasks.findTasksOn(targetDate);
 
                         if (matchingTasks.isEmpty()) {
                             reply = DIVIDER
@@ -123,20 +118,20 @@ public class Oz {
                         }
 
                     } else if (command.equals("mark")) {
-                        int index = parseTaskIndex(details, list.size());
-                        list.get(index).mark();
-                        this.storage.save(list);
+                        int index = parseTaskIndex(details, tasks.size());
+                        tasks.mark(index);
+                        this.storage.save(tasks);
                         reply = DIVIDER
                                 + "Nice! I've marked this task as done:\n  "
-                                + list.get(index) + "\n" + DIVIDER;
+                                + tasks.get(index) + "\n" + DIVIDER;
 
                     } else if (command.equals("unmark")) {
-                        int index = parseTaskIndex(details, list.size());
-                        list.get(index).unmark();
-                        this.storage.save(list);
+                        int index = parseTaskIndex(details, tasks.size());
+                        tasks.unmark(index);
+                        this.storage.save(tasks);
                         reply = DIVIDER
                                 + "OK! I've marked this task as not done yet:\n  "
-                                + list.get(index) + "\n" + DIVIDER;
+                                + tasks.get(index) + "\n" + DIVIDER;
 
                     } else if (command.equals("todo")) {
                         if (details.isBlank()) {
@@ -144,8 +139,9 @@ public class Oz {
                                     "The description of a todo cannot be empty.");
                         }
 
-                        list.add(new ToDo(details));
-                        this.storage.save(list);
+                        Task task = new ToDo(details);
+                        tasks.add(task);
+                        this.storage.save(tasks);
                         reply = DIVIDER
                                 + String.format(
                                 """
@@ -153,7 +149,7 @@ public class Oz {
                                         %s
                                         Now you have %d tasks in the list.
                                         """,
-                                        list.get(list.size() - 1), list.size())
+                                        task, tasks.size())
                                 + DIVIDER;
 
                     } else if (command.equals("deadline")) {
@@ -174,8 +170,9 @@ public class Oz {
                         }
 
                         TaskDateTime deadlineTime = TaskDateTime.parse(by);
-                        list.add(new Deadlines(deadlineDesc, deadlineTime));
-                        this.storage.save(list);
+                        Task task = new Deadlines(deadlineDesc, deadlineTime);
+                        tasks.add(task);
+                        this.storage.save(tasks);
                         reply = DIVIDER
                                 + String.format(
                                 """
@@ -183,7 +180,7 @@ public class Oz {
                                         %s
                                         Now you have %d tasks in the list.
                                         """,
-                                        list.get(list.size() - 1), list.size())
+                                        task, tasks.size())
                                 + DIVIDER;
 
                     } else if (command.equals("event")) {
@@ -206,8 +203,9 @@ public class Oz {
 
                         TaskDateTime fromTime = TaskDateTime.parse(from);
                         TaskDateTime toTime = TaskDateTime.parse(to);
-                        list.add(new Event(eventDesc, fromTime, toTime));
-                        this.storage.save(list);
+                        Task task = new Event(eventDesc, fromTime, toTime);
+                        tasks.add(task);
+                        this.storage.save(tasks);
                         reply = DIVIDER
                                 + String.format(
                                 """
@@ -215,14 +213,13 @@ public class Oz {
                                         %s
                                         Now you have %d tasks in the list.
                                         """,
-                                        list.get(list.size() - 1), list.size())
+                                        task, tasks.size())
                                 + DIVIDER;
 
                     } else if (command.equals("delete")) {
-                        int index = parseTaskIndex(details, list.size());
-                        Task removedTask = list.get(index);
-                        list.remove(index);
-                        this.storage.save(list);
+                        int index = parseTaskIndex(details, tasks.size());
+                        Task removedTask = tasks.delete(index);
+                        this.storage.save(tasks);
                         reply = DIVIDER
                                 + String.format(
                                 """
@@ -230,7 +227,7 @@ public class Oz {
                                         %s
                                         Now you have %d tasks in the list.
                                         """,
-                                        removedTask, list.size())
+                                        removedTask, tasks.size())
                                 + DIVIDER;
 
                     } else {
@@ -278,4 +275,5 @@ public class Oz {
         new Oz("data/oz.txt").run();
     }
 }
+
 

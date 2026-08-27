@@ -80,6 +80,16 @@ public class Storage {
     }
 
     /**
+     * Saves the tasks from a TaskList to the storage file on the hard disk.
+     *
+     * @param taskList The TaskList instance to save.
+     */
+    public void save(TaskList taskList) {
+        save(taskList.getTasks());
+    }
+
+
+    /**
      * Parses a line from the storage file into a corresponding Task object.
      *
      * @param line Raw line text from storage.
