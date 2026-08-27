@@ -119,9 +119,11 @@ public class Oz {
                                     "Use: deadline <description> /by <date>.");
                         }
 
+                        TaskDateTime deadlineTime =
+                                TaskDateTime.parse(deadlineMatcher.group("by").trim());
                         list.add(new Deadlines(
                                 deadlineMatcher.group("desc").trim(),
-                                deadlineMatcher.group("by").trim()));
+                                deadlineTime));
                         saveTasks(list);
                         reply = DIVIDER
                                 + String.format(
@@ -141,10 +143,14 @@ public class Oz {
                                     "Use: event <description> /from <start> /to <end>.");
                         }
 
+                        TaskDateTime fromTime =
+                                TaskDateTime.parse(eventMatcher.group("from").trim());
+                        TaskDateTime toTime =
+                                TaskDateTime.parse(eventMatcher.group("to").trim());
                         list.add(new Event(
                                 eventMatcher.group("desc").trim(),
-                                eventMatcher.group("from").trim(),
-                                eventMatcher.group("to").trim()));
+                                fromTime,
+                                toTime));
                         saveTasks(list);
                         reply = DIVIDER
                                 + String.format(
@@ -290,7 +296,8 @@ public class Oz {
             if (deadlineDesc.isEmpty() || by.isEmpty()) {
                 throw new OzException("Deadline description and date cannot be empty.");
             }
-            task = new Deadlines(deadlineDesc, by);
+            TaskDateTime deadlineTime = TaskDateTime.parse(by);
+            task = new Deadlines(deadlineDesc, deadlineTime);
             break;
 
         case "E":
@@ -304,7 +311,9 @@ public class Oz {
             if (eventDesc.isEmpty() || from.isEmpty() || to.isEmpty()) {
                 throw new OzException("Event description, start time, and end time cannot be empty.");
             }
-            task = new Event(eventDesc, from, to);
+            TaskDateTime fromTime = TaskDateTime.parse(from);
+            TaskDateTime toTime = TaskDateTime.parse(to);
+            task = new Event(eventDesc, fromTime, toTime);
             break;
 
         default:
@@ -316,6 +325,7 @@ public class Oz {
         }
         return task;
     }
+
 
     /**
      * Saves the current list of tasks to the storage file on the hard disk.
