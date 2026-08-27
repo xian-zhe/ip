@@ -119,11 +119,17 @@ public class Oz {
                                     "Use: deadline <description> /by <date>.");
                         }
 
-                        TaskDateTime deadlineTime =
-                                TaskDateTime.parse(deadlineMatcher.group("by").trim());
-                        list.add(new Deadlines(
-                                deadlineMatcher.group("desc").trim(),
-                                deadlineTime));
+                        String deadlineDesc = deadlineMatcher.group("desc").trim();
+                        String by = deadlineMatcher.group("by").trim();
+                        if (deadlineDesc.isEmpty()) {
+                            throw new OzException("The description of a deadline cannot be empty.");
+                        }
+                        if (by.isEmpty()) {
+                            throw new OzException("The deadline date/time (/by) cannot be empty.");
+                        }
+
+                        TaskDateTime deadlineTime = TaskDateTime.parse(by);
+                        list.add(new Deadlines(deadlineDesc, deadlineTime));
                         saveTasks(list);
                         reply = DIVIDER
                                 + String.format(
@@ -143,14 +149,19 @@ public class Oz {
                                     "Use: event <description> /from <start> /to <end>.");
                         }
 
-                        TaskDateTime fromTime =
-                                TaskDateTime.parse(eventMatcher.group("from").trim());
-                        TaskDateTime toTime =
-                                TaskDateTime.parse(eventMatcher.group("to").trim());
-                        list.add(new Event(
-                                eventMatcher.group("desc").trim(),
-                                fromTime,
-                                toTime));
+                        String eventDesc = eventMatcher.group("desc").trim();
+                        String from = eventMatcher.group("from").trim();
+                        String to = eventMatcher.group("to").trim();
+                        if (eventDesc.isEmpty()) {
+                            throw new OzException("The description of an event cannot be empty.");
+                        }
+                        if (from.isEmpty() || to.isEmpty()) {
+                            throw new OzException("The event start (/from) and end (/to) dates cannot be empty.");
+                        }
+
+                        TaskDateTime fromTime = TaskDateTime.parse(from);
+                        TaskDateTime toTime = TaskDateTime.parse(to);
+                        list.add(new Event(eventDesc, fromTime, toTime));
                         saveTasks(list);
                         reply = DIVIDER
                                 + String.format(
@@ -163,6 +174,7 @@ public class Oz {
                                 + DIVIDER;
 
                     } else if (command.equals("delete")) {
+
                         int index = parseTaskIndex(details, list.size());
                         Task removedTask = list.get(index);
                         list.remove(index);

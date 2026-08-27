@@ -11,14 +11,19 @@ public class Event extends Task {
      * @param description Description of the event.
      * @param from Start date/time of the event.
      * @param to End date/time of the event.
+     * @throws OzException If the start date/time is after the end date/time.
      */
-    public Event(String description, TaskDateTime from, TaskDateTime to) {
+    public Event(String description, TaskDateTime from, TaskDateTime to) throws OzException {
         super(description);
+        if (from.isAfter(to)) {
+            throw new OzException("The start date/time (/from) cannot be after the end date/time (/to).");
+        }
         this.from = from;
         this.to = to;
     }
 
     /**
+
      * Converts the event task into a file storage representation.
      *
      * @return Formatted string for writing to file.

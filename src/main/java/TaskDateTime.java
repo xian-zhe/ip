@@ -11,8 +11,6 @@ import java.util.Locale;
 public class TaskDateTime {
     private static final DateTimeFormatter DISPLAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
-    private static final DateTimeFormatter DISPLAY_DATETIME_FORMAT =
-            DateTimeFormatter.ofPattern("MMM dd yyyy, h:mma", Locale.ENGLISH);
     private static final DateTimeFormatter STORAGE_DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
     private static final DateTimeFormatter STORAGE_DATETIME_FORMAT =
@@ -21,14 +19,23 @@ public class TaskDateTime {
     private static final DateTimeFormatter[] INPUT_DATETIME_FORMATTERS = new DateTimeFormatter[] {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm", Locale.ENGLISH),
             DateTimeFormatter.ofPattern("d/M/yyyy HHmm", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("yyyy/M/d HHmm", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("d-M-yyyy HHmm", Locale.ENGLISH),
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ENGLISH),
             DateTimeFormatter.ofPattern("d/M/yyyy HH:mm", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("yyyy/M/d HH:mm", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("d-M-yyyy HH:mm", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("d/M/yyyy h:mma", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("d/M/yyyy ha", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd h:mma", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd ha", Locale.ENGLISH),
             DateTimeFormatter.ISO_LOCAL_DATE_TIME
     };
 
     private static final DateTimeFormatter[] INPUT_DATE_FORMATTERS = new DateTimeFormatter[] {
             DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH),
             DateTimeFormatter.ofPattern("d/M/yyyy", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("yyyy/M/d", Locale.ENGLISH),
             DateTimeFormatter.ofPattern("d-M-yyyy", Locale.ENGLISH),
             DateTimeFormatter.ISO_LOCAL_DATE
     };
@@ -89,7 +96,13 @@ public class TaskDateTime {
      */
     public String toDisplayString() {
         if (this.hasTime) {
-            return this.dateTime.format(DISPLAY_DATETIME_FORMAT);
+            String timePart;
+            if (this.dateTime.getMinute() == 0) {
+                timePart = this.dateTime.format(DateTimeFormatter.ofPattern("ha", Locale.ENGLISH)).toLowerCase();
+            } else {
+                timePart = this.dateTime.format(DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH)).toLowerCase();
+            }
+            return this.dateTime.format(DISPLAY_DATE_FORMAT) + ", " + timePart;
         }
         return this.dateTime.format(DISPLAY_DATE_FORMAT);
     }
@@ -104,6 +117,26 @@ public class TaskDateTime {
             return this.dateTime.format(STORAGE_DATETIME_FORMAT);
         }
         return this.dateTime.format(STORAGE_DATE_FORMAT);
+    }
+
+    /**
+     * Checks if this date/time occurs after another date/time.
+     *
+     * @param other The other TaskDateTime to compare against.
+     * @return True if this date/time is strictly after the other date/time.
+     */
+    public boolean isAfter(TaskDateTime other) {
+        return this.dateTime.isAfter(other.dateTime);
+    }
+
+    /**
+     * Checks if this date/time occurs before another date/time.
+     *
+     * @param other The other TaskDateTime to compare against.
+     * @return True if this date/time is strictly before the other date/time.
+     */
+    public boolean isBefore(TaskDateTime other) {
+        return this.dateTime.isBefore(other.dateTime);
     }
 
     @Override
