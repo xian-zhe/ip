@@ -1,22 +1,50 @@
+/**
+ * Represents a general task in the task list.
+ */
 public class Task {
     protected String description;
     protected boolean isDone;
 
+    /**
+     * Constructs a Task with the specified description.
+     *
+     * @param description Description of the task.
+     */
     public Task(String description) {
         this.description = description;
         this.isDone = false;
     }
 
+    /**
+     * Returns the status icon indicating whether the task is completed.
+     *
+     * @return "X" if done, or " " if not done.
+     */
     public String getStatusIcon() {
         return (isDone ? "X" : " "); // mark done task with X
     }
 
+    /**
+     * Marks the task as completed.
+     */
     public void mark() {
         this.isDone = true;
     }
 
+    /**
+     * Marks the task as not completed.
+     */
     public void unmark() {
         this.isDone = false;
+    }
+
+    /**
+     * Converts the task into a file storage representation.
+     *
+     * @return Formatted string for writing to file.
+     */
+    public String toFileFormat() {
+        return String.format("%s | %s", (this.isDone ? "1" : "0"), this.description);
     }
 
     @Override
