@@ -1,8 +1,11 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -77,6 +80,39 @@ public class Oz {
                         }
                         reply = response.append(DIVIDER).toString();
 
+                    } else if (command.equals("on")) {
+                        if (details.isBlank()) {
+                            throw new OzException("Use: on <date> (e.g., on 2019-10-15 or on 2/12/2019).");
+                        }
+
+                        TaskDateTime targetDateTime = TaskDateTime.parse(details);
+                        LocalDate targetDate = targetDateTime.toLocalDate();
+                        String dateHeader = targetDate.format(
+                                DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH));
+
+                        ArrayList<Task> matchingTasks = new ArrayList<>();
+                        for (Task task : list) {
+                            if (task.occursOn(targetDate)) {
+                                matchingTasks.add(task);
+                            }
+                        }
+
+                        if (matchingTasks.isEmpty()) {
+                            reply = DIVIDER
+                                    + "There are no tasks occurring on " + dateHeader + ".\n"
+                                    + DIVIDER;
+                        } else {
+                            StringBuilder response = new StringBuilder(DIVIDER
+                                    + "Here are the tasks occurring on " + dateHeader + ":\n");
+                            for (int i = 0; i < matchingTasks.size(); i++) {
+                                response.append(i + 1)
+                                        .append(". ")
+                                        .append(matchingTasks.get(i))
+                                        .append("\n");
+                            }
+                            reply = response.append(DIVIDER).toString();
+                        }
+
                     } else if (command.equals("mark")) {
                         int index = parseTaskIndex(details, list.size());
                         list.get(index).mark();
@@ -100,6 +136,7 @@ public class Oz {
                         }
 
                         list.add(new ToDo(details));
+
                         saveTasks(list);
                         reply = DIVIDER
                                 + String.format(
@@ -119,9 +156,17 @@ public class Oz {
                                     "Use: deadline <description> /by <date>.");
                         }
 
-                        list.add(new Deadlines(
-                                deadlineMatcher.group("desc").trim(),
-                                deadlineMatcher.group("by").trim()));
+                        String deadlineDesc = deadlineMatcher.group("desc").trim();
+                        String by = deadlineMatcher.group("by").trim();
+                        if (deadlineDesc.isEmpty()) {
+                            throw new OzException("The description of a deadline cannot be empty.");
+                        }
+                        if (by.isEmpty()) {
+                            throw new OzException("The deadline date/time (/by) cannot be empty.");
+                        }
+
+                        TaskDateTime deadlineTime = TaskDateTime.parse(by);
+                        list.add(new Deadlines(deadlineDesc, deadlineTime));
                         saveTasks(list);
                         reply = DIVIDER
                                 + String.format(
@@ -141,10 +186,19 @@ public class Oz {
                                     "Use: event <description> /from <start> /to <end>.");
                         }
 
-                        list.add(new Event(
-                                eventMatcher.group("desc").trim(),
-                                eventMatcher.group("from").trim(),
-                                eventMatcher.group("to").trim()));
+                        String eventDesc = eventMatcher.group("desc").trim();
+                        String from = eventMatcher.group("from").trim();
+                        String to = eventMatcher.group("to").trim();
+                        if (eventDesc.isEmpty()) {
+                            throw new OzException("The description of an event cannot be empty.");
+                        }
+                        if (from.isEmpty() || to.isEmpty()) {
+                            throw new OzException("The event start (/from) and end (/to) dates cannot be empty.");
+                        }
+
+                        TaskDateTime fromTime = TaskDateTime.parse(from);
+                        TaskDateTime toTime = TaskDateTime.parse(to);
+                        list.add(new Event(eventDesc, fromTime, toTime));
                         saveTasks(list);
                         reply = DIVIDER
                                 + String.format(
@@ -157,6 +211,7 @@ public class Oz {
                                 + DIVIDER;
 
                     } else if (command.equals("delete")) {
+
                         int index = parseTaskIndex(details, list.size());
                         Task removedTask = list.get(index);
                         list.remove(index);
@@ -290,7 +345,8 @@ public class Oz {
             if (deadlineDesc.isEmpty() || by.isEmpty()) {
                 throw new OzException("Deadline description and date cannot be empty.");
             }
-            task = new Deadlines(deadlineDesc, by);
+            TaskDateTime deadlineTime = TaskDateTime.parse(by);
+            task = new Deadlines(deadlineDesc, deadlineTime);
             break;
 
         case "E":
@@ -304,7 +360,9 @@ public class Oz {
             if (eventDesc.isEmpty() || from.isEmpty() || to.isEmpty()) {
                 throw new OzException("Event description, start time, and end time cannot be empty.");
             }
-            task = new Event(eventDesc, from, to);
+            TaskDateTime fromTime = TaskDateTime.parse(from);
+            TaskDateTime toTime = TaskDateTime.parse(to);
+            task = new Event(eventDesc, fromTime, toTime);
             break;
 
         default:
@@ -316,6 +374,7 @@ public class Oz {
         }
         return task;
     }
+
 
     /**
      * Saves the current list of tasks to the storage file on the hard disk.

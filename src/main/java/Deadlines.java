@@ -1,9 +1,10 @@
+import java.time.LocalDate;
+
 /**
- * Represents a task with a specific deadline.
+ * Represents a task with a specific deadline date or date-time.
  */
 public class Deadlines extends Task {
-    protected String deadline;
-
+    protected TaskDateTime deadline;
 
     /**
      * Constructs a Deadlines task with description and deadline date/time.
@@ -11,9 +12,20 @@ public class Deadlines extends Task {
      * @param description Description of the deadline task.
      * @param deadline Date or time by which the task should be completed.
      */
-    public Deadlines(String description, String deadline) {
+    public Deadlines(String description, TaskDateTime deadline) {
         super(description);
         this.deadline = deadline;
+    }
+
+    /**
+     * Checks if this deadline occurs on the given date.
+     *
+     * @param date The date to check against.
+     * @return True if the deadline falls on the specified date.
+     */
+    @Override
+    public boolean occursOn(LocalDate date) {
+        return this.deadline.toLocalDate().equals(date);
     }
 
     /**
@@ -23,11 +35,14 @@ public class Deadlines extends Task {
      */
     @Override
     public String toFileFormat() {
-        return String.format("D | %s | %s", super.toFileFormat(), this.deadline);
+        return String.format("D | %s | %s", super.toFileFormat(), this.deadline.toStorageString());
     }
 
     @Override
     public String toString() {
-        return String.format("[D][%s] %s (by: %s)", super.getStatusIcon(), this.description, this.deadline);
+        return String.format("[D][%s] %s (by: %s)",
+                super.getStatusIcon(), this.description, this.deadline.toDisplayString());
     }
-}
+}
+
+
