@@ -1,10 +1,6 @@
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -15,7 +11,6 @@ import java.util.regex.Pattern;
  */
 public class Oz {
     private static final String DIVIDER = "____________________________________________________________\n";
-    private static final Path FILE_PATH = Path.of("data", "oz.txt");
     private static final Pattern COMMAND_PATTERN =
             Pattern.compile("^(?<command>\\S+)(?:\\s+(?<details>.*))?$");
     private static final Pattern DEADLINE_ARGUMENTS_PATTERN =
@@ -23,7 +18,21 @@ public class Oz {
     private static final Pattern EVENT_ARGUMENTS_PATTERN =
             Pattern.compile("^(?<desc>.+?)\\s+/from\\s+(?<from>.+?)\\s+/to\\s+(?<to>.+)$");
 
-    public static void main(String[] args) {
+    private final Storage storage;
+
+    /**
+     * Constructs an Oz chatbot instance configured with the specified storage file path.
+     *
+     * @param filePath Path to the task storage file.
+     */
+    public Oz(String filePath) {
+        this.storage = new Storage(filePath);
+    }
+
+    /**
+     * Runs the main command loop of the chatbot.
+     */
+    public void run() {
         String banner = """
                   ___    ____\s
                  / _ \\  |_  /
@@ -43,7 +52,7 @@ public class Oz {
         System.out.print(greeting);
 
         try (Scanner scanner = new Scanner(System.in)) {
-            ArrayList<Task> list = loadTasks();
+            ArrayList<Task> list = this.storage.load();
 
             while (scanner.hasNextLine()) {
                 String desc = scanner.nextLine().trim();
@@ -116,7 +125,7 @@ public class Oz {
                     } else if (command.equals("mark")) {
                         int index = parseTaskIndex(details, list.size());
                         list.get(index).mark();
-                        saveTasks(list);
+                        this.storage.save(list);
                         reply = DIVIDER
                                 + "Nice! I've marked this task as done:\n  "
                                 + list.get(index) + "\n" + DIVIDER;
@@ -124,7 +133,7 @@ public class Oz {
                     } else if (command.equals("unmark")) {
                         int index = parseTaskIndex(details, list.size());
                         list.get(index).unmark();
-                        saveTasks(list);
+                        this.storage.save(list);
                         reply = DIVIDER
                                 + "OK! I've marked this task as not done yet:\n  "
                                 + list.get(index) + "\n" + DIVIDER;
@@ -136,8 +145,7 @@ public class Oz {
                         }
 
                         list.add(new ToDo(details));
-
-                        saveTasks(list);
+                        this.storage.save(list);
                         reply = DIVIDER
                                 + String.format(
                                 """
@@ -167,7 +175,7 @@ public class Oz {
 
                         TaskDateTime deadlineTime = TaskDateTime.parse(by);
                         list.add(new Deadlines(deadlineDesc, deadlineTime));
-                        saveTasks(list);
+                        this.storage.save(list);
                         reply = DIVIDER
                                 + String.format(
                                 """
@@ -199,7 +207,7 @@ public class Oz {
                         TaskDateTime fromTime = TaskDateTime.parse(from);
                         TaskDateTime toTime = TaskDateTime.parse(to);
                         list.add(new Event(eventDesc, fromTime, toTime));
-                        saveTasks(list);
+                        this.storage.save(list);
                         reply = DIVIDER
                                 + String.format(
                                 """
@@ -211,11 +219,10 @@ public class Oz {
                                 + DIVIDER;
 
                     } else if (command.equals("delete")) {
-
                         int index = parseTaskIndex(details, list.size());
                         Task removedTask = list.get(index);
                         list.remove(index);
-                        saveTasks(list);
+                        this.storage.save(list);
                         reply = DIVIDER
                                 + String.format(
                                 """
@@ -267,133 +274,8 @@ public class Oz {
         }
     }
 
-    /**
-     * Loads tasks from the storage file on the hard disk.
-     * If the file does not exist, an empty list is returned.
-     * Corrupted lines are reported and skipped.
-     *
-     * @return List of tasks loaded from the storage file.
-     */
-    private static ArrayList<Task> loadTasks() {
-        ArrayList<Task> tasks = new ArrayList<>();
-        if (!Files.exists(FILE_PATH)) {
-            return tasks;
-        }
-
-        try {
-            List<String> lines = Files.readAllLines(FILE_PATH);
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i).trim();
-                if (line.startsWith("\uFEFF")) {
-                    line = line.substring(1).trim();
-                }
-                if (line.isEmpty()) {
-                    continue;
-                }
-                try {
-                    Task task = parseTaskFromFile(line);
-                    tasks.add(task);
-                } catch (OzException exception) {
-                    System.out.println(DIVIDER + "WARNING: Skipping corrupted task entry at line "
-                            + (i + 1) + ": " + exception.getMessage() + "\n" + DIVIDER);
-                }
-            }
-        } catch (IOException exception) {
-            System.out.println(DIVIDER + "OOPS! Could not read tasks from file: "
-                    + exception.getMessage() + "\n" + DIVIDER);
-        }
-        return tasks;
-    }
-
-    /**
-     * Parses a line from the storage file into a corresponding Task object.
-     *
-     * @param line Raw line text from storage.
-     * @return A Task instance with status and descriptions populated.
-     * @throws OzException If the line format is invalid or has missing/corrupted fields.
-     */
-    private static Task parseTaskFromFile(String line) throws OzException {
-        String[] initialParts = line.split("\\s*\\|\\s*", 3);
-        if (initialParts.length < 3) {
-            throw new OzException("Malformed task entry: insufficient fields.");
-        }
-
-        String type = initialParts[0].trim();
-        String status = initialParts[1].trim();
-        if (!status.equals("0") && !status.equals("1")) {
-            throw new OzException("Invalid completion status (must be 0 or 1): " + status);
-        }
-        boolean isDone = status.equals("1");
-
-        Task task;
-        switch (type) {
-        case "T":
-            String todoDesc = initialParts[2].trim();
-            if (todoDesc.isEmpty()) {
-                throw new OzException("Todo description cannot be empty.");
-            }
-            task = new ToDo(todoDesc);
-            break;
-
-        case "D":
-            String[] deadlineParts = line.split("\\s*\\|\\s*", 4);
-            if (deadlineParts.length < 4) {
-                throw new OzException("Deadline task requires description and deadline date.");
-            }
-            String deadlineDesc = deadlineParts[2].trim();
-            String by = deadlineParts[3].trim();
-            if (deadlineDesc.isEmpty() || by.isEmpty()) {
-                throw new OzException("Deadline description and date cannot be empty.");
-            }
-            TaskDateTime deadlineTime = TaskDateTime.parse(by);
-            task = new Deadlines(deadlineDesc, deadlineTime);
-            break;
-
-        case "E":
-            String[] eventParts = line.split("\\s*\\|\\s*", 5);
-            if (eventParts.length < 5) {
-                throw new OzException("Event task requires description, start time, and end time.");
-            }
-            String eventDesc = eventParts[2].trim();
-            String from = eventParts[3].trim();
-            String to = eventParts[4].trim();
-            if (eventDesc.isEmpty() || from.isEmpty() || to.isEmpty()) {
-                throw new OzException("Event description, start time, and end time cannot be empty.");
-            }
-            TaskDateTime fromTime = TaskDateTime.parse(from);
-            TaskDateTime toTime = TaskDateTime.parse(to);
-            task = new Event(eventDesc, fromTime, toTime);
-            break;
-
-        default:
-            throw new OzException("Unknown task type: " + type);
-        }
-
-        if (isDone) {
-            task.mark();
-        }
-        return task;
-    }
-
-
-    /**
-     * Saves the current list of tasks to the storage file on the hard disk.
-     *
-     * @param tasks The list of tasks to save.
-     */
-    private static void saveTasks(ArrayList<Task> tasks) {
-        try {
-            if (FILE_PATH.getParent() != null) {
-                Files.createDirectories(FILE_PATH.getParent());
-            }
-            List<String> lines = new ArrayList<>();
-            for (Task task : tasks) {
-                lines.add(task.toFileFormat());
-            }
-            Files.write(FILE_PATH, lines);
-        } catch (IOException exception) {
-            System.out.println(DIVIDER + "OOPS! Could not save tasks to file: "
-                    + exception.getMessage() + "\n" + DIVIDER);
-        }
+    public static void main(String[] args) {
+        new Oz("data/oz.txt").run();
     }
 }
+
