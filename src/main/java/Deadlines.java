@@ -1,3 +1,5 @@
+import java.time.LocalDate;
+
 /**
  * Represents a task with a specific deadline date or date-time.
  */
@@ -16,6 +18,17 @@ public class Deadlines extends Task {
     }
 
     /**
+     * Checks if this deadline occurs on the given date.
+     *
+     * @param date The date to check against.
+     * @return True if the deadline falls on the specified date.
+     */
+    @Override
+    public boolean occursOn(LocalDate date) {
+        return this.deadline.toLocalDate().equals(date);
+    }
+
+    /**
      * Converts the deadline task into a file storage representation.
      *
      * @return Formatted string for writing to file.
@@ -31,4 +44,5 @@ public class Deadlines extends Task {
                 super.getStatusIcon(), this.description, this.deadline.toDisplayString());
     }
 }
+
 

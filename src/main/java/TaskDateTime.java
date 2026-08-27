@@ -139,8 +139,18 @@ public class TaskDateTime {
         return this.dateTime.isBefore(other.dateTime);
     }
 
+    /**
+     * Extracts the LocalDate component of this date/time.
+     *
+     * @return The LocalDate representation.
+     */
+    public LocalDate toLocalDate() {
+        return this.dateTime.toLocalDate();
+    }
+
     @Override
     public String toString() {
         return toDisplayString();
     }
+
 }

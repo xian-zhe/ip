@@ -1,3 +1,5 @@
+import java.time.LocalDate;
+
 /**
  * Represents a task that spans a start date/time and an end date/time.
  */
@@ -23,7 +25,19 @@ public class Event extends Task {
     }
 
     /**
+     * Checks if this event occurs on the given date (between start and end date inclusive).
+     *
+     * @param date The date to check against.
+     * @return True if the event spans across the specified date.
+     */
+    @Override
+    public boolean occursOn(LocalDate date) {
+        LocalDate startDate = this.from.toLocalDate();
+        LocalDate endDate = this.to.toLocalDate();
+        return !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
 
+    /**
      * Converts the event task into a file storage representation.
      *
      * @return Formatted string for writing to file.
@@ -40,4 +54,5 @@ public class Event extends Task {
                 super.getStatusIcon(), this.description, this.from.toDisplayString(), this.to.toDisplayString());
     }
 }
+
 

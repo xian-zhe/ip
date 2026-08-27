@@ -1,3 +1,5 @@
+import java.time.LocalDate;
+
 /**
  * Represents a general task in the task list.
  */
@@ -39,6 +41,16 @@ public class Task {
     }
 
     /**
+     * Checks if this task occurs on the given date.
+     *
+     * @param date The date to check against.
+     * @return True if the task occurs on the specified date, false otherwise.
+     */
+    public boolean occursOn(LocalDate date) {
+        return false;
+    }
+
+    /**
      * Converts the task into a file storage representation.
      *
      * @return Formatted string for writing to file.
@@ -52,3 +64,4 @@ public class Task {
         return String.format("[%s] %s", this.getStatusIcon(), this.description);
     }
 }
+

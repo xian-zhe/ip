@@ -1,8 +1,11 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -77,6 +80,39 @@ public class Oz {
                         }
                         reply = response.append(DIVIDER).toString();
 
+                    } else if (command.equals("on")) {
+                        if (details.isBlank()) {
+                            throw new OzException("Use: on <date> (e.g., on 2019-10-15 or on 2/12/2019).");
+                        }
+
+                        TaskDateTime targetDateTime = TaskDateTime.parse(details);
+                        LocalDate targetDate = targetDateTime.toLocalDate();
+                        String dateHeader = targetDate.format(
+                                DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH));
+
+                        ArrayList<Task> matchingTasks = new ArrayList<>();
+                        for (Task task : list) {
+                            if (task.occursOn(targetDate)) {
+                                matchingTasks.add(task);
+                            }
+                        }
+
+                        if (matchingTasks.isEmpty()) {
+                            reply = DIVIDER
+                                    + "There are no tasks occurring on " + dateHeader + ".\n"
+                                    + DIVIDER;
+                        } else {
+                            StringBuilder response = new StringBuilder(DIVIDER
+                                    + "Here are the tasks occurring on " + dateHeader + ":\n");
+                            for (int i = 0; i < matchingTasks.size(); i++) {
+                                response.append(i + 1)
+                                        .append(". ")
+                                        .append(matchingTasks.get(i))
+                                        .append("\n");
+                            }
+                            reply = response.append(DIVIDER).toString();
+                        }
+
                     } else if (command.equals("mark")) {
                         int index = parseTaskIndex(details, list.size());
                         list.get(index).mark();
@@ -100,6 +136,7 @@ public class Oz {
                         }
 
                         list.add(new ToDo(details));
+
                         saveTasks(list);
                         reply = DIVIDER
                                 + String.format(
