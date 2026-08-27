@@ -1,9 +1,12 @@
+package oz.task;
+
 /**
- * Represents a todo task without any date/time attached.
+ * Represents a simple todo task without date or time constraints.
  */
 public class ToDo extends Task {
+
     /**
-     * Constructs a ToDo task with the specified description.
+     * Constructs a ToDo task with the given description.
      *
      * @param description Description of the todo task.
      */
