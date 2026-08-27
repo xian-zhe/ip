@@ -1,3 +1,5 @@
+package oz.task;
+
 import java.time.LocalDate;
 
 /**
@@ -64,4 +66,3 @@ public class Task {
         return String.format("[%s] %s", this.getStatusIcon(), this.description);
     }
 }
-
