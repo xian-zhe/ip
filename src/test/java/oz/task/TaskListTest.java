@@ -44,6 +44,43 @@ public class TaskListTest {
 
         OzException exception = assertThrows(OzException.class, () -> taskList.delete(5));
         assertEquals("That task number does not exist.", exception.getMessage());
+
+        OzException negativeException = assertThrows(OzException.class, () -> taskList.delete(-1));
+        assertEquals("That task number does not exist.", negativeException.getMessage());
+    }
+
+    @Test
+    public void get_validAndInvalidIndex_correctBehavior() throws OzException {
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("first"));
+
+        assertEquals("[T][ ] first", taskList.get(0).toString());
+
+        OzException exception = assertThrows(OzException.class, () -> taskList.get(1));
+        assertEquals("That task number does not exist.", exception.getMessage());
+    }
+
+    @Test
+    public void markAndUnmark_validIndex_statusUpdated() throws OzException {
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("homework"));
+
+        taskList.mark(0);
+        assertEquals("[T][X] homework", taskList.get(0).toString());
+
+        taskList.unmark(0);
+        assertEquals("[T][ ] homework", taskList.get(0).toString());
+    }
+
+    @Test
+    public void markAndUnmark_outOfBoundsIndex_exceptionThrown() {
+        TaskList taskList = new TaskList();
+
+        OzException markException = assertThrows(OzException.class, () -> taskList.mark(0));
+        assertEquals("That task number does not exist.", markException.getMessage());
+
+        OzException unmarkException = assertThrows(OzException.class, () -> taskList.unmark(-1));
+        assertEquals("That task number does not exist.", unmarkException.getMessage());
     }
 
     @Test
@@ -59,5 +96,8 @@ public class TaskListTest {
         ArrayList<Task> matching = taskList.findTasksOn(LocalDate.of(2026, 9, 1));
         assertEquals(1, matching.size());
         assertEquals("submit report", matching.get(0).description);
+
+        ArrayList<Task> noMatches = taskList.findTasksOn(LocalDate.of(2026, 12, 31));
+        assertEquals(0, noMatches.size());
     }
 }

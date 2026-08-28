@@ -22,6 +22,7 @@ public class TaskDateTimeTest {
         assertEquals("Oct 15 2019", dateTime.toDisplayString());
         assertEquals("2019-10-15", dateTime.toStorageString());
         assertEquals(LocalDate.of(2019, 10, 15), dateTime.toLocalDate());
+        assertEquals("Oct 15 2019", dateTime.toString());
     }
 
     @Test
@@ -29,6 +30,13 @@ public class TaskDateTimeTest {
         TaskDateTime dateTime = TaskDateTime.parse("2/12/2019");
         assertEquals("Dec 02 2019", dateTime.toDisplayString());
         assertEquals("2019-12-02", dateTime.toStorageString());
+    }
+
+    @Test
+    public void parse_validDashDate_success() throws OzException {
+        TaskDateTime dateTime = TaskDateTime.parse("15-10-2019");
+        assertEquals("Oct 15 2019", dateTime.toDisplayString());
+        assertEquals("2019-10-15", dateTime.toStorageString());
     }
 
     @Test
@@ -46,10 +54,28 @@ public class TaskDateTimeTest {
     }
 
     @Test
+    public void parse_validDateTimeWithColon_success() throws OzException {
+        TaskDateTime dateTime = TaskDateTime.parse("2019-10-15 18:45");
+        assertEquals("Oct 15 2019, 6:45pm", dateTime.toDisplayString());
+        assertEquals("2019-10-15 1845", dateTime.toStorageString());
+    }
+
+    @Test
     public void parse_valid12HourAmPm_success() throws OzException {
-        TaskDateTime dateTime = TaskDateTime.parse("2019-10-15 6pm");
-        assertEquals("Oct 15 2019, 6pm", dateTime.toDisplayString());
-        assertEquals("2019-10-15 1800", dateTime.toStorageString());
+        TaskDateTime dateTimeLower = TaskDateTime.parse("2019-10-15 6pm");
+        assertEquals("Oct 15 2019, 6pm", dateTimeLower.toDisplayString());
+        assertEquals("2019-10-15 1800", dateTimeLower.toStorageString());
+
+        TaskDateTime dateTimeUpper = TaskDateTime.parse("2/12/2019 9:15AM");
+        assertEquals("Dec 02 2019, 9:15am", dateTimeUpper.toDisplayString());
+        assertEquals("2019-12-02 0915", dateTimeUpper.toStorageString());
+    }
+
+    @Test
+    public void parse_isoLocalDateTime_success() throws OzException {
+        TaskDateTime dateTime = TaskDateTime.parse("2019-10-15T14:30:00");
+        assertEquals("Oct 15 2019, 2:30pm", dateTime.toDisplayString());
+        assertEquals("2019-10-15 1430", dateTime.toStorageString());
     }
 
     @Test
@@ -59,9 +85,15 @@ public class TaskDateTimeTest {
     }
 
     @Test
-    public void parse_emptyInput_exceptionThrown() {
-        OzException exception = assertThrows(OzException.class, () -> TaskDateTime.parse("   "));
-        assertEquals("Date/time argument cannot be empty.", exception.getMessage());
+    public void parse_emptyOrBlankInput_exceptionThrown() {
+        OzException emptyException = assertThrows(OzException.class, () -> TaskDateTime.parse(""));
+        assertEquals("Date/time argument cannot be empty.", emptyException.getMessage());
+
+        OzException blankException = assertThrows(OzException.class, () -> TaskDateTime.parse("   "));
+        assertEquals("Date/time argument cannot be empty.", blankException.getMessage());
+
+        OzException nullException = assertThrows(OzException.class, () -> TaskDateTime.parse(null));
+        assertEquals("Date/time argument cannot be empty.", nullException.getMessage());
     }
 
     @Test
