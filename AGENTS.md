@@ -39,3 +39,11 @@ Do not commit or push unless explicitly asked.
 * Focus JUnit tests on the top ~50% highest-value methods (prioritizing complex parsing, validation, core task domain logic, and persistence).
 * Update and run JUnit tests after each code change to ensure ongoing compliance with the ~50% test coverage target.
 
+## Coding standard:
+
+* Strictly adhere to the SE-EDU Java Coding Standard (Basic + Intermediate) as defined in `.agents/skills/seedu-java-coding-standard/SKILL.md` and https://se-education.org/guides/conventions/java/intermediate.html for all code in this project.
+* Follow all naming conventions (PascalCase for classes, camelCase for methods/variables, SCREAMING_SNAKE_CASE for constants, no single-letter variable names or abbreviations like `desc` or `arg`).
+* Enforce layout rules: 4 spaces per indentation level, 8-space continuation indent for wrapped lines, 110-character soft limit / 120-character hard limit, K&R braces, no wildcard imports.
+* Provide Javadoc comments for all classes, public/protected members, and non-trivial private methods.
+
+
