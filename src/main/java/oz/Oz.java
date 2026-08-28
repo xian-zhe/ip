@@ -25,9 +25,9 @@ public class Oz {
     private static final Pattern COMMAND_PATTERN =
             Pattern.compile("^(?<command>\\S+)(?:\\s+(?<details>.*))?$");
     private static final Pattern DEADLINE_ARGUMENTS_PATTERN =
-            Pattern.compile("^(?<desc>.+?)\\s+/by\\s+(?<by>.+)$");
+            Pattern.compile("^(?<description>.+?)\\s+/by\\s+(?<byTime>.+)$");
     private static final Pattern EVENT_ARGUMENTS_PATTERN =
-            Pattern.compile("^(?<desc>.+?)\\s+/from\\s+(?<from>.+?)\\s+/to\\s+(?<to>.+)$");
+            Pattern.compile("^(?<description>.+?)\\s+/from\\s+(?<fromTime>.+?)\\s+/to\\s+(?<toTime>.+)$");
 
     private final Storage storage;
 
@@ -66,14 +66,14 @@ public class Oz {
             TaskList tasks = new TaskList(this.storage.load());
 
             while (scanner.hasNextLine()) {
-                String desc = scanner.nextLine().trim();
-                if (desc.equals("bye")) {
+                String fullCommand = scanner.nextLine().trim();
+                if (fullCommand.equals("bye")) {
                     break;
                 }
 
                 String reply;
                 try {
-                    Matcher commandMatcher = COMMAND_PATTERN.matcher(desc);
+                    Matcher commandMatcher = COMMAND_PATTERN.matcher(fullCommand);
                     if (!commandMatcher.matches()) {
                         throw new OzException("I could not understand that input.");
                     }
@@ -171,17 +171,17 @@ public class Oz {
                                     "Use: deadline <description> /by <date>.");
                         }
 
-                        String deadlineDesc = deadlineMatcher.group("desc").trim();
-                        String by = deadlineMatcher.group("by").trim();
-                        if (deadlineDesc.isEmpty()) {
+                        String deadlineDescription = deadlineMatcher.group("description").trim();
+                        String deadlineTimeArgument = deadlineMatcher.group("byTime").trim();
+                        if (deadlineDescription.isEmpty()) {
                             throw new OzException("The description of a deadline cannot be empty.");
                         }
-                        if (by.isEmpty()) {
+                        if (deadlineTimeArgument.isEmpty()) {
                             throw new OzException("The deadline date/time (/by) cannot be empty.");
                         }
 
-                        TaskDateTime deadlineTime = TaskDateTime.parse(by);
-                        Task task = new Deadlines(deadlineDesc, deadlineTime);
+                        TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
+                        Task task = new Deadlines(deadlineDescription, deadlineTime);
                         tasks.add(task);
                         this.storage.save(tasks);
                         reply = DIVIDER
@@ -202,19 +202,19 @@ public class Oz {
                                     "Use: event <description> /from <start> /to <end>.");
                         }
 
-                        String eventDesc = eventMatcher.group("desc").trim();
-                        String from = eventMatcher.group("from").trim();
-                        String to = eventMatcher.group("to").trim();
-                        if (eventDesc.isEmpty()) {
+                        String eventDescription = eventMatcher.group("description").trim();
+                        String fromTimeArgument = eventMatcher.group("fromTime").trim();
+                        String toTimeArgument = eventMatcher.group("toTime").trim();
+                        if (eventDescription.isEmpty()) {
                             throw new OzException("The description of an event cannot be empty.");
                         }
-                        if (from.isEmpty() || to.isEmpty()) {
+                        if (fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
                             throw new OzException("The event start (/from) and end (/to) dates cannot be empty.");
                         }
 
-                        TaskDateTime fromTime = TaskDateTime.parse(from);
-                        TaskDateTime toTime = TaskDateTime.parse(to);
-                        Task task = new Event(eventDesc, fromTime, toTime);
+                        TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
+                        TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
+                        Task task = new Event(eventDescription, fromTime, toTime);
                         tasks.add(task);
                         this.storage.save(tasks);
                         reply = DIVIDER
@@ -260,19 +260,19 @@ public class Oz {
     /**
      * Parses the zero-based task index from user command arguments.
      *
-     * @param args Arguments string containing the 1-based task number.
+     * @param argument Argument string containing the 1-based task number.
      * @param taskCount Current total number of tasks in the list.
      * @return 0-based task index.
      * @throws OzException If the input is invalid or out of range.
      */
-    private static int parseTaskIndex(String args, int taskCount)
+    private static int parseTaskIndex(String argument, int taskCount)
             throws OzException {
-        if (!args.matches("\\d+")) {
+        if (!argument.matches("\\d+")) {
             throw new OzException("Please provide a valid task number.");
         }
 
         try {
-            int taskNumber = Integer.parseInt(args);
+            int taskNumber = Integer.parseInt(argument);
             if (taskNumber < 1 || taskNumber > taskCount) {
                 throw new OzException("That task number does not exist.");
             }

@@ -121,11 +121,11 @@ public class Storage {
         Task task;
         switch (type) {
         case "T":
-            String todoDesc = initialParts[2].trim();
-            if (todoDesc.isEmpty()) {
+            String todoDescription = initialParts[2].trim();
+            if (todoDescription.isEmpty()) {
                 throw new OzException("Todo description cannot be empty.");
             }
-            task = new ToDo(todoDesc);
+            task = new ToDo(todoDescription);
             break;
 
         case "D":
@@ -133,13 +133,13 @@ public class Storage {
             if (deadlineParts.length < 4) {
                 throw new OzException("Deadline task requires description and deadline date.");
             }
-            String deadlineDesc = deadlineParts[2].trim();
-            String by = deadlineParts[3].trim();
-            if (deadlineDesc.isEmpty() || by.isEmpty()) {
+            String deadlineDescription = deadlineParts[2].trim();
+            String deadlineTimeArgument = deadlineParts[3].trim();
+            if (deadlineDescription.isEmpty() || deadlineTimeArgument.isEmpty()) {
                 throw new OzException("Deadline description and date cannot be empty.");
             }
-            TaskDateTime deadlineTime = TaskDateTime.parse(by);
-            task = new Deadlines(deadlineDesc, deadlineTime);
+            TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
+            task = new Deadlines(deadlineDescription, deadlineTime);
             break;
 
         case "E":
@@ -147,20 +147,21 @@ public class Storage {
             if (eventParts.length < 5) {
                 throw new OzException("Event task requires description, start time, and end time.");
             }
-            String eventDesc = eventParts[2].trim();
-            String from = eventParts[3].trim();
-            String to = eventParts[4].trim();
-            if (eventDesc.isEmpty() || from.isEmpty() || to.isEmpty()) {
+            String eventDescription = eventParts[2].trim();
+            String fromTimeArgument = eventParts[3].trim();
+            String toTimeArgument = eventParts[4].trim();
+            if (eventDescription.isEmpty() || fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
                 throw new OzException("Event description, start time, and end time cannot be empty.");
             }
-            TaskDateTime fromTime = TaskDateTime.parse(from);
-            TaskDateTime toTime = TaskDateTime.parse(to);
-            task = new Event(eventDesc, fromTime, toTime);
+            TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
+            TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
+            task = new Event(eventDescription, fromTime, toTime);
             break;
 
         default:
             throw new OzException("Unknown task type: " + type);
         }
+
 
         if (isDone) {
             task.mark();

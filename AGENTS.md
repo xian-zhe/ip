@@ -30,12 +30,22 @@ Ensure that Java 25 is used when running the application or build tasks. On macO
 
 ## Git
 
-Use lightweight tags unless the user requests an annotated tag.
-When proposing or creating a commit message, include enough detail to explain the rationale for the change.
-Do not commit or push unless explicitly asked.
+* Strictly follow the SE-EDU Git Conventions as defined in `.agents/skills/seedu-git-standard/SKILL.md` and https://se-education.org/guides/conventions/git.html for all proposed and created commits in this project.
+* Format commit messages with an imperative subject line ($\le 50$ chars, capitalized, no ending period) and a detailed body wrapped at 72 chars explaining WHAT changed and WHY.
+* Use lightweight tags unless the user requests an annotated tag.
+* Do not commit or push unless explicitly asked.
+
 
 ## Testing
 
 * Focus JUnit tests on the top ~50% highest-value methods (prioritizing complex parsing, validation, core task domain logic, and persistence).
 * Update and run JUnit tests after each code change to ensure ongoing compliance with the ~50% test coverage target.
+
+## Coding standard:
+
+* Strictly adhere to the SE-EDU Java Coding Standard (Basic + Intermediate) as defined in `.agents/skills/seedu-java-coding-standard/SKILL.md` and https://se-education.org/guides/conventions/java/intermediate.html for all code in this project.
+* Follow all naming conventions (PascalCase for classes, camelCase for methods/variables, SCREAMING_SNAKE_CASE for constants, no single-letter variable names or abbreviations like `desc` or `arg`).
+* Enforce layout rules: 4 spaces per indentation level, 8-space continuation indent for wrapped lines, 110-character soft limit / 120-character hard limit, K&R braces, no wildcard imports.
+* Provide Javadoc comments for all classes, public/protected members, and non-trivial private methods.
+
 
