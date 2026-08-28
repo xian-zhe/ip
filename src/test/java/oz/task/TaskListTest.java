@@ -100,4 +100,38 @@ public class TaskListTest {
         ArrayList<Task> noMatches = taskList.findTasksOn(LocalDate.of(2026, 12, 31));
         assertEquals(0, noMatches.size());
     }
+
+    @Test
+    public void findTasksByKeyword_matchingKeyword_returnsMatchingTasks() throws OzException {
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("read book"));
+        taskList.add(new Deadlines("return book", TaskDateTime.parse("2026-09-01 1800")));
+        taskList.add(new ToDo("buy milk"));
+
+        ArrayList<Task> matching = taskList.findTasksByKeyword("book");
+        assertEquals(2, matching.size());
+        assertEquals("[T][ ] read book", matching.get(0).toString());
+        assertEquals("[D][ ] return book (by: Sep 01 2026, 6pm)", matching.get(1).toString());
+    }
+
+    @Test
+    public void findTasksByKeyword_caseInsensitiveKeyword_returnsMatchingTasks() throws OzException {
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("Read Novel"));
+        taskList.add(new ToDo("write code"));
+
+        ArrayList<Task> matching = taskList.findTasksByKeyword("READ");
+        assertEquals(1, matching.size());
+        assertEquals("[T][ ] Read Novel", matching.get(0).toString());
+    }
+
+    @Test
+    public void findTasksByKeyword_nonMatchingKeyword_returnsEmptyList() {
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("clean room"));
+
+        ArrayList<Task> matching = taskList.findTasksByKeyword("exercise");
+        assertEquals(0, matching.size());
+    }
 }
+

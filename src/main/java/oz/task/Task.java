@@ -56,7 +56,21 @@ public class Task {
     }
 
     /**
+     * Checks if the task description contains the specified keyword (case-insensitive).
+     *
+     * @param keyword The keyword to search for in the task description.
+     * @return True if the task description contains the keyword.
+     */
+    public boolean containsKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return false;
+        }
+        return this.description.toLowerCase().contains(keyword.toLowerCase().trim());
+    }
+
+    /**
      * Converts the task into a file storage representation.
+
      *
      * @return Formatted string for writing to file.
      */

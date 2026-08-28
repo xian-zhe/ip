@@ -128,7 +128,31 @@ public class Oz {
                             reply = response.append(DIVIDER).toString();
                         }
 
+                    } else if (command.equals("find")) {
+                        if (details.isBlank()) {
+                            throw new OzException("The keyword for find cannot be empty.");
+                        }
+
+                        ArrayList<Task> matchingTasks = tasks.findTasksByKeyword(details);
+
+                        if (matchingTasks.isEmpty()) {
+                            reply = DIVIDER
+                                    + "There are no matching tasks in your list.\n"
+                                    + DIVIDER;
+                        } else {
+                            StringBuilder response = new StringBuilder(DIVIDER
+                                    + "Here are the matching tasks in your list:\n");
+                            for (int i = 0; i < matchingTasks.size(); i++) {
+                                response.append(i + 1)
+                                        .append(". ")
+                                        .append(matchingTasks.get(i))
+                                        .append("\n");
+                            }
+                            reply = response.append(DIVIDER).toString();
+                        }
+
                     } else if (command.equals("mark")) {
+
                         int index = parseTaskIndex(details, tasks.size());
                         tasks.mark(index);
                         this.storage.save(tasks);

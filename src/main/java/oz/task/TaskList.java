@@ -95,7 +95,24 @@ public class TaskList {
     }
 
     /**
+     * Finds and returns all tasks whose descriptions contain the specified keyword.
+     *
+     * @param keyword The keyword to filter tasks by.
+     * @return List of tasks matching the keyword.
+     */
+    public ArrayList<Task> findTasksByKeyword(String keyword) {
+        ArrayList<Task> matchingTasks = new ArrayList<>();
+        for (Task task : this.tasks) {
+            if (task.containsKeyword(keyword)) {
+                matchingTasks.add(task);
+            }
+        }
+        return matchingTasks;
+    }
+
+    /**
      * Marks the task at the specified zero-based index as completed.
+
      *
      * @param index Zero-based index of the task.
      * @throws OzException If the index is out of bounds.
