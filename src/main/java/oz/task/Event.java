@@ -8,10 +8,13 @@ import oz.exception.OzException;
  * Represents a task that spans a start date/time and an end date/time.
  */
 public class Event extends Task {
+    /** Start date and time of the event. */
     protected TaskDateTime from;
+    /** End date and time of the event. */
     protected TaskDateTime to;
 
     /**
+
      * Constructs an Event task with description, start time, and end time.
      *
      * @param description Description of the event.

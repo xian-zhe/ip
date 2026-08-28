@@ -6,9 +6,11 @@ import java.time.LocalDate;
  * Represents a task with a specific deadline date or date-time.
  */
 public class Deadlines extends Task {
+    /** Target deadline date and time. */
     protected TaskDateTime deadline;
 
     /**
+
      * Constructs a Deadlines task with description and deadline date/time.
      *
      * @param description Description of the deadline task.

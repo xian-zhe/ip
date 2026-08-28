@@ -6,10 +6,13 @@ import java.time.LocalDate;
  * Represents a general task in the task list.
  */
 public class Task {
+    /** Description text of the task. */
     protected String description;
+    /** Whether the task has been marked as completed. */
     protected boolean isDone;
 
     /**
+
      * Constructs a Task with the specified description.
      *
      * @param description Description of the task.

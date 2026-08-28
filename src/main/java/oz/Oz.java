@@ -282,7 +282,13 @@ public class Oz {
         }
     }
 
+    /**
+     * Entry point for running the Oz application.
+     *
+     * @param args Command-line arguments.
+     */
     public static void main(String[] args) {
         new Oz("data/oz.txt").run();
     }
 }
+
