@@ -3,6 +3,7 @@ package oz.task;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.util.Locale;
 
@@ -21,26 +22,26 @@ public class TaskDateTime {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm", Locale.ENGLISH);
 
     private static final DateTimeFormatter[] INPUT_DATETIME_FORMATTERS = new DateTimeFormatter[] {
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("d/M/yyyy HHmm", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("yyyy/M/d HHmm", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("d-M-yyyy HHmm", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("d/M/yyyy HH:mm", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("yyyy/M/d HH:mm", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("d-M-yyyy HH:mm", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("d/M/yyyy h:mma", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("d/M/yyyy ha", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd h:mma", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("yyyy-MM-dd ha", Locale.ENGLISH),
+            createFormatter("yyyy-MM-dd HHmm"),
+            createFormatter("d/M/yyyy HHmm"),
+            createFormatter("yyyy/M/d HHmm"),
+            createFormatter("d-M-yyyy HHmm"),
+            createFormatter("yyyy-MM-dd HH:mm"),
+            createFormatter("d/M/yyyy HH:mm"),
+            createFormatter("yyyy/M/d HH:mm"),
+            createFormatter("d-M-yyyy HH:mm"),
+            createFormatter("d/M/yyyy h:mma"),
+            createFormatter("d/M/yyyy ha"),
+            createFormatter("yyyy-MM-dd h:mma"),
+            createFormatter("yyyy-MM-dd ha"),
             DateTimeFormatter.ISO_LOCAL_DATE_TIME
     };
 
     private static final DateTimeFormatter[] INPUT_DATE_FORMATTERS = new DateTimeFormatter[] {
-            DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("d/M/yyyy", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("yyyy/M/d", Locale.ENGLISH),
-            DateTimeFormatter.ofPattern("d-M-yyyy", Locale.ENGLISH),
+            createFormatter("yyyy-MM-dd"),
+            createFormatter("d/M/yyyy"),
+            createFormatter("yyyy/M/d"),
+            createFormatter("d-M-yyyy"),
             DateTimeFormatter.ISO_LOCAL_DATE
     };
 
@@ -48,7 +49,21 @@ public class TaskDateTime {
     private final boolean hasTime;
 
     /**
+     * Constructs a case-insensitive DateTimeFormatter from the given pattern.
+     *
+     * @param pattern Date/time format pattern string.
+     * @return Case-insensitive DateTimeFormatter instance.
+     */
+    private static DateTimeFormatter createFormatter(String pattern) {
+        return new DateTimeFormatterBuilder()
+                .parseCaseInsensitive()
+                .appendPattern(pattern)
+                .toFormatter(Locale.ENGLISH);
+    }
+
+    /**
      * Constructs a TaskDateTime with a LocalDateTime instance and time flag.
+
      *
      * @param dateTime The parsed LocalDateTime.
      * @param hasTime Whether the time component was explicitly provided.
