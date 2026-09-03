@@ -22,31 +22,42 @@ public class TaskDateTime {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm", Locale.ENGLISH);
 
     private static final DateTimeFormatter[] INPUT_DATETIME_FORMATTERS = new DateTimeFormatter[] {
-            createFormatter("yyyy-MM-dd HHmm"),
-            createFormatter("d/M/yyyy HHmm"),
-            createFormatter("yyyy/M/d HHmm"),
-            createFormatter("d-M-yyyy HHmm"),
-            createFormatter("yyyy-MM-dd HH:mm"),
-            createFormatter("d/M/yyyy HH:mm"),
-            createFormatter("yyyy/M/d HH:mm"),
-            createFormatter("d-M-yyyy HH:mm"),
-            createFormatter("d/M/yyyy h:mma"),
-            createFormatter("d/M/yyyy ha"),
-            createFormatter("yyyy-MM-dd h:mma"),
-            createFormatter("yyyy-MM-dd ha"),
-            DateTimeFormatter.ISO_LOCAL_DATE_TIME
+        createFormatter("yyyy-MM-dd HHmm"),
+        createFormatter("d/M/yyyy HHmm"),
+        createFormatter("yyyy/M/d HHmm"),
+        createFormatter("d-M-yyyy HHmm"),
+        createFormatter("yyyy-MM-dd HH:mm"),
+        createFormatter("d/M/yyyy HH:mm"),
+        createFormatter("yyyy/M/d HH:mm"),
+        createFormatter("d-M-yyyy HH:mm"),
+        createFormatter("d/M/yyyy h:mma"),
+        createFormatter("d/M/yyyy ha"),
+        createFormatter("yyyy-MM-dd h:mma"),
+        createFormatter("yyyy-MM-dd ha"),
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME
     };
 
     private static final DateTimeFormatter[] INPUT_DATE_FORMATTERS = new DateTimeFormatter[] {
-            createFormatter("yyyy-MM-dd"),
-            createFormatter("d/M/yyyy"),
-            createFormatter("yyyy/M/d"),
-            createFormatter("d-M-yyyy"),
-            DateTimeFormatter.ISO_LOCAL_DATE
+        createFormatter("yyyy-MM-dd"),
+        createFormatter("d/M/yyyy"),
+        createFormatter("yyyy/M/d"),
+        createFormatter("d-M-yyyy"),
+        DateTimeFormatter.ISO_LOCAL_DATE
     };
 
     private final LocalDateTime dateTime;
     private final boolean hasTime;
+
+    /**
+     * Constructs a TaskDateTime with a LocalDateTime instance and time flag.
+     *
+     * @param dateTime The parsed LocalDateTime.
+     * @param hasTime Whether the time component was explicitly provided.
+     */
+    public TaskDateTime(LocalDateTime dateTime, boolean hasTime) {
+        this.dateTime = dateTime;
+        this.hasTime = hasTime;
+    }
 
     /**
      * Constructs a case-insensitive DateTimeFormatter from the given pattern.
@@ -61,17 +72,6 @@ public class TaskDateTime {
                 .toFormatter(Locale.ENGLISH);
     }
 
-    /**
-     * Constructs a TaskDateTime with a LocalDateTime instance and time flag.
-
-     *
-     * @param dateTime The parsed LocalDateTime.
-     * @param hasTime Whether the time component was explicitly provided.
-     */
-    public TaskDateTime(LocalDateTime dateTime, boolean hasTime) {
-        this.dateTime = dateTime;
-        this.hasTime = hasTime;
-    }
 
     /**
      * Parses a raw date or date-time string into a TaskDateTime.

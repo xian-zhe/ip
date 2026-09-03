@@ -120,47 +120,49 @@ public class Storage {
 
         Task task;
         switch (type) {
-        case "T":
-            String todoDescription = initialParts[2].trim();
-            if (todoDescription.isEmpty()) {
-                throw new OzException("Todo description cannot be empty.");
-            }
-            task = new ToDo(todoDescription);
-            break;
+            case "T":
+                String todoDescription = initialParts[2].trim();
+                if (todoDescription.isEmpty()) {
+                    throw new OzException("Todo description cannot be empty.");
+                }
+                task = new ToDo(todoDescription);
+                break;
 
-        case "D":
-            String[] deadlineParts = line.split("\\s*\\|\\s*", 4);
-            if (deadlineParts.length < 4) {
-                throw new OzException("Deadline task requires description and deadline date.");
-            }
-            String deadlineDescription = deadlineParts[2].trim();
-            String deadlineTimeArgument = deadlineParts[3].trim();
-            if (deadlineDescription.isEmpty() || deadlineTimeArgument.isEmpty()) {
-                throw new OzException("Deadline description and date cannot be empty.");
-            }
-            TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
-            task = new Deadlines(deadlineDescription, deadlineTime);
-            break;
+            case "D":
+                String[] deadlineParts = line.split("\\s*\\|\\s*", 4);
+                if (deadlineParts.length < 4) {
+                    throw new OzException("Deadline task requires description and deadline date.");
+                }
+                String deadlineDescription = deadlineParts[2].trim();
+                String deadlineTimeArgument = deadlineParts[3].trim();
+                if (deadlineDescription.isEmpty() || deadlineTimeArgument.isEmpty()) {
+                    throw new OzException("Deadline description and date cannot be empty.");
+                }
+                TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
+                task = new Deadlines(deadlineDescription, deadlineTime);
+                break;
 
-        case "E":
-            String[] eventParts = line.split("\\s*\\|\\s*", 5);
-            if (eventParts.length < 5) {
-                throw new OzException("Event task requires description, start time, and end time.");
-            }
-            String eventDescription = eventParts[2].trim();
-            String fromTimeArgument = eventParts[3].trim();
-            String toTimeArgument = eventParts[4].trim();
-            if (eventDescription.isEmpty() || fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
-                throw new OzException("Event description, start time, and end time cannot be empty.");
-            }
-            TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
-            TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
-            task = new Event(eventDescription, fromTime, toTime);
-            break;
+            case "E":
+                String[] eventParts = line.split("\\s*\\|\\s*", 5);
+                if (eventParts.length < 5) {
+                    throw new OzException("Event task requires description, start time, and end time.");
+                }
+                String eventDescription = eventParts[2].trim();
+                String fromTimeArgument = eventParts[3].trim();
+                String toTimeArgument = eventParts[4].trim();
+                if (eventDescription.isEmpty() || fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
+                    throw new OzException("Event description, start time, and end time cannot be empty.");
+                }
+                TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
+                TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
+                task = new Event(eventDescription, fromTime, toTime);
+                break;
 
-        default:
-            throw new OzException("Unknown task type: " + type);
+            default:
+                throw new OzException("Unknown task type: " + type);
         }
+
+
 
 
         if (isDone) {

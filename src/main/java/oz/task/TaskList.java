@@ -112,11 +112,11 @@ public class TaskList {
 
     /**
      * Marks the task at the specified zero-based index as completed.
-
      *
      * @param index Zero-based index of the task.
      * @throws OzException If the index is out of bounds.
      */
+
     public void mark(int index) throws OzException {
         checkIndex(index);
         this.tasks.get(index).mark();

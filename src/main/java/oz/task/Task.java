@@ -12,12 +12,12 @@ public class Task {
     protected boolean isDone;
 
     /**
-
      * Constructs a Task with the specified description.
      *
      * @param description Description of the task.
      */
     public Task(String description) {
+
         this.description = description;
         this.isDone = false;
     }
@@ -70,10 +70,10 @@ public class Task {
 
     /**
      * Converts the task into a file storage representation.
-
      *
      * @return Formatted string for writing to file.
      */
+
     public String toFileFormat() {
         return String.format("%s | %s", (this.isDone ? "1" : "0"), this.description);
     }
