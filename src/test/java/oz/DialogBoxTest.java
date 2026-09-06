@@ -1,6 +1,7 @@
 package oz;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -48,11 +49,12 @@ public class DialogBoxTest {
         Label label = (Label) dialogBox.getChildren().get(0);
         assertEquals(message, label.getText());
         assertTrue(label.isWrapText());
+        assertFalse(label.getStyleClass().contains("reply-label"));
 
         ImageView imageView = (ImageView) dialogBox.getChildren().get(1);
         assertEquals(dummyImage, imageView.getImage());
-        assertEquals(100.0, imageView.getFitWidth());
-        assertEquals(100.0, imageView.getFitHeight());
+        assertEquals(99.0, imageView.getFitWidth());
+        assertEquals(99.0, imageView.getFitHeight());
     }
 
     @Test
@@ -73,5 +75,15 @@ public class DialogBoxTest {
         Label label = (Label) dialogBox.getChildren().get(1);
         assertEquals(message, label.getText());
         assertTrue(label.isWrapText());
+        assertTrue(label.getStyleClass().contains("reply-label"));
+    }
+
+    @Test
+    public void getUserDialog_multilineText_preservesTextAndFormatting() {
+        String multilineMessage = "Here are the tasks:\n1. [T][ ] task 1\n2. [T][X] task 2";
+        DialogBox dialogBox = DialogBox.getUserDialog(multilineMessage, dummyImage);
+
+        Label label = (Label) dialogBox.getChildren().get(0);
+        assertEquals(multilineMessage, label.getText());
     }
 }

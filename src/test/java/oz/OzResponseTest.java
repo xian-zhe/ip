@@ -1,6 +1,7 @@
 package oz;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -45,6 +46,14 @@ public class OzResponseTest {
     public void getResponse_byeCommand_returnsFarewellMessage() {
         String response = this.oz.getResponse("bye");
         assertEquals("Bye. Hope to see you again soon! („• ֊ •„)੭", response);
+        assertTrue(this.oz.isExit());
+    }
+
+    @Test
+    public void isExit_defaultState_returnsFalse() {
+        assertFalse(this.oz.isExit());
+        this.oz.getResponse("list");
+        assertFalse(this.oz.isExit());
     }
 
     @Test

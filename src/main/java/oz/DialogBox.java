@@ -1,7 +1,11 @@
 package oz;
 
+import java.io.IOException;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -15,8 +19,10 @@ import javafx.scene.layout.HBox;
  */
 public class DialogBox extends HBox {
 
-    private final Label text;
-    private final ImageView displayPicture;
+    @FXML
+    private Label dialog;
+    @FXML
+    private ImageView displayPicture;
 
     /**
      * Constructs a dialog box with the specified text and avatar image.
@@ -24,17 +30,18 @@ public class DialogBox extends HBox {
      * @param text Message text to display.
      * @param image Avatar image of the speaker.
      */
-    public DialogBox(String text, Image image) {
-        this.text = new Label(text);
-        this.displayPicture = new ImageView(image);
+    private DialogBox(String text, Image image) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(DialogBox.class.getResource("/view/DialogBox.fxml"));
+            fxmlLoader.setController(this);
+            fxmlLoader.setRoot(this);
+            fxmlLoader.load();
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
 
-        // Styling the dialog box
-        this.text.setWrapText(true);
-        this.displayPicture.setFitWidth(100.0);
-        this.displayPicture.setFitHeight(100.0);
-        this.setAlignment(Pos.TOP_RIGHT);
-
-        this.getChildren().addAll(this.text, this.displayPicture);
+        this.dialog.setText(text);
+        this.displayPicture.setImage(image);
     }
 
     /**
@@ -46,6 +53,7 @@ public class DialogBox extends HBox {
         ObservableList<Node> temporaryChildren = FXCollections.observableArrayList(this.getChildren());
         FXCollections.reverse(temporaryChildren);
         this.getChildren().setAll(temporaryChildren);
+        this.dialog.getStyleClass().add("reply-label");
     }
 
     /**

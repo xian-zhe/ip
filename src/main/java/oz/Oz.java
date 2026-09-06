@@ -30,6 +30,7 @@ public class Oz {
 
     private final Storage storage;
     private final TaskList tasks;
+    private boolean isExit = false;
 
     /**
      * Constructs an Oz chatbot instance configured with the specified storage file
@@ -40,6 +41,15 @@ public class Oz {
     public Oz(String filePath) {
         this.storage = new Storage(filePath);
         this.tasks = new TaskList(this.storage.load());
+    }
+
+    /**
+     * Returns true if the chatbot has received an exit command.
+     *
+     * @return True if the exit command has been received; false otherwise.
+     */
+    public boolean isExit() {
+        return this.isExit;
     }
 
     /**
@@ -68,6 +78,7 @@ public class Oz {
             while (scanner.hasNextLine()) {
                 String fullCommand = scanner.nextLine().trim();
                 if (fullCommand.equals("bye")) {
+                    this.isExit = true;
                     break;
                 }
 
@@ -104,6 +115,7 @@ public class Oz {
             details = details.trim();
 
             if (command.equals("bye")) {
+                this.isExit = true;
                 return "Bye. Hope to see you again soon! („• ֊ •„)੭";
             } else if (command.equals("list")) {
                 if (!details.isBlank()) {
