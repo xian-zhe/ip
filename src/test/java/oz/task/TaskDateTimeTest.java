@@ -80,8 +80,10 @@ public class TaskDateTimeTest {
 
     @Test
     public void parse_invalidDateFormat_exceptionThrown() {
-        OzException exception = assertThrows(OzException.class, () -> TaskDateTime.parse("not-a-valid-date"));
-        assertEquals("Please provide a valid date/time (e.g., 2019-10-15 or 2/12/2019 1800).", exception.getMessage());
+        OzException exception = assertThrows(OzException.class, () ->
+                TaskDateTime.parse("not-a-valid-date"));
+        assertEquals("Please provide a valid date/time (e.g., 2019-10-15 or 2/12/2019 1800).",
+                exception.getMessage());
     }
 
     @Test

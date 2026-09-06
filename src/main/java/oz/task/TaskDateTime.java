@@ -14,13 +14,19 @@ import oz.exception.OzException;
  * Encapsulates java.time objects for formatting and persistence.
  */
 public class TaskDateTime {
+    /** Formatter for displaying dates to the user. */
     private static final DateTimeFormatter DISPLAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
+
+    /** Formatter for saving date-only values to storage. */
     private static final DateTimeFormatter STORAGE_DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+
+    /** Formatter for saving date-time values to storage. */
     private static final DateTimeFormatter STORAGE_DATETIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm", Locale.ENGLISH);
 
+    /** Supported input formatters for strings containing both date and time. */
     private static final DateTimeFormatter[] INPUT_DATETIME_FORMATTERS = new DateTimeFormatter[] {
         createFormatter("yyyy-MM-dd HHmm"),
         createFormatter("d/M/yyyy HHmm"),
@@ -37,6 +43,7 @@ public class TaskDateTime {
         DateTimeFormatter.ISO_LOCAL_DATE_TIME
     };
 
+    /** Supported input formatters for strings containing only a date. */
     private static final DateTimeFormatter[] INPUT_DATE_FORMATTERS = new DateTimeFormatter[] {
         createFormatter("yyyy-MM-dd"),
         createFormatter("d/M/yyyy"),
@@ -45,7 +52,10 @@ public class TaskDateTime {
         DateTimeFormatter.ISO_LOCAL_DATE
     };
 
+    /** Parsed date-time object. */
     private final LocalDateTime dateTime;
+
+    /** Whether the user specified a time component. */
     private final boolean hasTime;
 
     /**
@@ -71,7 +81,6 @@ public class TaskDateTime {
                 .appendPattern(pattern)
                 .toFormatter(Locale.ENGLISH);
     }
-
 
     /**
      * Parses a raw date or date-time string into a TaskDateTime.
@@ -117,9 +126,11 @@ public class TaskDateTime {
         if (this.hasTime) {
             String timePart;
             if (this.dateTime.getMinute() == 0) {
-                timePart = this.dateTime.format(DateTimeFormatter.ofPattern("ha", Locale.ENGLISH)).toLowerCase();
+                timePart = this.dateTime.format(
+                        DateTimeFormatter.ofPattern("ha", Locale.ENGLISH)).toLowerCase();
             } else {
-                timePart = this.dateTime.format(DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH)).toLowerCase();
+                timePart = this.dateTime.format(
+                        DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH)).toLowerCase();
             }
             return this.dateTime.format(DISPLAY_DATE_FORMAT) + ", " + timePart;
         }

@@ -21,8 +21,10 @@ public class EventTest {
         TaskDateTime start = TaskDateTime.parse("2026-09-05 1800");
         TaskDateTime end = TaskDateTime.parse("2026-09-01 1800");
 
-        OzException exception = assertThrows(OzException.class, () -> new Event("project meeting", start, end));
-        assertEquals("The start date/time (/from) cannot be after the end date/time (/to).", exception.getMessage());
+        OzException exception = assertThrows(OzException.class, () ->
+                new Event("project meeting", start, end));
+        assertEquals("The start date/time (/from) cannot be after the end date/time (/to).",
+                exception.getMessage());
     }
 
     @Test
@@ -60,7 +62,7 @@ public class EventTest {
 
         assertEquals("E | 0 | camp | 2026-09-02 0900 | 2026-09-04 1800", event.toFileFormat());
 
-        event.mark();
+        event.markAsDone();
         assertEquals("E | 1 | camp | 2026-09-02 0900 | 2026-09-04 1800", event.toFileFormat());
     }
 }

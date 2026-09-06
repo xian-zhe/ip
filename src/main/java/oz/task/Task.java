@@ -17,7 +17,6 @@ public class Task {
      * @param description Description of the task.
      */
     public Task(String description) {
-
         this.description = description;
         this.isDone = false;
     }
@@ -34,14 +33,14 @@ public class Task {
     /**
      * Marks the task as completed.
      */
-    public void mark() {
+    public void markAsDone() {
         this.isDone = true;
     }
 
     /**
      * Marks the task as not completed.
      */
-    public void unmark() {
+    public void markAsNotDone() {
         this.isDone = false;
     }
 

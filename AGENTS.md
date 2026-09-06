@@ -47,5 +47,7 @@ Ensure that Java 25 is used when running the application or build tasks. On macO
 * Follow all naming conventions (PascalCase for classes, camelCase for methods/variables, SCREAMING_SNAKE_CASE for constants, no single-letter variable names or abbreviations like `desc` or `arg`).
 * Enforce layout rules: 4 spaces per indentation level, 8-space continuation indent for wrapped lines, 110-character soft limit / 120-character hard limit, K&R braces, no wildcard imports.
 * Provide Javadoc comments for all classes, public/protected members, and non-trivial private methods.
+* Strictly adhere to the SE-EDU CSS Coding Standard as defined in `.agents/skills/seedu-css-standard/SKILL.md` and https://se-education.org/guides/conventions/css.html for all stylesheets in this project.
+
 
 
