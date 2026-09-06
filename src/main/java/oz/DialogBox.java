@@ -27,7 +27,7 @@ public class DialogBox extends HBox {
     /**
      * Constructs a dialog box with the specified text and avatar image.
      *
-     * @param text Message text to display.
+     * @param text  Message text to display.
      * @param image Avatar image of the speaker.
      */
     private DialogBox(String text, Image image) {
@@ -68,15 +68,50 @@ public class DialogBox extends HBox {
     }
 
     /**
-     * Returns a dialog box for Oz, flipped so the avatar is on the left.
+     * Returns a dialog box for Oz with default styling, flipped so the avatar is on the left.
      *
      * @param text Text of Oz's response message.
      * @param image Oz's avatar image.
      * @return DialogBox for Oz.
      */
     public static DialogBox getOzDialog(String text, Image image) {
+        return getOzDialog(text, image, "Default");
+    }
+
+    /**
+     * Returns a dialog box for Oz with command-specific styling, flipped so the avatar is on the left.
+     *
+     * @param text Text of Oz's response message.
+     * @param image Oz's avatar image.
+     * @param commandType Type of command used to style the dialog bubble.
+     * @return DialogBox for Oz.
+     */
+    public static DialogBox getOzDialog(String text, Image image, String commandType) {
         DialogBox dialogBox = new DialogBox(text, image);
         dialogBox.flip();
+        dialogBox.changeDialogStyle(commandType);
         return dialogBox;
+    }
+
+    /**
+     * Applies a command-specific style class to the dialog bubble.
+     *
+     * @param commandType The command type indicating which CSS style class to apply.
+     */
+    private void changeDialogStyle(String commandType) {
+        switch (commandType) {
+        case "AddCommand":
+            this.dialog.getStyleClass().add("add-label");
+            break;
+        case "ChangeMarkCommand":
+            this.dialog.getStyleClass().add("marked-label");
+            break;
+        case "DeleteCommand":
+            this.dialog.getStyleClass().add("delete-label");
+            break;
+        default:
+            // Do nothing for default or unspecified command types
+            break;
+        }
     }
 }

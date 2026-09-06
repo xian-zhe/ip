@@ -86,4 +86,25 @@ public class DialogBoxTest {
         Label label = (Label) dialogBox.getChildren().get(0);
         assertEquals(multilineMessage, label.getText());
     }
+
+    @Test
+    public void getOzDialog_commandTypes_appliesCorrectStyles() {
+        DialogBox addDialog = DialogBox.getOzDialog("Added", dummyImage, "AddCommand");
+        Label addLabel = (Label) addDialog.getChildren().get(1);
+        assertTrue(addLabel.getStyleClass().contains("add-label"));
+
+        DialogBox markedDialog = DialogBox.getOzDialog("Marked", dummyImage, "ChangeMarkCommand");
+        Label markedLabel = (Label) markedDialog.getChildren().get(1);
+        assertTrue(markedLabel.getStyleClass().contains("marked-label"));
+
+        DialogBox deleteDialog = DialogBox.getOzDialog("Deleted", dummyImage, "DeleteCommand");
+        Label deleteLabel = (Label) deleteDialog.getChildren().get(1);
+        assertTrue(deleteLabel.getStyleClass().contains("delete-label"));
+
+        DialogBox defaultDialog = DialogBox.getOzDialog("Default", dummyImage, "Default");
+        Label defaultLabel = (Label) defaultDialog.getChildren().get(1);
+        assertFalse(defaultLabel.getStyleClass().contains("add-label"));
+        assertFalse(defaultLabel.getStyleClass().contains("marked-label"));
+        assertFalse(defaultLabel.getStyleClass().contains("delete-label"));
+    }
 }
