@@ -12,7 +12,7 @@ import javafx.util.Pair;
 
 import oz.exception.OzException;
 import oz.storage.Storage;
-import oz.task.Deadlines;
+import oz.task.Deadline;
 import oz.task.Event;
 import oz.task.Task;
 import oz.task.TaskDateTime;
@@ -23,15 +23,28 @@ import oz.task.ToDo;
  * Main entry point and controller for the Oz chatbot.
  */
 public class Oz {
+    /** Visual divider line for console output. */
     private static final String DIVIDER = "____________________________________________________________\n";
-    private static final Pattern COMMAND_PATTERN = Pattern.compile("^(?<command>\\S+)(?:\\s+(?<details>.*))?$");
+
+    /** Regex pattern matching user command and optional arguments. */
+    private static final Pattern COMMAND_PATTERN = Pattern
+            .compile("^(?<command>\\S+)(?:\\s+(?<details>.*))?$");
+
+    /** Regex pattern parsing deadline description and /by argument. */
     private static final Pattern DEADLINE_ARGUMENTS_PATTERN = Pattern
             .compile("^(?<description>.+?)\\s+/by\\s+(?<byTime>.+)$");
+
+    /** Regex pattern parsing event description, /from, and /to arguments. */
     private static final Pattern EVENT_ARGUMENTS_PATTERN = Pattern
             .compile("^(?<description>.+?)\\s+/from\\s+(?<fromTime>.+?)\\s+/to\\s+(?<toTime>.+)$");
 
+    /** Storage manager for reading and writing tasks to disk. */
     private final Storage storage;
+
+    /** In-memory task list. */
     private final TaskList tasks;
+
+    /** Flag indicating whether an exit command was issued. */
     private boolean isExit = false;
 
     /**
@@ -84,7 +97,7 @@ public class Oz {
                     break;
                 }
 
-                Pair<String, String> reply = getResponse(fullCommand);
+                Pair<String, CommandType> reply = getResponse(fullCommand);
                 System.out.print(DIVIDER + reply.getKey() + "\n" + DIVIDER);
             }
         }
@@ -96,11 +109,11 @@ public class Oz {
      * Processes a user command and returns the response message.
      *
      * @param fullCommand Full command string entered by the user.
-     * @return Response string to display to the user.
+     * @return A pair containing the response message and the command type tag.
      */
-    public Pair<String, String> getResponse(String fullCommand) {
+    public Pair<String, CommandType> getResponse(String fullCommand) {
         if (fullCommand == null || fullCommand.isBlank()) {
-            return new Pair<>("Please enter a command.", "Blank");
+            return new Pair<>("Please enter a command.", CommandType.BLANK);
         }
 
         try {
@@ -118,7 +131,7 @@ public class Oz {
 
             if (command.equals("bye")) {
                 this.isExit = true;
-                return new Pair<>("Bye. Hope to see you again soon! („• ֊ •„)੭", "Bye");
+                return new Pair<>("Bye. Hope to see you again soon! („• ֊ •„)੭", CommandType.BYE);
             } else if (command.equals("list")) {
                 if (!details.isBlank()) {
                     throw new OzException("The list command does not take arguments.");
@@ -131,7 +144,7 @@ public class Oz {
                             .append(this.tasks.get(i))
                             .append("\n");
                 }
-                return new Pair<>(response.toString().stripTrailing(), "List");
+                return new Pair<>(response.toString().stripTrailing(), CommandType.LIST);
 
             } else if (command.equals("on")) {
                 if (details.isBlank()) {
@@ -146,7 +159,8 @@ public class Oz {
                 ArrayList<Task> matchingTasks = this.tasks.findTasksOn(targetDate);
 
                 if (matchingTasks.isEmpty()) {
-                    return new Pair<>("There are no tasks occurring on " + dateHeader + ".", "List");
+                    return new Pair<>("There are no tasks occurring on " + dateHeader + ".",
+                            CommandType.LIST);
                 }
 
                 StringBuilder response = new StringBuilder(
@@ -157,7 +171,7 @@ public class Oz {
                             .append(matchingTasks.get(i))
                             .append("\n");
                 }
-                return new Pair<>(response.toString().stripTrailing(), "List");
+                return new Pair<>(response.toString().stripTrailing(), CommandType.LIST);
 
             } else if (command.equals("find")) {
                 if (details.isBlank()) {
@@ -167,7 +181,7 @@ public class Oz {
                 ArrayList<Task> matchingTasks = this.tasks.findTasksByKeyword(details);
 
                 if (matchingTasks.isEmpty()) {
-                    return new Pair<>("There are no matching tasks in your list.", "Find");
+                    return new Pair<>("There are no matching tasks in your list.", CommandType.FIND);
                 }
 
                 StringBuilder response = new StringBuilder("Here are the matching tasks in your list:\n");
@@ -177,21 +191,21 @@ public class Oz {
                             .append(matchingTasks.get(i))
                             .append("\n");
                 }
-                return new Pair<>(response.toString().stripTrailing(), "Find");
+                return new Pair<>(response.toString().stripTrailing(), CommandType.FIND);
 
             } else if (command.equals("mark")) {
                 int index = parseTaskIndex(details, this.tasks.size());
-                this.tasks.mark(index);
+                this.tasks.markAsDone(index);
                 this.storage.save(this.tasks);
                 return new Pair<>("Nice! I've marked this task as done:\n  " + this.tasks.get(index),
-                        "ChangeMarkCommand");
+                        CommandType.CHANGE_MARK);
 
             } else if (command.equals("unmark")) {
                 int index = parseTaskIndex(details, this.tasks.size());
-                this.tasks.unmark(index);
+                this.tasks.markAsNotDone(index);
                 this.storage.save(this.tasks);
                 return new Pair<>("OK! I've marked this task as not done yet:\n  " + this.tasks.get(index),
-                        "ChangeMarkCommand");
+                        CommandType.CHANGE_MARK);
 
             } else if (command.equals("todo")) {
                 if (details.isBlank()) {
@@ -207,7 +221,7 @@ public class Oz {
                                 %s
                                 Now you have %d tasks in the list.
                                 """,
-                        task, this.tasks.size()).stripTrailing(), "AddCommand");
+                        task, this.tasks.size()).stripTrailing(), CommandType.ADD);
 
             } else if (command.equals("deadline")) {
                 Matcher deadlineMatcher = DEADLINE_ARGUMENTS_PATTERN.matcher(details);
@@ -225,7 +239,7 @@ public class Oz {
                 }
 
                 TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
-                Task task = new Deadlines(deadlineDescription, deadlineTime);
+                Task task = new Deadline(deadlineDescription, deadlineTime);
                 this.tasks.add(task);
                 this.storage.save(this.tasks);
                 return new Pair<>(String.format(
@@ -234,7 +248,7 @@ public class Oz {
                                 %s
                                 Now you have %d tasks in the list.
                                 """,
-                        task, this.tasks.size()).stripTrailing(), "AddCommand");
+                        task, this.tasks.size()).stripTrailing(), CommandType.ADD);
 
             } else if (command.equals("event")) {
                 Matcher eventMatcher = EVENT_ARGUMENTS_PATTERN.matcher(details);
@@ -263,7 +277,7 @@ public class Oz {
                                 %s
                                 Now you have %d tasks in the list.
                                 """,
-                        task, this.tasks.size()).stripTrailing(), "AddCommand");
+                        task, this.tasks.size()).stripTrailing(), CommandType.ADD);
 
             } else if (command.equals("delete")) {
                 int index = parseTaskIndex(details, this.tasks.size());
@@ -275,13 +289,13 @@ public class Oz {
                                 %s
                                 Now you have %d tasks in the list.
                                 """,
-                        removedTask, this.tasks.size()).stripTrailing(), "DeleteCommand");
+                        removedTask, this.tasks.size()).stripTrailing(), CommandType.DELETE);
 
             } else {
                 throw new OzException("Sorry, I do not understand that command.");
             }
         } catch (OzException exception) {
-            return new Pair<>("OOPS! " + exception.getMessage(), "Error");
+            return new Pair<>("OOPS! " + exception.getMessage(), CommandType.ERROR);
         }
     }
 

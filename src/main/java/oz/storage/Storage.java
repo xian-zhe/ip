@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import oz.exception.OzException;
-import oz.task.Deadlines;
+import oz.task.Deadline;
 import oz.task.Event;
 import oz.task.Task;
 import oz.task.TaskDateTime;
@@ -15,10 +15,14 @@ import oz.task.TaskList;
 import oz.task.ToDo;
 
 /**
- * Handles loading tasks from a storage file and saving tasks to the storage file.
+ * Handles loading tasks from a storage file and saving tasks to the storage
+ * file.
  */
 public class Storage {
+    /** Visual divider line for console output. */
     private static final String DIVIDER = "____________________________________________________________\n";
+
+    /** Path to the task storage file on disk. */
     private final Path filePath;
 
     /**
@@ -54,7 +58,7 @@ public class Storage {
                     continue;
                 }
                 try {
-                    Task task = parseTaskFromFile(line);
+                    Task task = parseTaskLine(line);
                     tasks.add(task);
                 } catch (OzException exception) {
                     System.out.println(DIVIDER + "WARNING: Skipping corrupted task entry at line "
@@ -103,9 +107,10 @@ public class Storage {
      *
      * @param line Raw line text from storage.
      * @return A Task instance with status and descriptions populated.
-     * @throws OzException If the line format is invalid or has missing/corrupted fields.
+     * @throws OzException If the line format is invalid or has missing/corrupted
+     *                     fields.
      */
-    private Task parseTaskFromFile(String line) throws OzException {
+    private Task parseTaskLine(String line) throws OzException {
         String[] initialParts = line.split("\\s*\\|\\s*", 3);
         if (initialParts.length < 3) {
             throw new OzException("Malformed task entry: insufficient fields.");
@@ -139,7 +144,7 @@ public class Storage {
                     throw new OzException("Deadline description and date cannot be empty.");
                 }
                 TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
-                task = new Deadlines(deadlineDescription, deadlineTime);
+                task = new Deadline(deadlineDescription, deadlineTime);
                 break;
 
             case "E":
@@ -162,11 +167,8 @@ public class Storage {
                 throw new OzException("Unknown task type: " + type);
         }
 
-
-
-
         if (isDone) {
-            task.mark();
+            task.markAsDone();
         }
         return task;
     }

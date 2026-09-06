@@ -9,26 +9,26 @@ import oz.exception.OzException;
  */
 public class Event extends Task {
     /** Start date and time of the event. */
-    protected TaskDateTime from;
+    protected TaskDateTime startDateTime;
     /** End date and time of the event. */
-    protected TaskDateTime to;
+    protected TaskDateTime endDateTime;
 
     /**
      * Constructs an Event task with description, start time, and end time.
      *
      * @param description Description of the event.
-     * @param from Start date/time of the event.
-     * @param to End date/time of the event.
+     * @param startDateTime Start date/time of the event.
+     * @param endDateTime End date/time of the event.
      * @throws OzException If the start date/time is after the end date/time.
      */
-    public Event(String description, TaskDateTime from, TaskDateTime to) throws OzException {
-
+    public Event(String description, TaskDateTime startDateTime,
+            TaskDateTime endDateTime) throws OzException {
         super(description);
-        if (from.isAfter(to)) {
+        if (startDateTime.isAfter(endDateTime)) {
             throw new OzException("The start date/time (/from) cannot be after the end date/time (/to).");
         }
-        this.from = from;
-        this.to = to;
+        this.startDateTime = startDateTime;
+        this.endDateTime = endDateTime;
     }
 
     /**
@@ -39,8 +39,8 @@ public class Event extends Task {
      */
     @Override
     public boolean occursOn(LocalDate date) {
-        LocalDate startDate = this.from.toLocalDate();
-        LocalDate endDate = this.to.toLocalDate();
+        LocalDate startDate = this.startDateTime.toLocalDate();
+        LocalDate endDate = this.endDateTime.toLocalDate();
         return !date.isBefore(startDate) && !date.isAfter(endDate);
     }
 
@@ -52,12 +52,15 @@ public class Event extends Task {
     @Override
     public String toFileFormat() {
         return String.format("E | %s | %s | %s",
-                super.toFileFormat(), this.from.toStorageString(), this.to.toStorageString());
+                super.toFileFormat(),
+                this.startDateTime.toStorageString(),
+                this.endDateTime.toStorageString());
     }
 
     @Override
     public String toString() {
         return String.format("[E][%s] %s (from: %s to: %s)",
-                super.getStatusIcon(), this.description, this.from.toDisplayString(), this.to.toDisplayString());
+                super.getStatusIcon(), this.description,
+                this.startDateTime.toDisplayString(), this.endDateTime.toDisplayString());
     }
 }

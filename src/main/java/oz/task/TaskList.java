@@ -9,6 +9,7 @@ import oz.exception.OzException;
  * Represents the list of tasks and provides operations to manipulate tasks.
  */
 public class TaskList {
+    /** Internal list storing task objects. */
     private final ArrayList<Task> tasks;
 
     /**
@@ -116,10 +117,9 @@ public class TaskList {
      * @param index Zero-based index of the task.
      * @throws OzException If the index is out of bounds.
      */
-
-    public void mark(int index) throws OzException {
+    public void markAsDone(int index) throws OzException {
         checkIndex(index);
-        this.tasks.get(index).mark();
+        this.tasks.get(index).markAsDone();
     }
 
     /**
@@ -128,9 +128,9 @@ public class TaskList {
      * @param index Zero-based index of the task.
      * @throws OzException If the index is out of bounds.
      */
-    public void unmark(int index) throws OzException {
+    public void markAsNotDone(int index) throws OzException {
         checkIndex(index);
-        this.tasks.get(index).unmark();
+        this.tasks.get(index).markAsNotDone();
     }
 
     /**

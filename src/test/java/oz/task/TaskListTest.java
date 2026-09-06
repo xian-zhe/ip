@@ -65,10 +65,10 @@ public class TaskListTest {
         TaskList taskList = new TaskList();
         taskList.add(new ToDo("homework"));
 
-        taskList.mark(0);
+        taskList.markAsDone(0);
         assertEquals("[T][X] homework", taskList.get(0).toString());
 
-        taskList.unmark(0);
+        taskList.markAsNotDone(0);
         assertEquals("[T][ ] homework", taskList.get(0).toString());
     }
 
@@ -76,10 +76,10 @@ public class TaskListTest {
     public void markAndUnmark_outOfBoundsIndex_exceptionThrown() {
         TaskList taskList = new TaskList();
 
-        OzException markException = assertThrows(OzException.class, () -> taskList.mark(0));
+        OzException markException = assertThrows(OzException.class, () -> taskList.markAsDone(0));
         assertEquals("That task number does not exist.", markException.getMessage());
 
-        OzException unmarkException = assertThrows(OzException.class, () -> taskList.unmark(-1));
+        OzException unmarkException = assertThrows(OzException.class, () -> taskList.markAsNotDone(-1));
         assertEquals("That task number does not exist.", unmarkException.getMessage());
     }
 
@@ -89,13 +89,13 @@ public class TaskListTest {
         TaskDateTime targetDateTime = TaskDateTime.parse("2026-09-01 1800");
         TaskDateTime otherDateTime = TaskDateTime.parse("2026-09-05 1800");
 
-        taskList.add(new Deadlines("submit report", targetDateTime));
-        taskList.add(new Deadlines("pay bill", otherDateTime));
+        taskList.add(new Deadline("submit report", targetDateTime));
+        taskList.add(new Deadline("pay bill", otherDateTime));
         taskList.add(new ToDo("read book"));
 
-        ArrayList<Task> matching = taskList.findTasksOn(LocalDate.of(2026, 9, 1));
-        assertEquals(1, matching.size());
-        assertEquals("submit report", matching.get(0).description);
+        ArrayList<Task> matchingTasks = taskList.findTasksOn(LocalDate.of(2026, 9, 1));
+        assertEquals(1, matchingTasks.size());
+        assertEquals("submit report", matchingTasks.get(0).description);
 
         ArrayList<Task> noMatches = taskList.findTasksOn(LocalDate.of(2026, 12, 31));
         assertEquals(0, noMatches.size());
@@ -105,13 +105,13 @@ public class TaskListTest {
     public void findTasksByKeyword_matchingKeyword_returnsMatchingTasks() throws OzException {
         TaskList taskList = new TaskList();
         taskList.add(new ToDo("read book"));
-        taskList.add(new Deadlines("return book", TaskDateTime.parse("2026-09-01 1800")));
+        taskList.add(new Deadline("return book", TaskDateTime.parse("2026-09-01 1800")));
         taskList.add(new ToDo("buy milk"));
 
-        ArrayList<Task> matching = taskList.findTasksByKeyword("book");
-        assertEquals(2, matching.size());
-        assertEquals("[T][ ] read book", matching.get(0).toString());
-        assertEquals("[D][ ] return book (by: Sep 01 2026, 6pm)", matching.get(1).toString());
+        ArrayList<Task> matchingTasks = taskList.findTasksByKeyword("book");
+        assertEquals(2, matchingTasks.size());
+        assertEquals("[T][ ] read book", matchingTasks.get(0).toString());
+        assertEquals("[D][ ] return book (by: Sep 01 2026, 6pm)", matchingTasks.get(1).toString());
     }
 
     @Test
@@ -120,9 +120,9 @@ public class TaskListTest {
         taskList.add(new ToDo("Read Novel"));
         taskList.add(new ToDo("write code"));
 
-        ArrayList<Task> matching = taskList.findTasksByKeyword("READ");
-        assertEquals(1, matching.size());
-        assertEquals("[T][ ] Read Novel", matching.get(0).toString());
+        ArrayList<Task> matchingTasks = taskList.findTasksByKeyword("READ");
+        assertEquals(1, matchingTasks.size());
+        assertEquals("[T][ ] Read Novel", matchingTasks.get(0).toString());
     }
 
     @Test
@@ -130,8 +130,7 @@ public class TaskListTest {
         TaskList taskList = new TaskList();
         taskList.add(new ToDo("clean room"));
 
-        ArrayList<Task> matching = taskList.findTasksByKeyword("exercise");
-        assertEquals(0, matching.size());
+        ArrayList<Task> matchingTasks = taskList.findTasksByKeyword("exercise");
+        assertEquals(0, matchingTasks.size());
     }
 }
-

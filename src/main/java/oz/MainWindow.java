@@ -16,18 +16,29 @@ import javafx.util.Pair;
  * Controller for the main GUI.
  */
 public class MainWindow extends AnchorPane {
+    /** Scroll pane containing the chat dialog. */
     @FXML
     private ScrollPane scrollPane;
+
+    /** Vertical container holding all user and bot dialog bubbles. */
     @FXML
     private VBox dialogContainer;
+
+    /** Text input field for user commands. */
     @FXML
     private TextField userInput;
+
+    /** Button triggering submission of user command. */
     @FXML
     private Button sendButton;
 
+    /** The Oz chatbot instance handling command logic. */
     private Oz oz;
 
+    /** User avatar image. */
     private Image userImage = new Image(this.getClass().getResourceAsStream("/images/DaUser2.png"));
+
+    /** Oz avatar image. */
     private Image ozImage = new Image(this.getClass().getResourceAsStream("/images/DaOz.png"));
 
     /**
@@ -55,7 +66,7 @@ public class MainWindow extends AnchorPane {
     @FXML
     private void handleUserInput() {
         String input = userInput.getText();
-        Pair<String, String> response = oz.getResponse(input);
+        Pair<String, CommandType> response = oz.getResponse(input);
         dialogContainer.getChildren().addAll(
                 DialogBox.getUserDialog(input, userImage),
                 DialogBox.getOzDialog(response.getKey(), ozImage, response.getValue()));

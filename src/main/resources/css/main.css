@@ -1,13 +1,19 @@
+/* ==========================================================================
+   Root Application Window
+   ========================================================================== */
+
 .root {
-    main-color: rgb(237, 255, 242);
     /* Create a looked-up color called "main-color" within root. */
-    -fx-background-color: main-radial-gradient(radius 100%, red, yellow, blue);
-    /* Set image */
+    main-color: rgb(237, 255, 242);
+    -fx-background-color: radial-gradient(radius 100%, red, yellow, blue);
     -fx-background-image: url("../images/background.jpg");
     -fx-background-size: 400px 600px;
     -fx-background-repeat: repeat;
-
 }
+
+/* ==========================================================================
+   Input Controls
+   ========================================================================== */
 
 .text-field {
     -fx-background-color: #d9ffe2;
@@ -29,8 +35,12 @@
     -fx-font-size: 19px;
 }
 
+/* ==========================================================================
+   Scroll Pane & Scroll Bar
+   ========================================================================== */
+
 .scroll-pane {
-    -fx-background-color: rgba(0, 0, 0, .5);
+    -fx-background-color: rgba(0, 0, 0, 0.5);
 }
 
 .scroll-pane .viewport {
@@ -39,7 +49,6 @@
 
 .scroll-bar {
     -fx-font-size: 10px;
-    /* Change width of scroll bar. */
     -fx-background-color: main-color;
 }
 

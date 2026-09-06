@@ -5,6 +5,7 @@ import java.io.IOException;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
@@ -13,6 +14,10 @@ import javafx.stage.Stage;
  */
 public class Main extends Application {
 
+    /** Application title displayed on the primary stage window. */
+    public static final String APP_TITLE = "Oz";
+
+    /** The Oz chatbot instance handling application logic. */
     private Oz oz = new Oz("data/oz.txt");
 
     /**
@@ -27,6 +32,8 @@ public class Main extends Application {
             FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/view/MainWindow.fxml"));
             AnchorPane mainLayout = fxmlLoader.load();
             Scene scene = new Scene(mainLayout);
+            stage.setTitle(APP_TITLE);
+            stage.getIcons().add(new Image(Main.class.getResourceAsStream("/images/icon.png")));
             stage.setScene(scene);
             fxmlLoader.<MainWindow>getController().setOz(oz); // Injects the Oz instance
             stage.show();

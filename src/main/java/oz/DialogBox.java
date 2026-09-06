@@ -19,8 +19,11 @@ import javafx.scene.layout.HBox;
  */
 public class DialogBox extends HBox {
 
+    /** Text label for the dialog message. */
     @FXML
     private Label dialog;
+
+    /** Avatar picture representing the speaker. */
     @FXML
     private ImageView displayPicture;
 
@@ -59,7 +62,7 @@ public class DialogBox extends HBox {
     /**
      * Returns a dialog box for the user, aligned to the right.
      *
-     * @param text Text of the user's message.
+     * @param text  Text of the user's message.
      * @param image User's avatar image.
      * @return DialogBox for the user.
      */
@@ -68,25 +71,27 @@ public class DialogBox extends HBox {
     }
 
     /**
-     * Returns a dialog box for Oz with default styling, flipped so the avatar is on the left.
+     * Returns a dialog box for Oz with default styling, flipped so the avatar is on
+     * the left.
      *
-     * @param text Text of Oz's response message.
+     * @param text  Text of Oz's response message.
      * @param image Oz's avatar image.
      * @return DialogBox for Oz.
      */
     public static DialogBox getOzDialog(String text, Image image) {
-        return getOzDialog(text, image, "Default");
+        return getOzDialog(text, image, CommandType.DEFAULT);
     }
 
     /**
-     * Returns a dialog box for Oz with command-specific styling, flipped so the avatar is on the left.
+     * Returns a dialog box for Oz with command-specific styling, flipped so the
+     * avatar is on the left.
      *
-     * @param text Text of Oz's response message.
-     * @param image Oz's avatar image.
+     * @param text        Text of Oz's response message.
+     * @param image       Oz's avatar image.
      * @param commandType Type of command used to style the dialog bubble.
      * @return DialogBox for Oz.
      */
-    public static DialogBox getOzDialog(String text, Image image, String commandType) {
+    public static DialogBox getOzDialog(String text, Image image, CommandType commandType) {
         DialogBox dialogBox = new DialogBox(text, image);
         dialogBox.flip();
         dialogBox.changeDialogStyle(commandType);
@@ -96,18 +101,26 @@ public class DialogBox extends HBox {
     /**
      * Applies a command-specific style class to the dialog bubble.
      *
-     * @param commandType The command type indicating which CSS style class to apply.
+     * @param commandType The command type indicating which CSS style class to
+     *                    apply.
      */
-    private void changeDialogStyle(String commandType) {
+    private void changeDialogStyle(CommandType commandType) {
+        if (commandType == null) {
+            return;
+        }
+
         switch (commandType) {
-        case "AddCommand":
+        case ADD:
             this.dialog.getStyleClass().add("add-label");
             break;
-        case "ChangeMarkCommand":
+        case CHANGE_MARK:
             this.dialog.getStyleClass().add("marked-label");
             break;
-        case "DeleteCommand":
+        case DELETE:
             this.dialog.getStyleClass().add("delete-label");
+            break;
+        case ERROR:
+            this.dialog.getStyleClass().add("error-label");
             break;
         default:
             // Do nothing for default or unspecified command types

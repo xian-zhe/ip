@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
  */
 public class DialogBoxTest {
 
+    /** 1x1 pixel image used as dummy avatar for testing. */
     private static Image dummyImage;
 
     /**
@@ -89,22 +90,27 @@ public class DialogBoxTest {
 
     @Test
     public void getOzDialog_commandTypes_appliesCorrectStyles() {
-        DialogBox addDialog = DialogBox.getOzDialog("Added", dummyImage, "AddCommand");
+        DialogBox addDialog = DialogBox.getOzDialog("Added", dummyImage, CommandType.ADD);
         Label addLabel = (Label) addDialog.getChildren().get(1);
         assertTrue(addLabel.getStyleClass().contains("add-label"));
 
-        DialogBox markedDialog = DialogBox.getOzDialog("Marked", dummyImage, "ChangeMarkCommand");
+        DialogBox markedDialog = DialogBox.getOzDialog("Marked", dummyImage, CommandType.CHANGE_MARK);
         Label markedLabel = (Label) markedDialog.getChildren().get(1);
         assertTrue(markedLabel.getStyleClass().contains("marked-label"));
 
-        DialogBox deleteDialog = DialogBox.getOzDialog("Deleted", dummyImage, "DeleteCommand");
+        DialogBox deleteDialog = DialogBox.getOzDialog("Deleted", dummyImage, CommandType.DELETE);
         Label deleteLabel = (Label) deleteDialog.getChildren().get(1);
         assertTrue(deleteLabel.getStyleClass().contains("delete-label"));
 
-        DialogBox defaultDialog = DialogBox.getOzDialog("Default", dummyImage, "Default");
+        DialogBox errorDialog = DialogBox.getOzDialog("Error", dummyImage, CommandType.ERROR);
+        Label errorLabel = (Label) errorDialog.getChildren().get(1);
+        assertTrue(errorLabel.getStyleClass().contains("error-label"));
+
+        DialogBox defaultDialog = DialogBox.getOzDialog("Default", dummyImage, CommandType.DEFAULT);
         Label defaultLabel = (Label) defaultDialog.getChildren().get(1);
         assertFalse(defaultLabel.getStyleClass().contains("add-label"));
         assertFalse(defaultLabel.getStyleClass().contains("marked-label"));
         assertFalse(defaultLabel.getStyleClass().contains("delete-label"));
+        assertFalse(defaultLabel.getStyleClass().contains("error-label"));
     }
 }

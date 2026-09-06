@@ -24,11 +24,15 @@ import org.junit.jupiter.api.io.TempDir;
  */
 public class MainWindowTest {
 
+    /** Temporary folder for test storage file. */
     @TempDir
     Path temporaryFolder;
 
+    /** Controller instance under test. */
     private MainWindow mainWindowController;
+    /** Root anchor pane loaded from FXML. */
     private AnchorPane rootLayout;
+    /** Chatbot instance injected into controller. */
     private Oz oz;
 
     /**
