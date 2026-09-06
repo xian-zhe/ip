@@ -7,10 +7,13 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.scene.layout.Region;
 
+/**
+ * A graphical user interface application for Oz using JavaFX.
+ */
 public class Main extends Application {
 
     private ScrollPane scrollPane;
@@ -20,8 +23,15 @@ public class Main extends Application {
     private Scene scene;
 
     private Image userImage = new Image(this.getClass().getResourceAsStream("/images/DaUser2.png"));
-    private Image dukeImage = new Image(this.getClass().getResourceAsStream("/images/DaOz.png"));
+    private Image ozImage = new Image(this.getClass().getResourceAsStream("/images/DaOz.png"));
 
+    private Oz oz = new Oz("data/oz.txt");
+
+    /**
+     * Initializes and configures the main GUI layout and displays the primary stage.
+     *
+     * @param stage Primary stage for this JavaFX application.
+     */
     @Override
     public void start(Stage stage) {
         // Setting up required components
@@ -41,12 +51,9 @@ public class Main extends Application {
         stage.setScene(scene);
         stage.show();
 
-        DialogBox dialogBox = new DialogBox("Hello!", userImage);
-        dialogContainer.getChildren().addAll(dialogBox);
-
         // Formatting the window to look as expected
 
-        stage.setTitle("Duke");
+        stage.setTitle("Oz");
         stage.setResizable(false);
         stage.setMinHeight(600.0);
         stage.setMinWidth(400.0);
@@ -88,11 +95,17 @@ public class Main extends Application {
     }
 
     /**
-     * Creates a dialog box containing user input, and appends it to
-     * the dialog container. Clears the user input after processing.
+     * Creates two dialog boxes, one echoing user input and the other
+     * containing Oz's reply, and appends them to the dialog container.
+     * Clears the user input after processing.
      */
     private void handleUserInput() {
-        dialogContainer.getChildren().addAll(new DialogBox(userInput.getText(), userImage));
+        String userText = userInput.getText();
+        String ozText = oz.getResponse(userText);
+        dialogContainer.getChildren().addAll(
+                DialogBox.getUserDialog(userText, userImage),
+                DialogBox.getOzDialog(ozText, ozImage)
+        );
         userInput.clear();
     }
 }
