@@ -131,16 +131,17 @@ public class TaskDateTime {
      * @return Formatted string for user viewing.
      */
     public String toDisplayString() {
-        if (this.hasTime) {
-            String timePart;
-            if (this.dateTime.getMinute() == 0) {
-                timePart = this.dateTime.format(DISPLAY_HOUR_FORMAT).toLowerCase();
-            } else {
-                timePart = this.dateTime.format(DISPLAY_TIME_FORMAT).toLowerCase();
-            }
-            return this.dateTime.format(DISPLAY_DATE_FORMAT) + ", " + timePart;
+        if (!this.hasTime) {
+            return this.dateTime.format(DISPLAY_DATE_FORMAT);
         }
-        return this.dateTime.format(DISPLAY_DATE_FORMAT);
+
+        String timePart;
+        if (this.dateTime.getMinute() == 0) {
+            timePart = this.dateTime.format(DISPLAY_HOUR_FORMAT).toLowerCase();
+        } else {
+            timePart = this.dateTime.format(DISPLAY_TIME_FORMAT).toLowerCase();
+        }
+        return this.dateTime.format(DISPLAY_DATE_FORMAT) + ", " + timePart;
     }
 
     /**

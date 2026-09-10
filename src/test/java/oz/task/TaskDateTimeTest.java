@@ -33,6 +33,16 @@ public class TaskDateTimeTest {
         assertEquals("Oct 15 2019, 12:05pm", TaskDateTime.parse("2019-10-15 1205").toDisplayString());
     }
 
+    /** Verifies that omitting a time remains distinct from explicitly specifying midnight. */
+    @Test
+    public void toDisplayString_dateOnlyAndExplicitMidnight_distinguishesTimePresence() throws OzException {
+        TaskDateTime dateOnly = TaskDateTime.parse("2019-10-15");
+        TaskDateTime midnight = TaskDateTime.parse("2019-10-15 0000");
+        assertEquals(dateOnly.toLocalDate(), midnight.toLocalDate());
+        assertEquals("Oct 15 2019", dateOnly.toDisplayString());
+        assertEquals("Oct 15 2019, 12am", midnight.toDisplayString());
+    }
+
     @Test
     public void parse_validSlashDate_success() throws OzException {
         TaskDateTime dateTime = TaskDateTime.parse("2/12/2019");
