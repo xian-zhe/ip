@@ -122,180 +122,288 @@ public class Oz {
             }
 
             String command = commandMatcher.group("command");
-            String details = commandMatcher.group("details");
-            if (details == null) {
-                details = "";
-            }
-            details = details.trim();
-
-            if (command.equals("bye")) {
-                this.isExit = true;
-                return new Pair<>("Bye. Hope to see you again soon! („• ֊ •„)੭", CommandType.BYE);
-            } else if (command.equals("list")) {
-                if (!details.isBlank()) {
-                    throw new OzException("The list command does not take arguments.");
-                }
-
-                StringBuilder response = new StringBuilder("Here are the tasks in your list:\n");
-                for (int i = 0; i < this.tasks.size(); i++) {
-                    response.append(i + 1)
-                            .append(". ")
-                            .append(this.tasks.get(i))
-                            .append("\n");
-                }
-                return new Pair<>(response.toString().stripTrailing(), CommandType.LIST);
-
-            } else if (command.equals("on")) {
-                if (details.isBlank()) {
-                    throw new OzException("Use: on <date> (e.g., on 2019-10-15 or on 2/12/2019).");
-                }
-
-                TaskDateTime targetDateTime = TaskDateTime.parse(details);
-                LocalDate targetDate = targetDateTime.toLocalDate();
-                String dateHeader = targetDate.format(
-                        DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH));
-
-                ArrayList<Task> matchingTasks = this.tasks.findTasksOn(targetDate);
-
-                if (matchingTasks.isEmpty()) {
-                    return new Pair<>("There are no tasks occurring on " + dateHeader + ".",
-                            CommandType.LIST);
-                }
-
-                StringBuilder response = new StringBuilder(
-                        "Here are the tasks occurring on " + dateHeader + ":\n");
-                for (int i = 0; i < matchingTasks.size(); i++) {
-                    response.append(i + 1)
-                            .append(". ")
-                            .append(matchingTasks.get(i))
-                            .append("\n");
-                }
-                return new Pair<>(response.toString().stripTrailing(), CommandType.LIST);
-
-            } else if (command.equals("find")) {
-                if (details.isBlank()) {
-                    throw new OzException("The keyword for find cannot be empty.");
-                }
-
-                ArrayList<Task> matchingTasks = this.tasks.findTasksByKeyword(details);
-
-                if (matchingTasks.isEmpty()) {
-                    return new Pair<>("There are no matching tasks in your list.", CommandType.FIND);
-                }
-
-                StringBuilder response = new StringBuilder("Here are the matching tasks in your list:\n");
-                for (int i = 0; i < matchingTasks.size(); i++) {
-                    response.append(i + 1)
-                            .append(". ")
-                            .append(matchingTasks.get(i))
-                            .append("\n");
-                }
-                return new Pair<>(response.toString().stripTrailing(), CommandType.FIND);
-
-            } else if (command.equals("mark")) {
-                int index = parseTaskIndex(details, this.tasks.size());
-                this.tasks.markAsDone(index);
-                this.storage.save(this.tasks);
-                return new Pair<>("Nice! I've marked this task as done:\n  " + this.tasks.get(index),
-                        CommandType.CHANGE_MARK);
-
-            } else if (command.equals("unmark")) {
-                int index = parseTaskIndex(details, this.tasks.size());
-                this.tasks.markAsNotDone(index);
-                this.storage.save(this.tasks);
-                return new Pair<>("OK! I've marked this task as not done yet:\n  " + this.tasks.get(index),
-                        CommandType.CHANGE_MARK);
-
-            } else if (command.equals("todo")) {
-                if (details.isBlank()) {
-                    throw new OzException("The description of a todo cannot be empty.");
-                }
-
-                Task task = new ToDo(details);
-                this.tasks.add(task);
-                this.storage.save(this.tasks);
-                return new Pair<>(String.format(
-                        """
-                                Got it. I've added this task:
-                                %s
-                                Now you have %d tasks in the list.
-                                """,
-                        task, this.tasks.size()).stripTrailing(), CommandType.ADD);
-
-            } else if (command.equals("deadline")) {
-                Matcher deadlineMatcher = DEADLINE_ARGUMENTS_PATTERN.matcher(details);
-                if (!deadlineMatcher.matches()) {
-                    throw new OzException("Use: deadline <description> /by <date>.");
-                }
-
-                String deadlineDescription = deadlineMatcher.group("description").trim();
-                String deadlineTimeArgument = deadlineMatcher.group("byTime").trim();
-                if (deadlineDescription.isEmpty()) {
-                    throw new OzException("The description of a deadline cannot be empty.");
-                }
-                if (deadlineTimeArgument.isEmpty()) {
-                    throw new OzException("The deadline date/time (/by) cannot be empty.");
-                }
-
-                TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
-                Task task = new Deadline(deadlineDescription, deadlineTime);
-                this.tasks.add(task);
-                this.storage.save(this.tasks);
-                return new Pair<>(String.format(
-                        """
-                                Got it. I've added this task:
-                                %s
-                                Now you have %d tasks in the list.
-                                """,
-                        task, this.tasks.size()).stripTrailing(), CommandType.ADD);
-
-            } else if (command.equals("event")) {
-                Matcher eventMatcher = EVENT_ARGUMENTS_PATTERN.matcher(details);
-                if (!eventMatcher.matches()) {
-                    throw new OzException("Use: event <description> /from <start> /to <end>.");
-                }
-
-                String eventDescription = eventMatcher.group("description").trim();
-                String fromTimeArgument = eventMatcher.group("fromTime").trim();
-                String toTimeArgument = eventMatcher.group("toTime").trim();
-                if (eventDescription.isEmpty()) {
-                    throw new OzException("The description of an event cannot be empty.");
-                }
-                if (fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
-                    throw new OzException("The event start (/from) and end (/to) dates cannot be empty.");
-                }
-
-                TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
-                TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
-                Task task = new Event(eventDescription, fromTime, toTime);
-                this.tasks.add(task);
-                this.storage.save(this.tasks);
-                return new Pair<>(String.format(
-                        """
-                                Got it. I've added this task:
-                                %s
-                                Now you have %d tasks in the list.
-                                """,
-                        task, this.tasks.size()).stripTrailing(), CommandType.ADD);
-
-            } else if (command.equals("delete")) {
-                int index = parseTaskIndex(details, this.tasks.size());
-                Task removedTask = this.tasks.delete(index);
-                this.storage.save(this.tasks);
-                return new Pair<>(String.format(
-                        """
-                                Ok the following task has been removed!:
-                                %s
-                                Now you have %d tasks in the list.
-                                """,
-                        removedTask, this.tasks.size()).stripTrailing(), CommandType.DELETE);
-
-            } else {
-                throw new OzException("Sorry, I do not understand that command.");
-            }
+            String rawDetails = commandMatcher.group("details");
+            String details = rawDetails == null ? "" : rawDetails.trim();
+            return executeCommand(command, details);
         } catch (OzException exception) {
             return new Pair<>("OOPS! " + exception.getMessage(), CommandType.ERROR);
         }
+    }
+
+    /**
+     * Routes a recognized command word to its handler.
+     *
+     * @param command Command word entered by the user.
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command is unknown or its arguments are invalid.
+     */
+    private Pair<String, CommandType> executeCommand(String command, String details) throws OzException {
+        switch (command) {
+            case "bye":
+                return exit();
+            case "list":
+                return listTasks(details);
+            case "on":
+                return listTasksOn(details);
+            case "find":
+                return findTasks(details);
+            case "mark":
+                return markTask(details);
+            case "unmark":
+                return unmarkTask(details);
+            case "todo":
+                return addTodo(details);
+            case "deadline":
+                return addDeadline(details);
+            case "event":
+                return addEvent(details);
+            case "delete":
+                return deleteTask(details);
+            default:
+                throw new OzException("Sorry, I do not understand that command.");
+        }
+    }
+
+    /**
+     * Records the exit request and returns the farewell message.
+     *
+     * @return Response message and command type.
+     */
+    private Pair<String, CommandType> exit() {
+        this.isExit = true;
+        return new Pair<>("Bye. Hope to see you again soon! („• ֊ •„)੭", CommandType.BYE);
+    }
+
+    /**
+     * Lists all tasks after validating that no arguments were supplied.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> listTasks(String details) throws OzException {
+        if (!details.isBlank()) {
+            throw new OzException("The list command does not take arguments.");
+        }
+
+        StringBuilder response = new StringBuilder("Here are the tasks in your list:\n");
+        for (int i = 0; i < this.tasks.size(); i++) {
+            response.append(i + 1)
+                    .append(". ")
+                    .append(this.tasks.get(i))
+                    .append("\n");
+        }
+        return new Pair<>(response.toString().stripTrailing(), CommandType.LIST);
+    }
+
+    /**
+     * Lists tasks occurring on the date supplied by the user.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> listTasksOn(String details) throws OzException {
+        if (details.isBlank()) {
+            throw new OzException("Use: on <date> (e.g., on 2019-10-15 or on 2/12/2019).");
+        }
+
+        TaskDateTime targetDateTime = TaskDateTime.parse(details);
+        LocalDate targetDate = targetDateTime.toLocalDate();
+        String dateHeader = targetDate.format(
+                DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH));
+
+        ArrayList<Task> matchingTasks = this.tasks.findTasksOn(targetDate);
+
+        if (matchingTasks.isEmpty()) {
+            return new Pair<>("There are no tasks occurring on " + dateHeader + ".",
+                    CommandType.LIST);
+        }
+
+        StringBuilder response = new StringBuilder(
+                "Here are the tasks occurring on " + dateHeader + ":\n");
+        for (int i = 0; i < matchingTasks.size(); i++) {
+            response.append(i + 1)
+                    .append(". ")
+                    .append(matchingTasks.get(i))
+                    .append("\n");
+        }
+        return new Pair<>(response.toString().stripTrailing(), CommandType.LIST);
+    }
+
+    /**
+     * Finds tasks containing the supplied keyword.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> findTasks(String details) throws OzException {
+        if (details.isBlank()) {
+            throw new OzException("The keyword for find cannot be empty.");
+        }
+
+        ArrayList<Task> matchingTasks = this.tasks.findTasksByKeyword(details);
+
+        if (matchingTasks.isEmpty()) {
+            return new Pair<>("There are no matching tasks in your list.", CommandType.FIND);
+        }
+
+        StringBuilder response = new StringBuilder("Here are the matching tasks in your list:\n");
+        for (int i = 0; i < matchingTasks.size(); i++) {
+            response.append(i + 1)
+                    .append(". ")
+                    .append(matchingTasks.get(i))
+                    .append("\n");
+        }
+        return new Pair<>(response.toString().stripTrailing(), CommandType.FIND);
+    }
+
+    /**
+     * Marks the selected task as done and saves the updated list.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> markTask(String details) throws OzException {
+        int index = parseTaskIndex(details, this.tasks.size());
+        this.tasks.markAsDone(index);
+        this.storage.save(this.tasks);
+        return new Pair<>("Nice! I've marked this task as done:\n  " + this.tasks.get(index),
+                CommandType.CHANGE_MARK);
+    }
+
+    /**
+     * Marks the selected task as not done and saves the updated list.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> unmarkTask(String details) throws OzException {
+        int index = parseTaskIndex(details, this.tasks.size());
+        this.tasks.markAsNotDone(index);
+        this.storage.save(this.tasks);
+        return new Pair<>("OK! I've marked this task as not done yet:\n  " + this.tasks.get(index),
+                CommandType.CHANGE_MARK);
+    }
+
+    /**
+     * Validates and adds a todo task.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> addTodo(String details) throws OzException {
+        if (details.isBlank()) {
+            throw new OzException("The description of a todo cannot be empty.");
+        }
+
+        Task task = new ToDo(details);
+        this.tasks.add(task);
+        this.storage.save(this.tasks);
+        return new Pair<>(String.format(
+                """
+                        Got it. I've added this task:
+                        %s
+                        Now you have %d tasks in the list.
+                        """,
+                task, this.tasks.size()).stripTrailing(), CommandType.ADD);
+    }
+
+    /**
+     * Parses and adds a deadline task.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> addDeadline(String details) throws OzException {
+        Matcher deadlineMatcher = DEADLINE_ARGUMENTS_PATTERN.matcher(details);
+        if (!deadlineMatcher.matches()) {
+            throw new OzException("Use: deadline <description> /by <date>.");
+        }
+
+        String deadlineDescription = deadlineMatcher.group("description").trim();
+        String deadlineTimeArgument = deadlineMatcher.group("byTime").trim();
+        if (deadlineDescription.isEmpty()) {
+            throw new OzException("The description of a deadline cannot be empty.");
+        }
+        if (deadlineTimeArgument.isEmpty()) {
+            throw new OzException("The deadline date/time (/by) cannot be empty.");
+        }
+
+        TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
+        Task task = new Deadline(deadlineDescription, deadlineTime);
+        this.tasks.add(task);
+        this.storage.save(this.tasks);
+        return new Pair<>(String.format(
+                """
+                        Got it. I've added this task:
+                        %s
+                        Now you have %d tasks in the list.
+                        """,
+                task, this.tasks.size()).stripTrailing(), CommandType.ADD);
+    }
+
+    /**
+     * Parses and adds an event task.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> addEvent(String details) throws OzException {
+        Matcher eventMatcher = EVENT_ARGUMENTS_PATTERN.matcher(details);
+        if (!eventMatcher.matches()) {
+            throw new OzException("Use: event <description> /from <start> /to <end>.");
+        }
+
+        String eventDescription = eventMatcher.group("description").trim();
+        String fromTimeArgument = eventMatcher.group("fromTime").trim();
+        String toTimeArgument = eventMatcher.group("toTime").trim();
+        if (eventDescription.isEmpty()) {
+            throw new OzException("The description of an event cannot be empty.");
+        }
+        if (fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
+            throw new OzException("The event start (/from) and end (/to) dates cannot be empty.");
+        }
+
+        TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
+        TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
+        Task task = new Event(eventDescription, fromTime, toTime);
+        this.tasks.add(task);
+        this.storage.save(this.tasks);
+        return new Pair<>(String.format(
+                """
+                        Got it. I've added this task:
+                        %s
+                        Now you have %d tasks in the list.
+                        """,
+                task, this.tasks.size()).stripTrailing(), CommandType.ADD);
+    }
+
+    /**
+     * Deletes the selected task and saves the updated list.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the command arguments are invalid.
+     */
+    private Pair<String, CommandType> deleteTask(String details) throws OzException {
+        int index = parseTaskIndex(details, this.tasks.size());
+        Task removedTask = this.tasks.delete(index);
+        this.storage.save(this.tasks);
+        return new Pair<>(String.format(
+                """
+                        Ok the following task has been removed!:
+                        %s
+                        Now you have %d tasks in the list.
+                        """,
+                removedTask, this.tasks.size()).stripTrailing(), CommandType.DELETE);
     }
 
     /**
