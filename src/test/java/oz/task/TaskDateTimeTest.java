@@ -25,6 +25,14 @@ public class TaskDateTimeTest {
         assertEquals("Oct 15 2019", dateTime.toString());
     }
 
+    /** Verifies that display formats distinguish midnight, noon, and times with minutes. */
+    @Test
+    public void toDisplayString_midnightNoonAndMinutes_preservesClockNotation() throws OzException {
+        assertEquals("Oct 15 2019, 12am", TaskDateTime.parse("2019-10-15 0000").toDisplayString());
+        assertEquals("Oct 15 2019, 12pm", TaskDateTime.parse("2019-10-15 1200").toDisplayString());
+        assertEquals("Oct 15 2019, 12:05pm", TaskDateTime.parse("2019-10-15 1205").toDisplayString());
+    }
+
     @Test
     public void parse_validSlashDate_success() throws OzException {
         TaskDateTime dateTime = TaskDateTime.parse("2/12/2019");

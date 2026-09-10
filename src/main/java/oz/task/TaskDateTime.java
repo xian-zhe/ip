@@ -14,9 +14,17 @@ import oz.exception.OzException;
  * Encapsulates java.time objects for formatting and persistence.
  */
 public class TaskDateTime {
-    /** Formatter for displaying dates to the user. */
-    private static final DateTimeFormatter DISPLAY_DATE_FORMAT =
+    /** Date format shared by task descriptions and date-filtered list headings. */
+    public static final DateTimeFormatter DISPLAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
+
+    /** Time format omitting minutes for times on the hour. */
+    private static final DateTimeFormatter DISPLAY_HOUR_FORMAT =
+            DateTimeFormatter.ofPattern("ha", Locale.ENGLISH);
+
+    /** Time format including minutes for times between whole hours. */
+    private static final DateTimeFormatter DISPLAY_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH);
 
     /** Formatter for saving date-only values to storage. */
     private static final DateTimeFormatter STORAGE_DATE_FORMAT =
@@ -126,11 +134,9 @@ public class TaskDateTime {
         if (this.hasTime) {
             String timePart;
             if (this.dateTime.getMinute() == 0) {
-                timePart = this.dateTime.format(
-                        DateTimeFormatter.ofPattern("ha", Locale.ENGLISH)).toLowerCase();
+                timePart = this.dateTime.format(DISPLAY_HOUR_FORMAT).toLowerCase();
             } else {
-                timePart = this.dateTime.format(
-                        DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH)).toLowerCase();
+                timePart = this.dateTime.format(DISPLAY_TIME_FORMAT).toLowerCase();
             }
             return this.dateTime.format(DISPLAY_DATE_FORMAT) + ", " + timePart;
         }

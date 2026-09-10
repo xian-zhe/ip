@@ -16,6 +16,9 @@ import javafx.util.Pair;
  * Controller for the main GUI.
  */
 public class MainWindow extends AnchorPane {
+    /** Time allowed for reading the farewell message before the application closes. */
+    private static final Duration FAREWELL_DISPLAY_DURATION = Duration.seconds(1.5);
+
     /** Scroll pane containing the chat dialog. */
     @FXML
     private ScrollPane scrollPane;
@@ -75,7 +78,7 @@ public class MainWindow extends AnchorPane {
         if (oz.isExit()) {
             userInput.setDisable(true);
             sendButton.setDisable(true);
-            PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+            PauseTransition delay = new PauseTransition(FAREWELL_DISPLAY_DURATION);
             delay.setOnFinished((event) -> Platform.exit());
             delay.play();
         }

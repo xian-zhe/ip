@@ -1,10 +1,8 @@
 package oz;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,6 +21,9 @@ import oz.task.ToDo;
  * Main entry point and controller for the Oz chatbot.
  */
 public class Oz {
+    /** Default task file shared by the console and graphical entry points. */
+    public static final String DEFAULT_STORAGE_PATH = "data/oz.txt";
+
     /** Visual divider line for console output. */
     private static final String DIVIDER = "____________________________________________________________\n";
 
@@ -207,8 +208,7 @@ public class Oz {
 
         TaskDateTime targetDateTime = TaskDateTime.parse(details);
         LocalDate targetDate = targetDateTime.toLocalDate();
-        String dateHeader = targetDate.format(
-                DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH));
+        String dateHeader = targetDate.format(TaskDateTime.DISPLAY_DATE_FORMAT);
 
         ArrayList<Task> matchingTasks = this.tasks.findTasksOn(targetDate);
 
@@ -434,6 +434,6 @@ public class Oz {
      * @param args Command-line arguments.
      */
     public static void main(String[] args) {
-        new Oz("data/oz.txt").run();
+        new Oz(DEFAULT_STORAGE_PATH).run();
     }
 }
