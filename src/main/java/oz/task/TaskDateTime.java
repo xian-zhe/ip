@@ -88,6 +88,7 @@ public class TaskDateTime {
      * @return Date-only task value.
      */
     public static TaskDateTime fromDate(LocalDate date) {
+        assert date != null : "The date value must be non-null";
         return new TaskDateTime(date.atStartOfDay(), false);
     }
 
@@ -98,6 +99,7 @@ public class TaskDateTime {
      * @return Task value with an explicit time component.
      */
     public static TaskDateTime fromDateTime(LocalDateTime dateTime) {
+        assert dateTime != null : "The date-time value must be non-null";
         return new TaskDateTime(dateTime, true);
     }
 

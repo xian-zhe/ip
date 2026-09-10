@@ -25,17 +25,16 @@ public class TaskInvariantTest {
 
     @Test
     public void eventConstructor_nullDateTime_assertionErrorThrown() {
-        TaskDateTime dateTime = new TaskDateTime(LocalDateTime.of(2026, 9, 10, 18, 0), true);
+        TaskDateTime dateTime = TaskDateTime.fromDateTime(LocalDateTime.of(2026, 9, 10, 18, 0));
 
         assertThrows(AssertionError.class, () -> new Event("meeting", null, dateTime));
         assertThrows(AssertionError.class, () -> new Event("meeting", dateTime, null));
     }
 
     @Test
-    public void taskDateTimeConstructor_nonMidnightDateOnlyValue_assertionErrorThrown() {
-        LocalDateTime valueWithTime = LocalDateTime.of(2026, 9, 10, 18, 0);
-
-        assertThrows(AssertionError.class, () -> new TaskDateTime(valueWithTime, false));
+    public void taskDateTimeFactories_nullInput_assertionErrorThrown() {
+        assertThrows(AssertionError.class, () -> TaskDateTime.fromDate(null));
+        assertThrows(AssertionError.class, () -> TaskDateTime.fromDateTime(null));
     }
 
     @Test
