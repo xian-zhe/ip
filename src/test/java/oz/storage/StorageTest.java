@@ -53,6 +53,12 @@ public class StorageTest {
                 }
             }
             storage.save(tasks);
+            String expectedStatus = isDone ? "1" : "0";
+            assertEquals(List.of(
+                    "T | " + expectedStatus + " | read book",
+                    "D | " + expectedStatus + " | return book | 2026-10-10",
+                    "E | " + expectedStatus + " | meeting | 2026-10-10 1400 | 2026-10-10 1630"),
+                    Files.readAllLines(storageFile));
             ArrayList<Task> loaded = storage.load();
             assertEquals(tasks.size(), loaded.size());
             for (int i = 0; i < tasks.size(); i++) {

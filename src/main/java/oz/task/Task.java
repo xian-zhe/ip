@@ -6,6 +6,12 @@ import java.time.LocalDate;
  * Represents a general task in the task list.
  */
 public class Task {
+    /** Completion code written for a finished task. */
+    public static final String STORAGE_DONE = "1";
+
+    /** Completion code written for an unfinished task. */
+    public static final String STORAGE_NOT_DONE = "0";
+
     /** Description text of the task. */
     protected String description;
     /** Whether the task has been marked as completed. */
@@ -74,7 +80,7 @@ public class Task {
      */
 
     public String toFileFormat() {
-        return String.format("%s | %s", (this.isDone ? "1" : "0"), this.description);
+        return String.format("%s | %s", (this.isDone ? STORAGE_DONE : STORAGE_NOT_DONE), this.description);
     }
 
     @Override

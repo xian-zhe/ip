@@ -22,6 +22,39 @@ public class Storage {
     /** Visual divider line for console output. */
     private static final String DIVIDER = "____________________________________________________________\n";
 
+    /** Separator accepting optional whitespace around a stored pipe. */
+    private static final String FIELD_SEPARATOR_PATTERN = "\\s*\\|\\s*";
+
+    /** Optional Unicode marker ignored when reading stored lines. */
+    private static final String BYTE_ORDER_MARK = "\uFEFF";
+
+    /** Position of the task type code. */
+    private static final int TYPE_FIELD_INDEX = 0;
+
+    /** Position of the completion status code. */
+    private static final int STATUS_FIELD_INDEX = 1;
+
+    /** Position of the task description. */
+    private static final int DESCRIPTION_FIELD_INDEX = 2;
+
+    /** Position of a deadline's date or date-time. */
+    private static final int DEADLINE_FIELD_INDEX = 3;
+
+    /** Position of an event's start date or date-time. */
+    private static final int EVENT_START_FIELD_INDEX = 3;
+
+    /** Position of an event's end date or date-time. */
+    private static final int EVENT_END_FIELD_INDEX = 4;
+
+    /** Number of fields in a todo entry and in the initial header split. */
+    private static final int TODO_FIELD_COUNT = 3;
+
+    /** Number of fields in a deadline entry. */
+    private static final int DEADLINE_FIELD_COUNT = 4;
+
+    /** Number of fields in an event entry. */
+    private static final int EVENT_FIELD_COUNT = 5;
+
     /** Path to the task storage file on disk. */
     private final Path filePath;
 
@@ -51,8 +84,8 @@ public class Storage {
             List<String> lines = Files.readAllLines(this.filePath);
             for (int i = 0; i < lines.size(); i++) {
                 String line = lines.get(i).trim();
-                if (line.startsWith("\uFEFF")) {
-                    line = line.substring(1).trim();
+                if (line.startsWith(BYTE_ORDER_MARK)) {
+                    line = line.substring(BYTE_ORDER_MARK.length()).trim();
                 }
                 if (line.isEmpty()) {
                     continue;
@@ -111,17 +144,17 @@ public class Storage {
      *                     fields.
      */
     private Task parseTaskLine(String line) throws OzException {
-        String[] initialParts = line.split("\\s*\\|\\s*", 3);
-        if (initialParts.length < 3) {
+        String[] initialParts = line.split(FIELD_SEPARATOR_PATTERN, TODO_FIELD_COUNT);
+        if (initialParts.length < TODO_FIELD_COUNT) {
             throw new OzException("Malformed task entry: insufficient fields.");
         }
 
-        String type = initialParts[0].trim();
-        String status = initialParts[1].trim();
-        if (!status.equals("0") && !status.equals("1")) {
+        String type = initialParts[TYPE_FIELD_INDEX].trim();
+        String status = initialParts[STATUS_FIELD_INDEX].trim();
+        if (!status.equals(Task.STORAGE_NOT_DONE) && !status.equals(Task.STORAGE_DONE)) {
             throw new OzException("Invalid completion status (must be 0 or 1): " + status);
         }
-        boolean isDone = status.equals("1");
+        boolean isDone = status.equals(Task.STORAGE_DONE);
 
         Task task = parseTaskDetails(type, line);
         if (isDone) {
@@ -140,11 +173,11 @@ public class Storage {
      */
     private Task parseTaskDetails(String type, String line) throws OzException {
         switch (type) {
-            case "T":
+            case ToDo.TYPE_CODE:
                 return parseTodo(line);
-            case "D":
+            case Deadline.TYPE_CODE:
                 return parseDeadline(line);
-            case "E":
+            case Event.TYPE_CODE:
                 return parseEvent(line);
             default:
                 throw new OzException("Unknown task type: " + type);
@@ -160,8 +193,8 @@ public class Storage {
      */
     private Task parseTodo(String line) throws OzException {
         // Limit splitting so a todo description can contain literal pipe characters.
-        String[] todoParts = line.split("\\s*\\|\\s*", 3);
-        String todoDescription = todoParts[2].trim();
+        String[] todoParts = line.split(FIELD_SEPARATOR_PATTERN, TODO_FIELD_COUNT);
+        String todoDescription = todoParts[DESCRIPTION_FIELD_INDEX].trim();
         if (todoDescription.isEmpty()) {
             throw new OzException("Todo description cannot be empty.");
         }
@@ -176,12 +209,12 @@ public class Storage {
      * @throws OzException If required fields are missing or invalid.
      */
     private Task parseDeadline(String line) throws OzException {
-        String[] deadlineParts = line.split("\\s*\\|\\s*", 4);
-        if (deadlineParts.length < 4) {
+        String[] deadlineParts = line.split(FIELD_SEPARATOR_PATTERN, DEADLINE_FIELD_COUNT);
+        if (deadlineParts.length < DEADLINE_FIELD_COUNT) {
             throw new OzException("Deadline task requires description and deadline date.");
         }
-        String deadlineDescription = deadlineParts[2].trim();
-        String deadlineTimeArgument = deadlineParts[3].trim();
+        String deadlineDescription = deadlineParts[DESCRIPTION_FIELD_INDEX].trim();
+        String deadlineTimeArgument = deadlineParts[DEADLINE_FIELD_INDEX].trim();
         if (deadlineDescription.isEmpty() || deadlineTimeArgument.isEmpty()) {
             throw new OzException("Deadline description and date cannot be empty.");
         }
@@ -197,13 +230,13 @@ public class Storage {
      * @throws OzException If required fields are missing or invalid.
      */
     private Task parseEvent(String line) throws OzException {
-        String[] eventParts = line.split("\\s*\\|\\s*", 5);
-        if (eventParts.length < 5) {
+        String[] eventParts = line.split(FIELD_SEPARATOR_PATTERN, EVENT_FIELD_COUNT);
+        if (eventParts.length < EVENT_FIELD_COUNT) {
             throw new OzException("Event task requires description, start time, and end time.");
         }
-        String eventDescription = eventParts[2].trim();
-        String fromTimeArgument = eventParts[3].trim();
-        String toTimeArgument = eventParts[4].trim();
+        String eventDescription = eventParts[DESCRIPTION_FIELD_INDEX].trim();
+        String fromTimeArgument = eventParts[EVENT_START_FIELD_INDEX].trim();
+        String toTimeArgument = eventParts[EVENT_END_FIELD_INDEX].trim();
         if (eventDescription.isEmpty() || fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
             throw new OzException("Event description, start time, and end time cannot be empty.");
         }
