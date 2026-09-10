@@ -187,4 +187,35 @@ public class OzResponseTest {
         assertEquals("There are no tasks occurring on Jan 01 2027.",
                 this.oz.getResponse("on 2027-01-01").getKey());
     }
+
+    /** Verifies that every add command saves its task and reports the updated count. */
+    @Test
+    public void getResponse_addEachTaskType_persistsTasksAndReportsCounts() {
+        String[] commands = {
+            "todo read book",
+            "deadline return book /by 2026-10-10",
+            "event meeting /from 2026-10-10 1400 /to 2026-10-10 1600"
+        };
+        for (int i = 0; i < commands.length; i++) {
+            Pair<String, CommandType> response = this.oz.getResponse(commands[i]);
+            assertEquals(CommandType.ADD, response.getValue());
+            assertTrue(response.getKey().endsWith("Now you have " + (i + 1) + " tasks in the list."));
+            Oz reloaded = new Oz(this.temporaryFolder.resolve("test_tasks.txt").toString());
+            assertEquals(this.oz.getResponse("list").getKey(), reloaded.getResponse("list").getKey());
+        }
+    }
+
+    /** Verifies ordering, numbering, whitespace, and empty results for keyword search. */
+    @Test
+    public void getResponse_findCommand_numbersMatchesWithoutTrailingNewline() {
+        this.oz.getResponse("todo wash car");
+        this.oz.getResponse("todo read book");
+        this.oz.getResponse("todo buy book");
+        assertEquals("Here are the matching tasks in your list:\n"
+                + "1. [T][ ] read book\n2. [T][ ] buy book",
+                this.oz.getResponse("find book").getKey());
+        Pair<String, CommandType> noMatches = this.oz.getResponse("find missing");
+        assertEquals("There are no matching tasks in your list.", noMatches.getKey());
+        assertEquals(CommandType.FIND, noMatches.getValue());
+    }
 }

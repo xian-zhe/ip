@@ -3,6 +3,7 @@ package oz;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.regex.Matcher;
@@ -187,14 +188,9 @@ public class Oz {
             throw new OzException("The list command does not take arguments.");
         }
 
-        StringBuilder response = new StringBuilder("Here are the tasks in your list:\n");
-        for (int i = 0; i < this.tasks.size(); i++) {
-            response.append(i + 1)
-                    .append(". ")
-                    .append(this.tasks.get(i))
-                    .append("\n");
-        }
-        return new Pair<>(response.toString().stripTrailing(), CommandType.LIST);
+        String response = formatTaskList("Here are the tasks in your list:\n",
+                this.tasks.getTasks());
+        return new Pair<>(response, CommandType.LIST);
     }
 
     /**
@@ -221,15 +217,9 @@ public class Oz {
                     CommandType.LIST);
         }
 
-        StringBuilder response = new StringBuilder(
-                "Here are the tasks occurring on " + dateHeader + ":\n");
-        for (int i = 0; i < matchingTasks.size(); i++) {
-            response.append(i + 1)
-                    .append(". ")
-                    .append(matchingTasks.get(i))
-                    .append("\n");
-        }
-        return new Pair<>(response.toString().stripTrailing(), CommandType.LIST);
+        String response = formatTaskList("Here are the tasks occurring on " + dateHeader + ":\n",
+                matchingTasks);
+        return new Pair<>(response, CommandType.LIST);
     }
 
     /**
@@ -250,14 +240,9 @@ public class Oz {
             return new Pair<>("There are no matching tasks in your list.", CommandType.FIND);
         }
 
-        StringBuilder response = new StringBuilder("Here are the matching tasks in your list:\n");
-        for (int i = 0; i < matchingTasks.size(); i++) {
-            response.append(i + 1)
-                    .append(". ")
-                    .append(matchingTasks.get(i))
-                    .append("\n");
-        }
-        return new Pair<>(response.toString().stripTrailing(), CommandType.FIND);
+        String response = formatTaskList("Here are the matching tasks in your list:\n",
+                matchingTasks);
+        return new Pair<>(response, CommandType.FIND);
     }
 
     /**
@@ -303,15 +288,7 @@ public class Oz {
         }
 
         Task task = new ToDo(details);
-        this.tasks.add(task);
-        this.storage.save(this.tasks);
-        return new Pair<>(String.format(
-                """
-                        Got it. I've added this task:
-                        %s
-                        Now you have %d tasks in the list.
-                        """,
-                task, this.tasks.size()).stripTrailing(), CommandType.ADD);
+        return addTask(task);
     }
 
     /**
@@ -338,15 +315,7 @@ public class Oz {
 
         TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
         Task task = new Deadline(deadlineDescription, deadlineTime);
-        this.tasks.add(task);
-        this.storage.save(this.tasks);
-        return new Pair<>(String.format(
-                """
-                        Got it. I've added this task:
-                        %s
-                        Now you have %d tasks in the list.
-                        """,
-                task, this.tasks.size()).stripTrailing(), CommandType.ADD);
+        return addTask(task);
     }
 
     /**
@@ -375,15 +344,7 @@ public class Oz {
         TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
         TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
         Task task = new Event(eventDescription, fromTime, toTime);
-        this.tasks.add(task);
-        this.storage.save(this.tasks);
-        return new Pair<>(String.format(
-                """
-                        Got it. I've added this task:
-                        %s
-                        Now you have %d tasks in the list.
-                        """,
-                task, this.tasks.size()).stripTrailing(), CommandType.ADD);
+        return addTask(task);
     }
 
     /**
@@ -404,6 +365,42 @@ public class Oz {
                         Now you have %d tasks in the list.
                         """,
                 removedTask, this.tasks.size()).stripTrailing(), CommandType.DELETE);
+    }
+
+    /**
+     * Adds a validated task, saves the list, and reports the new task count.
+     *
+     * @param task Task to add.
+     * @return Confirmation message and the add command type.
+     */
+    private Pair<String, CommandType> addTask(Task task) {
+        this.tasks.add(task);
+        this.storage.save(this.tasks);
+        return new Pair<>(String.format(
+                """
+                        Got it. I've added this task:
+                        %s
+                        Now you have %d tasks in the list.
+                        """,
+                task, this.tasks.size()).stripTrailing(), CommandType.ADD);
+    }
+
+    /**
+     * Formats tasks in their existing order with consecutive display numbers.
+     *
+     * @param header Heading to place before the numbered tasks, including its newline.
+     * @param tasksToDisplay Tasks to include in the response.
+     * @return Heading and numbered task descriptions without trailing whitespace.
+     */
+    private static String formatTaskList(String header, List<Task> tasksToDisplay) {
+        StringBuilder response = new StringBuilder(header);
+        for (int i = 0; i < tasksToDisplay.size(); i++) {
+            response.append(i + 1)
+                    .append(". ")
+                    .append(tasksToDisplay.get(i))
+                    .append("\n");
+        }
+        return response.toString().stripTrailing();
     }
 
     /**
