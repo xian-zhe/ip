@@ -2,6 +2,7 @@ package oz.task;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
@@ -73,6 +74,9 @@ public class TaskDateTime {
      * @param hasTime Whether the time component was explicitly provided.
      */
     private TaskDateTime(LocalDateTime dateTime, boolean hasTime) {
+        assert dateTime != null : "The date-time value must be non-null";
+        assert hasTime || dateTime.toLocalTime().equals(LocalTime.MIDNIGHT)
+                  : "A date-only value must be stored at midnight";
         this.dateTime = dateTime;
         this.hasTime = hasTime;
     }

@@ -27,9 +27,13 @@ public class Event extends Task {
     public Event(String description, TaskDateTime startDateTime,
             TaskDateTime endDateTime) throws OzException {
         super(description);
+        assert startDateTime != null : "An event must have a start date-time";
+        assert endDateTime != null : "An event must have an end date-time";
         if (startDateTime.isAfter(endDateTime)) {
             throw new OzException("The start date/time (/from) cannot be after the end date/time (/to).");
         }
+        assert !startDateTime.isAfter(endDateTime)
+                : "An event must not start after it ends";
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
     }

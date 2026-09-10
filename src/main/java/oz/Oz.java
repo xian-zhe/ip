@@ -413,6 +413,7 @@ public class Oz {
      */
     private static int parseTaskIndex(String argument, int taskCount)
             throws OzException {
+        assert taskCount >= 0 : "The task count must not be negative";
         if (!argument.matches("\\d+")) {
             throw new OzException("Please provide a valid task number.");
         }
@@ -422,7 +423,10 @@ public class Oz {
             if (taskNumber < 1 || taskNumber > taskCount) {
                 throw new OzException("That task number does not exist.");
             }
-            return taskNumber - 1;
+            int index = taskNumber - 1;
+            assert index >= 0 && index < taskCount
+                    : "A validated task number must map to an existing index";
+            return index;
         } catch (NumberFormatException exception) {
             throw new OzException("That task number is too large.");
         }
