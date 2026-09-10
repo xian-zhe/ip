@@ -110,21 +110,21 @@ public class DialogBox extends HBox {
         }
 
         switch (commandType) {
-        case ADD:
-            this.dialog.getStyleClass().add("add-label");
-            break;
-        case CHANGE_MARK:
-            this.dialog.getStyleClass().add("marked-label");
-            break;
-        case DELETE:
-            this.dialog.getStyleClass().add("delete-label");
-            break;
-        case ERROR:
-            this.dialog.getStyleClass().add("error-label");
-            break;
-        default:
-            // Do nothing for default or unspecified command types
-            break;
+            case ADD:
+                this.dialog.getStyleClass().add("add-label");
+                break;
+            case CHANGE_MARK:
+                this.dialog.getStyleClass().add("marked-label");
+                break;
+            case DELETE:
+                this.dialog.getStyleClass().add("delete-label");
+                break;
+            case ERROR:
+                this.dialog.getStyleClass().add("error-label");
+                break;
+            default:
+                // Do nothing for default or unspecified command types
+                break;
         }
     }
 }

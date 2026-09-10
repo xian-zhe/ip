@@ -18,7 +18,7 @@ public class Main extends Application {
     public static final String APP_TITLE = "Oz";
 
     /** The Oz chatbot instance handling application logic. */
-    private Oz oz = new Oz("data/oz.txt");
+    private Oz oz = new Oz(Oz.DEFAULT_STORAGE_PATH);
 
     /**
      * Initializes and configures the main GUI layout and displays the primary

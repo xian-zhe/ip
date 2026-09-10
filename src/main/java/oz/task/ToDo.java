@@ -4,6 +4,8 @@ package oz.task;
  * Represents a simple todo task without date or time constraints.
  */
 public class ToDo extends Task {
+    /** Task type code used in storage and display output. */
+    public static final String TYPE_CODE = "T";
 
     /**
      * Constructs a ToDo task with the given description.
@@ -21,11 +23,11 @@ public class ToDo extends Task {
      */
     @Override
     public String toFileFormat() {
-        return String.format("T | %s", super.toFileFormat());
+        return String.format(TYPE_CODE + " | %s", super.toFileFormat());
     }
 
     @Override
     public String toString() {
-        return String.format("[T][%s] %s", super.getStatusIcon(), this.description);
+        return String.format("[" + TYPE_CODE + "][%s] %s", super.getStatusIcon(), this.description);
     }
 }

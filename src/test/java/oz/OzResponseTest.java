@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 
-import javafx.util.Pair;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import javafx.util.Pair;
 
 /**
  * Tests the response generation logic in {@link Oz} that drives GUI interactions.
@@ -139,5 +139,83 @@ public class OzResponseTest {
         assertTrue(findResponse.getKey().contains("read book"));
         assertTrue(findResponse.getKey().contains("buy book"));
         assertEquals(CommandType.FIND, findResponse.getValue());
+    }
+
+    /** Verifies that invalid arguments are reported without changing the task list. */
+    @Test
+    public void getResponse_invalidArguments_returnsErrorWithoutAddingTasks() {
+        String[] invalidCommands = {
+            "list extra", "on", "on invalid-date", "find", "deadline return book",
+            "deadline return book /by invalid-date", "event meeting",
+            "event meeting /from 2026-10-11 /to 2026-10-10"
+        };
+        for (String command : invalidCommands) {
+            Pair<String, CommandType> response = this.oz.getResponse(command);
+            assertEquals(CommandType.ERROR, response.getValue(), command);
+            assertTrue(response.getKey().startsWith("OOPS! "), command);
+        }
+        assertEquals("Here are the tasks in your list:", this.oz.getResponse("list").getKey());
+    }
+
+    /** Verifies task-number validation for all commands that select an existing task. */
+    @Test
+    public void getResponse_invalidTaskNumbers_preservesTask() {
+        this.oz.getResponse("todo keep task");
+        String[] commands = {"mark", "unmark", "delete"};
+        String[] invalidNumbers = {"", "abc", "-1", "0", "2", "999999999999999999999"};
+        for (String command : commands) {
+            for (String number : invalidNumbers) {
+                Pair<String, CommandType> response = this.oz.getResponse(command + " " + number);
+                assertEquals(CommandType.ERROR, response.getValue(), command + " " + number);
+            }
+        }
+        assertEquals("Here are the tasks in your list:\n1. [T][ ] keep task",
+                this.oz.getResponse("list").getKey());
+    }
+
+    /** Verifies date filtering and local numbering when unrelated tasks precede the matches. */
+    @Test
+    public void getResponse_onCommand_listsOnlyTasksOccurringOnDate() {
+        this.oz.getResponse("todo unrelated task");
+        this.oz.getResponse("deadline return book /by 2026-10-10");
+        this.oz.getResponse("event conference /from 2026-10-09 /to 2026-10-11");
+        Pair<String, CommandType> response = this.oz.getResponse("  on  2026-10-10  ");
+        assertEquals(CommandType.LIST, response.getValue());
+        assertEquals("Here are the tasks occurring on Oct 10 2026:\n"
+                + "1. [D][ ] return book (by: Oct 10 2026)\n"
+                + "2. [E][ ] conference (from: Oct 09 2026 to: Oct 11 2026)", response.getKey());
+        assertEquals("There are no tasks occurring on Jan 01 2027.",
+                this.oz.getResponse("on 2027-01-01").getKey());
+    }
+
+    /** Verifies that every add command saves its task and reports the updated count. */
+    @Test
+    public void getResponse_addEachTaskType_persistsTasksAndReportsCounts() {
+        String[] commands = {
+            "todo read book",
+            "deadline return book /by 2026-10-10",
+            "event meeting /from 2026-10-10 1400 /to 2026-10-10 1600"
+        };
+        for (int i = 0; i < commands.length; i++) {
+            Pair<String, CommandType> response = this.oz.getResponse(commands[i]);
+            assertEquals(CommandType.ADD, response.getValue());
+            assertTrue(response.getKey().endsWith("Now you have " + (i + 1) + " tasks in the list."));
+            Oz reloaded = new Oz(this.temporaryFolder.resolve("test_tasks.txt").toString());
+            assertEquals(this.oz.getResponse("list").getKey(), reloaded.getResponse("list").getKey());
+        }
+    }
+
+    /** Verifies ordering, numbering, whitespace, and empty results for keyword search. */
+    @Test
+    public void getResponse_findCommand_numbersMatchesWithoutTrailingNewline() {
+        this.oz.getResponse("todo wash car");
+        this.oz.getResponse("todo read book");
+        this.oz.getResponse("todo buy book");
+        assertEquals("Here are the matching tasks in your list:\n"
+                + "1. [T][ ] read book\n2. [T][ ] buy book",
+                this.oz.getResponse("find book").getKey());
+        Pair<String, CommandType> noMatches = this.oz.getResponse("find missing");
+        assertEquals("There are no matching tasks in your list.", noMatches.getKey());
+        assertEquals(CommandType.FIND, noMatches.getValue());
     }
 }

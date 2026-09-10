@@ -6,6 +6,9 @@ import java.time.LocalDate;
  * Represents a task with a specific deadline date or date-time.
  */
 public class Deadline extends Task {
+    /** Task type code used in storage and display output. */
+    public static final String TYPE_CODE = "D";
+
     /** Target deadline date and time. */
     protected TaskDateTime deadline;
 
@@ -39,12 +42,12 @@ public class Deadline extends Task {
      */
     @Override
     public String toFileFormat() {
-        return String.format("D | %s | %s", super.toFileFormat(), this.deadline.toStorageString());
+        return String.format(TYPE_CODE + " | %s | %s", super.toFileFormat(), this.deadline.toStorageString());
     }
 
     @Override
     public String toString() {
-        return String.format("[D][%s] %s (by: %s)",
+        return String.format("[" + TYPE_CODE + "][%s] %s (by: %s)",
                 super.getStatusIcon(), this.description, this.deadline.toDisplayString());
     }
 }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +17,31 @@ import oz.exception.OzException;
  */
 public class TaskDateTimeTest {
 
+    /** Verifies that date-only construction uses midnight for chronological comparisons. */
+    @Test
+    public void fromDate_validDate_omitsTimeAndComparesAtStartOfDay() {
+        LocalDate date = LocalDate.of(2019, 10, 15);
+        TaskDateTime dateOnly = TaskDateTime.fromDate(date);
+        TaskDateTime midnight = TaskDateTime.fromDateTime(date.atStartOfDay());
+        assertEquals(date, dateOnly.toLocalDate());
+        assertEquals("Oct 15 2019", dateOnly.toDisplayString());
+        assertEquals("2019-10-15", dateOnly.toStorageString());
+        assertFalse(dateOnly.isBefore(midnight));
+        assertFalse(dateOnly.isAfter(midnight));
+    }
+
+    /** Verifies explicit time construction retains midnight and nonzero minutes. */
+    @Test
+    public void fromDateTime_midnightAndAfternoon_preservesExplicitTime() {
+        TaskDateTime midnight = TaskDateTime.fromDateTime(LocalDateTime.of(2019, 10, 15, 0, 0));
+        TaskDateTime afternoon = TaskDateTime.fromDateTime(LocalDateTime.of(2019, 10, 15, 14, 30));
+        assertEquals("Oct 15 2019, 12am", midnight.toDisplayString());
+        assertEquals("2019-10-15 0000", midnight.toStorageString());
+        assertEquals("Oct 15 2019, 2:30pm", afternoon.toDisplayString());
+        assertEquals("2019-10-15 1430", afternoon.toStorageString());
+        assertTrue(afternoon.isAfter(midnight));
+    }
+
     @Test
     public void parse_validIsoDate_success() throws OzException {
         TaskDateTime dateTime = TaskDateTime.parse("2019-10-15");
@@ -23,6 +49,24 @@ public class TaskDateTimeTest {
         assertEquals("2019-10-15", dateTime.toStorageString());
         assertEquals(LocalDate.of(2019, 10, 15), dateTime.toLocalDate());
         assertEquals("Oct 15 2019", dateTime.toString());
+    }
+
+    /** Verifies that display formats distinguish midnight, noon, and times with minutes. */
+    @Test
+    public void toDisplayString_midnightNoonAndMinutes_preservesClockNotation() throws OzException {
+        assertEquals("Oct 15 2019, 12am", TaskDateTime.parse("2019-10-15 0000").toDisplayString());
+        assertEquals("Oct 15 2019, 12pm", TaskDateTime.parse("2019-10-15 1200").toDisplayString());
+        assertEquals("Oct 15 2019, 12:05pm", TaskDateTime.parse("2019-10-15 1205").toDisplayString());
+    }
+
+    /** Verifies that omitting a time remains distinct from explicitly specifying midnight. */
+    @Test
+    public void toDisplayString_dateOnlyAndExplicitMidnight_distinguishesTimePresence() throws OzException {
+        TaskDateTime dateOnly = TaskDateTime.parse("2019-10-15");
+        TaskDateTime midnight = TaskDateTime.parse("2019-10-15 0000");
+        assertEquals(dateOnly.toLocalDate(), midnight.toLocalDate());
+        assertEquals("Oct 15 2019", dateOnly.toDisplayString());
+        assertEquals("Oct 15 2019, 12am", midnight.toDisplayString());
     }
 
     @Test

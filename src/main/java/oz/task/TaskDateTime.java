@@ -15,9 +15,17 @@ import oz.exception.OzException;
  * Encapsulates java.time objects for formatting and persistence.
  */
 public class TaskDateTime {
-    /** Formatter for displaying dates to the user. */
-    private static final DateTimeFormatter DISPLAY_DATE_FORMAT =
+    /** Date format shared by task descriptions and date-filtered list headings. */
+    public static final DateTimeFormatter DISPLAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
+
+    /** Time format omitting minutes for times on the hour. */
+    private static final DateTimeFormatter DISPLAY_HOUR_FORMAT =
+            DateTimeFormatter.ofPattern("ha", Locale.ENGLISH);
+
+    /** Time format including minutes for times between whole hours. */
+    private static final DateTimeFormatter DISPLAY_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH);
 
     /** Formatter for saving date-only values to storage. */
     private static final DateTimeFormatter STORAGE_DATE_FORMAT =
@@ -65,12 +73,34 @@ public class TaskDateTime {
      * @param dateTime The parsed LocalDateTime.
      * @param hasTime Whether the time component was explicitly provided.
      */
-    public TaskDateTime(LocalDateTime dateTime, boolean hasTime) {
+    private TaskDateTime(LocalDateTime dateTime, boolean hasTime) {
         assert dateTime != null : "The date-time value must be non-null";
         assert hasTime || dateTime.toLocalTime().equals(LocalTime.MIDNIGHT)
-                : "A date-only value must be stored at midnight";
+                  : "A date-only value must be stored at midnight";
         this.dateTime = dateTime;
         this.hasTime = hasTime;
+    }
+
+    /**
+     * Creates a date-only value, using the start of the day for comparisons.
+     *
+     * @param date Date with no explicitly specified time.
+     * @return Date-only task value.
+     */
+    public static TaskDateTime fromDate(LocalDate date) {
+        assert date != null : "The date value must be non-null";
+        return new TaskDateTime(date.atStartOfDay(), false);
+    }
+
+    /**
+     * Creates a value with an explicitly specified time, including midnight.
+     *
+     * @param dateTime Date and time to retain for display, storage, and comparisons.
+     * @return Task value with an explicit time component.
+     */
+    public static TaskDateTime fromDateTime(LocalDateTime dateTime) {
+        assert dateTime != null : "The date-time value must be non-null";
+        return new TaskDateTime(dateTime, true);
     }
 
     /**
@@ -103,7 +133,7 @@ public class TaskDateTime {
         for (DateTimeFormatter formatter : INPUT_DATETIME_FORMATTERS) {
             try {
                 LocalDateTime parsedDateTime = LocalDateTime.parse(trimmed, formatter);
-                return new TaskDateTime(parsedDateTime, true);
+                return fromDateTime(parsedDateTime);
             } catch (DateTimeParseException ignored) {
                 // Continue trying other formats
             }
@@ -112,7 +142,7 @@ public class TaskDateTime {
         for (DateTimeFormatter formatter : INPUT_DATE_FORMATTERS) {
             try {
                 LocalDate parsedDate = LocalDate.parse(trimmed, formatter);
-                return new TaskDateTime(parsedDate.atStartOfDay(), false);
+                return fromDate(parsedDate);
             } catch (DateTimeParseException ignored) {
                 // Continue trying other formats
             }
@@ -127,18 +157,17 @@ public class TaskDateTime {
      * @return Formatted string for user viewing.
      */
     public String toDisplayString() {
-        if (this.hasTime) {
-            String timePart;
-            if (this.dateTime.getMinute() == 0) {
-                timePart = this.dateTime.format(
-                        DateTimeFormatter.ofPattern("ha", Locale.ENGLISH)).toLowerCase();
-            } else {
-                timePart = this.dateTime.format(
-                        DateTimeFormatter.ofPattern("h:mma", Locale.ENGLISH)).toLowerCase();
-            }
-            return this.dateTime.format(DISPLAY_DATE_FORMAT) + ", " + timePart;
+        if (!this.hasTime) {
+            return this.dateTime.format(DISPLAY_DATE_FORMAT);
         }
-        return this.dateTime.format(DISPLAY_DATE_FORMAT);
+
+        String timePart;
+        if (this.dateTime.getMinute() == 0) {
+            timePart = this.dateTime.format(DISPLAY_HOUR_FORMAT).toLowerCase();
+        } else {
+            timePart = this.dateTime.format(DISPLAY_TIME_FORMAT).toLowerCase();
+        }
+        return this.dateTime.format(DISPLAY_DATE_FORMAT) + ", " + timePart;
     }
 
     /**

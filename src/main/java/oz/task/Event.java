@@ -8,6 +8,9 @@ import oz.exception.OzException;
  * Represents a task that spans a start date/time and an end date/time.
  */
 public class Event extends Task {
+    /** Task type code used in storage and display output. */
+    public static final String TYPE_CODE = "E";
+
     /** Start date and time of the event. */
     protected TaskDateTime startDateTime;
     /** End date and time of the event. */
@@ -55,7 +58,7 @@ public class Event extends Task {
      */
     @Override
     public String toFileFormat() {
-        return String.format("E | %s | %s | %s",
+        return String.format(TYPE_CODE + " | %s | %s | %s",
                 super.toFileFormat(),
                 this.startDateTime.toStorageString(),
                 this.endDateTime.toStorageString());
@@ -63,7 +66,7 @@ public class Event extends Task {
 
     @Override
     public String toString() {
-        return String.format("[E][%s] %s (from: %s to: %s)",
+        return String.format("[" + TYPE_CODE + "][%s] %s (from: %s to: %s)",
                 super.getStatusIcon(), this.description,
                 this.startDateTime.toDisplayString(), this.endDateTime.toDisplayString());
     }
