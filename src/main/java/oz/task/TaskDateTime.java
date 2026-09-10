@@ -72,9 +72,29 @@ public class TaskDateTime {
      * @param dateTime The parsed LocalDateTime.
      * @param hasTime Whether the time component was explicitly provided.
      */
-    public TaskDateTime(LocalDateTime dateTime, boolean hasTime) {
+    private TaskDateTime(LocalDateTime dateTime, boolean hasTime) {
         this.dateTime = dateTime;
         this.hasTime = hasTime;
+    }
+
+    /**
+     * Creates a date-only value, using the start of the day for comparisons.
+     *
+     * @param date Date with no explicitly specified time.
+     * @return Date-only task value.
+     */
+    public static TaskDateTime fromDate(LocalDate date) {
+        return new TaskDateTime(date.atStartOfDay(), false);
+    }
+
+    /**
+     * Creates a value with an explicitly specified time, including midnight.
+     *
+     * @param dateTime Date and time to retain for display, storage, and comparisons.
+     * @return Task value with an explicit time component.
+     */
+    public static TaskDateTime fromDateTime(LocalDateTime dateTime) {
+        return new TaskDateTime(dateTime, true);
     }
 
     /**
@@ -107,7 +127,7 @@ public class TaskDateTime {
         for (DateTimeFormatter formatter : INPUT_DATETIME_FORMATTERS) {
             try {
                 LocalDateTime parsedDateTime = LocalDateTime.parse(trimmed, formatter);
-                return new TaskDateTime(parsedDateTime, true);
+                return fromDateTime(parsedDateTime);
             } catch (DateTimeParseException ignored) {
                 // Continue trying other formats
             }
@@ -116,7 +136,7 @@ public class TaskDateTime {
         for (DateTimeFormatter formatter : INPUT_DATE_FORMATTERS) {
             try {
                 LocalDate parsedDate = LocalDate.parse(trimmed, formatter);
-                return new TaskDateTime(parsedDate.atStartOfDay(), false);
+                return fromDate(parsedDate);
             } catch (DateTimeParseException ignored) {
                 // Continue trying other formats
             }
