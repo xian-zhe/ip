@@ -78,6 +78,9 @@ public class Storage {
      * @param tasks The list of tasks to save.
      */
     public void save(ArrayList<Task> tasks) {
+        assert tasks != null : "The task collection to save must be non-null";
+        assert tasks.stream().noneMatch(task -> task == null)
+                : "The task collection to save must not contain null tasks";
         try {
             if (this.filePath.getParent() != null) {
                 Files.createDirectories(this.filePath.getParent());
@@ -167,6 +170,7 @@ public class Storage {
                 throw new OzException("Unknown task type: " + type);
         }
 
+        assert task != null : "A recognized task type must produce a task";
         if (isDone) {
             task.markAsDone();
         }
