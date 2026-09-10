@@ -26,6 +26,8 @@ public class TaskList {
      */
     public TaskList(ArrayList<Task> tasks) {
         this.tasks = tasks != null ? tasks : new ArrayList<>();
+        assert this.tasks.stream().noneMatch(task -> task == null)
+                : "A task list must not contain null tasks";
     }
 
     /**
@@ -34,6 +36,7 @@ public class TaskList {
      * @param task The task to add.
      */
     public void add(Task task) {
+        assert task != null : "Cannot add a null task";
         this.tasks.add(task);
     }
 
@@ -86,6 +89,7 @@ public class TaskList {
      * @return List of matching tasks occurring on that date.
      */
     public ArrayList<Task> findTasksOn(LocalDate date) {
+        assert date != null : "The target date must be non-null";
         ArrayList<Task> matchingTasks = new ArrayList<>();
         for (Task task : this.tasks) {
             if (task.occursOn(date)) {
