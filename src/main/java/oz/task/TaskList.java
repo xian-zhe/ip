@@ -2,6 +2,7 @@ package oz.task;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import oz.exception.OzException;
 
@@ -90,13 +91,9 @@ public class TaskList {
      */
     public ArrayList<Task> findTasksOn(LocalDate date) {
         assert date != null : "The target date must be non-null";
-        ArrayList<Task> matchingTasks = new ArrayList<>();
-        for (Task task : this.tasks) {
-            if (task.occursOn(date)) {
-                matchingTasks.add(task);
-            }
-        }
-        return matchingTasks;
+        return this.tasks.stream()
+                .filter(task -> task.occursOn(date))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
@@ -106,13 +103,9 @@ public class TaskList {
      * @return List of tasks matching the keyword.
      */
     public ArrayList<Task> findTasksByKeyword(String keyword) {
-        ArrayList<Task> matchingTasks = new ArrayList<>();
-        for (Task task : this.tasks) {
-            if (task.containsKeyword(keyword)) {
-                matchingTasks.add(task);
-            }
-        }
-        return matchingTasks;
+        return this.tasks.stream()
+                .filter(task -> task.containsKeyword(keyword))
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**
