@@ -254,9 +254,7 @@ final class TaskRecordParser {
     private static Task parseRecurringEvent(String line) throws OzException {
         String[] recurringParts = line.split(FIELD_SEPARATOR_PATTERN,
                 RECURRING_EVENT_FIELD_COUNT);
-        if (recurringParts.length < RECURRING_EVENT_FIELD_COUNT) {
-            throw new OzException(RECURRING_FIELDS_MESSAGE);
-        }
+        validateRecurringFields(recurringParts);
 
         String description = recurringParts[DESCRIPTION_FIELD_INDEX].trim();
         String firstStartArgument = recurringParts[RECURRING_START_FIELD_INDEX].trim();
@@ -264,15 +262,6 @@ final class TaskRecordParser {
         String intervalArgument = recurringParts[RECURRING_INTERVAL_FIELD_INDEX].trim();
         String untilArgument = recurringParts[RECURRING_UNTIL_FIELD_INDEX].trim();
         String completedDatesArgument = recurringParts[RECURRING_COMPLETED_FIELD_INDEX].trim();
-        boolean hasEmptyField = description.isEmpty()
-                || firstStartArgument.isEmpty()
-                || firstEndArgument.isEmpty()
-                || intervalArgument.isEmpty()
-                || untilArgument.isEmpty()
-                || completedDatesArgument.isEmpty();
-        if (hasEmptyField) {
-            throw new OzException(EMPTY_RECURRING_FIELD_MESSAGE);
-        }
 
         int weekInterval = parsePositiveInterval(intervalArgument);
         LocalDate untilDate = untilArgument.equals(RecurringEvent.STORAGE_NONE)
@@ -283,6 +272,28 @@ final class TaskRecordParser {
                 TaskDateTime.parse(firstEndArgument), weekInterval, untilDate);
         restoreCompletedOccurrences(recurringEvent, completedDatesArgument);
         return recurringEvent;
+    }
+
+    /**
+     * Validates the structure and required fields of a recurring record.
+     *
+     * @param recurringParts Fields split from the stored record.
+     * @throws OzException If the record has missing or empty fields.
+     */
+    private static void validateRecurringFields(String[] recurringParts) throws OzException {
+        if (recurringParts.length < RECURRING_EVENT_FIELD_COUNT) {
+            throw new OzException(RECURRING_FIELDS_MESSAGE);
+        }
+
+        boolean hasEmptyField = recurringParts[DESCRIPTION_FIELD_INDEX].trim().isEmpty()
+                || recurringParts[RECURRING_START_FIELD_INDEX].trim().isEmpty()
+                || recurringParts[RECURRING_END_FIELD_INDEX].trim().isEmpty()
+                || recurringParts[RECURRING_INTERVAL_FIELD_INDEX].trim().isEmpty()
+                || recurringParts[RECURRING_UNTIL_FIELD_INDEX].trim().isEmpty()
+                || recurringParts[RECURRING_COMPLETED_FIELD_INDEX].trim().isEmpty();
+        if (hasEmptyField) {
+            throw new OzException(EMPTY_RECURRING_FIELD_MESSAGE);
+        }
     }
 
     /**
