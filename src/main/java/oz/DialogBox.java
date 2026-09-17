@@ -19,6 +19,9 @@ import javafx.scene.layout.HBox;
  */
 public class DialogBox extends HBox {
 
+    /** Maximum share of a dialog row occupied by its text bubble. */
+    private static final double DIALOG_WIDTH_RATIO = 0.75;
+
     /** Classpath location of the dialog box layout. */
     private static final String DIALOG_BOX_FXML_PATH = "/view/DialogBox.fxml";
 
@@ -63,6 +66,7 @@ public class DialogBox extends HBox {
 
         this.dialog.setText(text);
         this.displayPicture.setImage(image);
+        this.dialog.maxWidthProperty().bind(this.widthProperty().multiply(DIALOG_WIDTH_RATIO));
     }
 
     /**

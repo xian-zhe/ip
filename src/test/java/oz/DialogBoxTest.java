@@ -50,6 +50,7 @@ public class DialogBoxTest {
         Label label = (Label) dialogBox.getChildren().get(0);
         assertEquals(message, label.getText());
         assertTrue(label.isWrapText());
+        assertEquals(0.0, label.getMinWidth());
         assertFalse(label.getStyleClass().contains("reply-label"));
     }
 

@@ -71,6 +71,8 @@ public class MainWindowTest {
         assertNotNull(this.rootLayout);
         assertEquals(400.0, this.rootLayout.getPrefWidth());
         assertEquals(600.0, this.rootLayout.getPrefHeight());
+        assertEquals(320.0, this.rootLayout.getMinWidth());
+        assertEquals(400.0, this.rootLayout.getMinHeight());
     }
 
     @Test
