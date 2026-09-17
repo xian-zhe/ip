@@ -41,6 +41,30 @@ public class Oz {
     private static final String LIST_ARGUMENTS_MESSAGE =
             "The list command does not take arguments.";
 
+    /** Error shown when the bye command receives arguments. */
+    private static final String BYE_ARGUMENTS_MESSAGE =
+            "The bye command does not take arguments.";
+
+    /** Error template shown when duplicate parameter flags are detected. */
+    private static final String DUPLICATE_FLAG_MESSAGE_FORMAT =
+            "Duplicate '%s' parameter detected.";
+
+    /** Error shown when an unexpected parameter flag is supplied to todo. */
+    private static final String TODO_UNEXPECTED_FLAG_MESSAGE =
+            "The todo command does not accept parameter flags like /by, /from, or /to.";
+
+    /** Error template shown when a required parameter flag is missing. */
+    private static final String MISSING_FLAG_MESSAGE_FORMAT =
+            "Missing required '%s' parameter. %s";
+
+    /** Error template shown when parameters are supplied out of order. */
+    private static final String MISPLACED_FLAG_MESSAGE_FORMAT =
+            "The '%s' parameter must precede '%s'. %s";
+
+    /** Error template shown when an unexpected parameter flag is supplied. */
+    private static final String UNEXPECTED_FLAG_MESSAGE_FORMAT =
+            "Unexpected '%s' parameter in %s command. %s";
+
     /** Usage message for date-filtered task listing. */
     private static final String ON_USAGE_MESSAGE =
             "Use: on <date> (e.g., on 2019-10-15 or on 2/12/2019).";
@@ -246,7 +270,7 @@ public class Oz {
     private Pair<String, CommandType> executeCommand(String command, String details) throws OzException {
         switch (command) {
             case "bye":
-                return exit();
+                return exit(details);
             case "list":
                 return listTasks(details);
             case "on":
@@ -275,9 +299,14 @@ public class Oz {
     /**
      * Records the exit request and returns the farewell message.
      *
+     * @param details Arguments supplied after the command word.
      * @return Response message and command type.
+     * @throws OzException If arguments are supplied to the bye command.
      */
-    private Pair<String, CommandType> exit() {
+    private Pair<String, CommandType> exit(String details) throws OzException {
+        if (!details.isBlank()) {
+            throw new OzException(BYE_ARGUMENTS_MESSAGE);
+        }
         this.isExit = true;
         return new Pair<>("Farewell! Back to my contraptions. *oink*", CommandType.BYE);
     }
@@ -359,6 +388,16 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private Pair<String, CommandType> markTask(String details) throws OzException {
+        if (countFlagOccurrences(details, "/on") > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
+        }
+        if (countFlagOccurrences(details, "/by") > 0
+                || countFlagOccurrences(details, "/from") > 0
+                || countFlagOccurrences(details, "/to") > 0) {
+            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
+                    "flag", "mark", "Use: mark <number> [/on <date>]."));
+        }
+
         Matcher occurrenceMatcher = OCCURRENCE_ARGUMENTS_PATTERN.matcher(details);
         if (occurrenceMatcher.matches()) {
             int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.tasks.size());
@@ -395,6 +434,16 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private Pair<String, CommandType> unmarkTask(String details) throws OzException {
+        if (countFlagOccurrences(details, "/on") > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
+        }
+        if (countFlagOccurrences(details, "/by") > 0
+                || countFlagOccurrences(details, "/from") > 0
+                || countFlagOccurrences(details, "/to") > 0) {
+            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
+                    "flag", "unmark", "Use: unmark <number> [/on <date>]."));
+        }
+
         Matcher occurrenceMatcher = OCCURRENCE_ARGUMENTS_PATTERN.matcher(details);
         if (occurrenceMatcher.matches()) {
             int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.tasks.size());
@@ -435,6 +484,12 @@ public class Oz {
             throw new OzException(EMPTY_TODO_DESCRIPTION_MESSAGE);
         }
         validateNoStorageDelimiter(details);
+        if (countFlagOccurrences(details, "/by") > 0
+                || countFlagOccurrences(details, "/from") > 0
+                || countFlagOccurrences(details, "/to") > 0
+                || countFlagOccurrences(details, "/on") > 0) {
+            throw new OzException(TODO_UNEXPECTED_FLAG_MESSAGE);
+        }
 
         Task task = new ToDo(details);
         return addTask(task);
@@ -449,6 +504,22 @@ public class Oz {
      */
     private Pair<String, CommandType> addDeadline(String details) throws OzException {
         validateNoStorageDelimiter(details);
+        int byCount = countFlagOccurrences(details, "/by");
+        if (byCount > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/by"));
+        }
+        if (byCount == 0) {
+            throw new OzException(DEADLINE_USAGE_MESSAGE);
+        }
+        if (countFlagOccurrences(details, "/from") > 0) {
+            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
+                    "/from", "deadline", DEADLINE_USAGE_MESSAGE));
+        }
+        if (countFlagOccurrences(details, "/to") > 0) {
+            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
+                    "/to", "deadline", DEADLINE_USAGE_MESSAGE));
+        }
+
         Matcher deadlineMatcher = DEADLINE_ARGUMENTS_PATTERN.matcher(details);
         if (!deadlineMatcher.matches()) {
             throw new OzException(DEADLINE_USAGE_MESSAGE);
@@ -477,6 +548,34 @@ public class Oz {
      */
     private Pair<String, CommandType> addEvent(String details) throws OzException {
         validateNoStorageDelimiter(details);
+        int fromCount = countFlagOccurrences(details, "/from");
+        int toCount = countFlagOccurrences(details, "/to");
+        if (fromCount > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/from"));
+        }
+        if (toCount > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/to"));
+        }
+        if (fromCount == 0 && toCount == 0) {
+            throw new OzException(EVENT_USAGE_MESSAGE);
+        }
+        if (fromCount == 0) {
+            throw new OzException(String.format(MISSING_FLAG_MESSAGE_FORMAT,
+                    "/from", EVENT_USAGE_MESSAGE));
+        }
+        if (toCount == 0) {
+            throw new OzException(String.format(MISSING_FLAG_MESSAGE_FORMAT,
+                    "/to", EVENT_USAGE_MESSAGE));
+        }
+        if (details.indexOf("/to") < details.indexOf("/from")) {
+            throw new OzException(String.format(MISPLACED_FLAG_MESSAGE_FORMAT,
+                    "/from", "/to", EVENT_USAGE_MESSAGE));
+        }
+        if (countFlagOccurrences(details, "/by") > 0) {
+            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
+                    "/by", "event", EVENT_USAGE_MESSAGE));
+        }
+
         Matcher eventMatcher = EVENT_ARGUMENTS_PATTERN.matcher(details);
         if (!eventMatcher.matches()) {
             throw new OzException(EVENT_USAGE_MESSAGE);
@@ -507,6 +606,40 @@ public class Oz {
      */
     private Pair<String, CommandType> addRecurringEvent(String details) throws OzException {
         validateNoStorageDelimiter(details);
+        int onCount = countFlagOccurrences(details, "/on");
+        int startCount = countFlagOccurrences(details, "/start");
+        int endCount = countFlagOccurrences(details, "/end");
+        int everyCount = countFlagOccurrences(details, "/every");
+        int untilCount = countFlagOccurrences(details, "/until");
+        if (onCount > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
+        }
+        if (startCount > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/start"));
+        }
+        if (endCount > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/end"));
+        }
+        if (everyCount > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/every"));
+        }
+        if (untilCount > 1) {
+            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/until"));
+        }
+        if (onCount == 0 || startCount == 0 || endCount == 0 || everyCount == 0) {
+            throw new OzException(RECURRING_EVENT_USAGE_MESSAGE);
+        }
+        int onIdx = details.indexOf("/on");
+        int startIdx = details.indexOf("/start");
+        int endIdx = details.indexOf("/end");
+        int everyIdx = details.indexOf("/every");
+        int untilIdx = details.indexOf("/until");
+        if (!(onIdx < startIdx && startIdx < endIdx && endIdx < everyIdx
+                && (untilIdx == -1 || everyIdx < untilIdx))) {
+            throw new OzException("Recurring parameters are out of order. "
+                    + RECURRING_EVENT_USAGE_MESSAGE);
+        }
+
         Matcher recurringEventMatcher = RECURRING_EVENT_ARGUMENTS_PATTERN.matcher(details);
         if (!recurringEventMatcher.matches()) {
             throw new OzException(RECURRING_EVENT_USAGE_MESSAGE);
@@ -675,6 +808,22 @@ public class Oz {
         } catch (NumberFormatException exception) {
             throw new OzException(TASK_NUMBER_TOO_LARGE_MESSAGE);
         }
+    }
+
+    /**
+     * Counts occurrences of a parameter flag in the argument string.
+     *
+     * @param input Raw arguments string.
+     * @param flag Parameter flag including the leading slash (e.g., "/by").
+     * @return Number of times the flag appears as a distinct argument word.
+     */
+    private static int countFlagOccurrences(String input, String flag) {
+        Matcher matcher = Pattern.compile("(?<=\\s|^)" + Pattern.quote(flag) + "(?=\\s|$)").matcher(input);
+        int count = 0;
+        while (matcher.find()) {
+            count++;
+        }
+        return count;
     }
 
     /**

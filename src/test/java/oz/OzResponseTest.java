@@ -318,4 +318,51 @@ public class OzResponseTest {
         assertEquals(expectedMessage, recurringResponse.getKey());
         assertEquals(CommandType.ERROR, recurringResponse.getValue());
     }
+
+    @Test
+    public void getResponse_duplicateFlags_returnsErrorMessage() {
+        Pair<String, CommandType> deadlineDuplicate = this.oz.getResponse(
+                "deadline return book /by 2026-10-10 /by 2026-10-11");
+        assertEquals("Confound it! Duplicate '/by' parameter detected.",
+                deadlineDuplicate.getKey());
+        assertEquals(CommandType.ERROR, deadlineDuplicate.getValue());
+
+        Pair<String, CommandType> eventDuplicateFrom = this.oz.getResponse(
+                "event meeting /from 2026-10-10 1400 /from 2026-10-10 1500 /to 2026-10-10 1600");
+        assertEquals("Confound it! Duplicate '/from' parameter detected.",
+                eventDuplicateFrom.getKey());
+        assertEquals(CommandType.ERROR, eventDuplicateFrom.getValue());
+
+        Pair<String, CommandType> eventDuplicateTo = this.oz.getResponse(
+                "event meeting /from 2026-10-10 1400 /to 2026-10-10 1500 /to 2026-10-10 1600");
+        assertEquals("Confound it! Duplicate '/to' parameter detected.",
+                eventDuplicateTo.getKey());
+        assertEquals(CommandType.ERROR, eventDuplicateTo.getValue());
+    }
+
+    @Test
+    public void getResponse_misplacedOrUnexpectedFlags_returnsErrorMessage() {
+        Pair<String, CommandType> eventMisplaced = this.oz.getResponse(
+                "event party /to 2026-10-10 1800 /from 2026-10-10 1400");
+        assertTrue(eventMisplaced.getKey().contains("The '/from' parameter must precede '/to'"));
+        assertEquals(CommandType.ERROR, eventMisplaced.getValue());
+
+        Pair<String, CommandType> todoUnexpected = this.oz.getResponse(
+                "todo read book /by tomorrow");
+        assertEquals("Confound it! The todo command does not accept parameter flags like /by, /from, or /to.",
+                todoUnexpected.getKey());
+        assertEquals(CommandType.ERROR, todoUnexpected.getValue());
+
+        Pair<String, CommandType> deadlineUnexpected = this.oz.getResponse(
+                "deadline submit /by 2026-10-10 /from 1000");
+        assertTrue(deadlineUnexpected.getKey().contains("Unexpected '/from' parameter in deadline command"));
+        assertEquals(CommandType.ERROR, deadlineUnexpected.getValue());
+    }
+
+    @Test
+    public void getResponse_byeWithArguments_returnsErrorMessage() {
+        Pair<String, CommandType> response = this.oz.getResponse("bye later");
+        assertEquals("Confound it! The bye command does not take arguments.", response.getKey());
+        assertEquals(CommandType.ERROR, response.getValue());
+    }
 }
