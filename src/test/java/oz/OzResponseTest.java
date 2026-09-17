@@ -38,29 +38,29 @@ public class OzResponseTest {
     public void getResponse_emptyOrBlankInput_promptsUser() {
         CommandResult empty = this.oz.getResponse("");
         assertEquals("Please enter a command.", empty.message());
-        assertEquals(CommandType.BLANK, empty.type());
+        assertEquals(ResponseType.BLANK, empty.type());
 
         CommandResult blank = this.oz.getResponse("   ");
         assertEquals("Please enter a command.", blank.message());
-        assertEquals(CommandType.BLANK, blank.type());
+        assertEquals(ResponseType.BLANK, blank.type());
 
         CommandResult nullInput = this.oz.getResponse(null);
         assertEquals("Please enter a command.", nullInput.message());
-        assertEquals(CommandType.BLANK, nullInput.type());
+        assertEquals(ResponseType.BLANK, nullInput.type());
     }
 
     @Test
     public void getResponse_unknownCommand_returnsErrorMessage() {
         CommandResult response = this.oz.getResponse("unknownCommand");
         assertEquals("Confound it! Unknown command. Check your blueprint syntax.", response.message());
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
     public void getResponse_byeCommand_returnsFarewellMessage() {
         CommandResult response = this.oz.getResponse("bye");
         assertEquals("Farewell! Back to my contraptions. *oink*", response.message());
-        assertEquals(CommandType.BYE, response.type());
+        assertEquals(ResponseType.BYE, response.type());
         assertTrue(this.oz.isExit());
     }
 
@@ -77,14 +77,14 @@ public class OzResponseTest {
         assertTrue(response.message().contains("*Snort* Added to the list:"));
         assertTrue(response.message().contains("[T][ ] borrow book"));
         assertTrue(response.message().contains("Now you have 1 tasks in the list."));
-        assertEquals(CommandType.ADD, response.type());
+        assertEquals(ResponseType.ADD, response.type());
     }
 
     @Test
     public void getResponse_todoCommandWithEmptyDescription_returnsErrorMessage() {
         CommandResult response = this.oz.getResponse("todo ");
         assertEquals("Confound it! The description of a todo cannot be empty.", response.message());
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class OzResponseTest {
         assertTrue(response.message().contains("*Snort* Added to the list:"));
         assertTrue(response.message().contains("[D][ ] return book"));
         assertTrue(response.message().contains("Dec 31 2026"));
-        assertEquals(CommandType.ADD, response.type());
+        assertEquals(ResponseType.ADD, response.type());
     }
 
     @Test
@@ -102,7 +102,7 @@ public class OzResponseTest {
                 "event project meeting /from 2026-10-10 14:00 /to 2026-10-10 16:00");
         assertTrue(response.message().contains("*Snort* Added to the list:"));
         assertTrue(response.message().contains("[E][ ] project meeting"));
-        assertEquals(CommandType.ADD, response.type());
+        assertEquals(ResponseType.ADD, response.type());
     }
 
     @Test
@@ -111,7 +111,7 @@ public class OzResponseTest {
                 "recurring project meeting /on 2026-10-02 /start 1400 /end 1500 "
                         + "/every 1 week /until 2026-12-31");
 
-        assertEquals(CommandType.ADD, response.type());
+        assertEquals(ResponseType.ADD, response.type());
         assertEquals("*Snort* Added to the list:\n"
                 + "[R] project meeting (from: Oct 02 2026, 2pm to: Oct 02 2026, 3pm; "
                 + "repeats: every 1 week until Dec 31 2026)\n"
@@ -131,7 +131,7 @@ public class OzResponseTest {
 
         for (String command : invalidCommands) {
             CommandResult response = this.oz.getResponse(command);
-            assertEquals(CommandType.ERROR, response.type(), command);
+            assertEquals(ResponseType.ERROR, response.type(), command);
             assertTrue(response.message().startsWith("Confound it! "), command);
         }
         assertEquals("Here is the master task list:", this.oz.getResponse("list").message());
@@ -148,14 +148,14 @@ public class OzResponseTest {
                 + "Use: unmark <number> /on <date>.", this.oz.getResponse("unmark 1").message());
 
         CommandResult marked = this.oz.getResponse("mark 1 /on 2026-10-09");
-        assertEquals(CommandType.CHANGE_MARK, marked.type());
+        assertEquals(ResponseType.CHANGE_MARK, marked.type());
         assertTrue(marked.message().contains(
                 "[R][X] meeting (from: Oct 09 2026, 2pm to: Oct 09 2026, 3pm)"));
         assertTrue(this.oz.getResponse("mark 1 /on 2026-10-09").message()
                 .contains("already marked as done"));
 
         CommandResult unmarked = this.oz.getResponse("unmark 1 /on 2026-10-09");
-        assertEquals(CommandType.CHANGE_MARK, unmarked.type());
+        assertEquals(ResponseType.CHANGE_MARK, unmarked.type());
         assertTrue(unmarked.message().contains(
                 "[R][ ] meeting (from: Oct 09 2026, 2pm to: Oct 09 2026, 3pm)"));
     }
@@ -186,12 +186,12 @@ public class OzResponseTest {
         CommandResult markResponse = this.oz.getResponse("mark 1");
         assertTrue(markResponse.message().contains("*Oink* Marked as done:"));
         assertTrue(markResponse.message().contains("[T][X] finish homework"));
-        assertEquals(CommandType.CHANGE_MARK, markResponse.type());
+        assertEquals(ResponseType.CHANGE_MARK, markResponse.type());
 
         CommandResult unmarkResponse = this.oz.getResponse("unmark 1");
         assertTrue(unmarkResponse.message().contains("*Snort* Marked as not done yet:"));
         assertTrue(unmarkResponse.message().contains("[T][ ] finish homework"));
-        assertEquals(CommandType.CHANGE_MARK, unmarkResponse.type());
+        assertEquals(ResponseType.CHANGE_MARK, unmarkResponse.type());
     }
 
     @Test
@@ -201,7 +201,7 @@ public class OzResponseTest {
         assertTrue(deleteResponse.message().contains("Scrapped! Removed task:"));
         assertTrue(deleteResponse.message().contains("[T][ ] task to remove"));
         assertTrue(deleteResponse.message().contains("Now you have 0 tasks in the list."));
-        assertEquals(CommandType.DELETE, deleteResponse.type());
+        assertEquals(ResponseType.DELETE, deleteResponse.type());
     }
 
     @Test
@@ -214,7 +214,7 @@ public class OzResponseTest {
         assertTrue(findResponse.message().contains("Matching tasks located:"));
         assertTrue(findResponse.message().contains("read book"));
         assertTrue(findResponse.message().contains("buy book"));
-        assertEquals(CommandType.FIND, findResponse.type());
+        assertEquals(ResponseType.FIND, findResponse.type());
     }
 
     /** Verifies that invalid arguments are reported without changing the task list. */
@@ -227,7 +227,7 @@ public class OzResponseTest {
         };
         for (String command : invalidCommands) {
             CommandResult response = this.oz.getResponse(command);
-            assertEquals(CommandType.ERROR, response.type(), command);
+            assertEquals(ResponseType.ERROR, response.type(), command);
             assertTrue(response.message().startsWith("Confound it! "), command);
         }
         assertEquals("Here is the master task list:", this.oz.getResponse("list").message());
@@ -242,7 +242,7 @@ public class OzResponseTest {
         for (String command : commands) {
             for (String number : invalidNumbers) {
                 CommandResult response = this.oz.getResponse(command + " " + number);
-                assertEquals(CommandType.ERROR, response.type(), command + " " + number);
+                assertEquals(ResponseType.ERROR, response.type(), command + " " + number);
             }
         }
         assertEquals("Here is the master task list:\n1. [T][ ] keep task",
@@ -256,7 +256,7 @@ public class OzResponseTest {
         this.oz.getResponse("deadline return book /by 2026-10-10");
         this.oz.getResponse("event conference /from 2026-10-09 /to 2026-10-11");
         CommandResult response = this.oz.getResponse("  on  2026-10-10  ");
-        assertEquals(CommandType.LIST, response.type());
+        assertEquals(ResponseType.LIST, response.type());
         assertEquals("Tasks occurring on Oct 10 2026:\n"
                 + "1. [D][ ] return book (by: Oct 10 2026)\n"
                 + "2. [E][ ] conference (from: Oct 09 2026 to: Oct 11 2026)", response.message());
@@ -274,7 +274,7 @@ public class OzResponseTest {
         };
         for (int i = 0; i < commands.length; i++) {
             CommandResult response = this.oz.getResponse(commands[i]);
-            assertEquals(CommandType.ADD, response.type());
+            assertEquals(ResponseType.ADD, response.type());
             assertTrue(response.message().endsWith("Now you have " + (i + 1) + " tasks in the list."));
             Oz reloaded = new Oz(this.temporaryFolder.resolve("test_tasks.txt").toString());
             assertEquals(this.oz.getResponse("list").message(), reloaded.getResponse("list").message());
@@ -292,7 +292,7 @@ public class OzResponseTest {
                 this.oz.getResponse("find book").message());
         CommandResult noMatches = this.oz.getResponse("find missing");
         assertEquals("No matching tasks found in the ledger.", noMatches.message());
-        assertEquals(CommandType.FIND, noMatches.type());
+        assertEquals(ResponseType.FIND, noMatches.type());
     }
 
     @Test
@@ -302,22 +302,22 @@ public class OzResponseTest {
 
         CommandResult todoResponse = this.oz.getResponse("todo read | book");
         assertEquals(expectedMessage, todoResponse.message());
-        assertEquals(CommandType.ERROR, todoResponse.type());
+        assertEquals(ResponseType.ERROR, todoResponse.type());
 
         CommandResult deadlineResponse = this.oz.getResponse(
                 "deadline return | book /by 2026-10-10");
         assertEquals(expectedMessage, deadlineResponse.message());
-        assertEquals(CommandType.ERROR, deadlineResponse.type());
+        assertEquals(ResponseType.ERROR, deadlineResponse.type());
 
         CommandResult eventResponse = this.oz.getResponse(
                 "event team | sync /from 2026-10-10 1400 /to 2026-10-10 1500");
         assertEquals(expectedMessage, eventResponse.message());
-        assertEquals(CommandType.ERROR, eventResponse.type());
+        assertEquals(ResponseType.ERROR, eventResponse.type());
 
         CommandResult recurringResponse = this.oz.getResponse(
                 "recurring team | meeting /on 2026-10-10 /start 1000 /end 1100 /every 1 week");
         assertEquals(expectedMessage, recurringResponse.message());
-        assertEquals(CommandType.ERROR, recurringResponse.type());
+        assertEquals(ResponseType.ERROR, recurringResponse.type());
     }
 
     @Test
@@ -326,19 +326,19 @@ public class OzResponseTest {
                 "deadline return book /by 2026-10-10 /by 2026-10-11");
         assertEquals("Confound it! Duplicate '/by' parameter detected.",
                 deadlineDuplicate.message());
-        assertEquals(CommandType.ERROR, deadlineDuplicate.type());
+        assertEquals(ResponseType.ERROR, deadlineDuplicate.type());
 
         CommandResult eventDuplicateFrom = this.oz.getResponse(
                 "event meeting /from 2026-10-10 1400 /from 2026-10-10 1500 /to 2026-10-10 1600");
         assertEquals("Confound it! Duplicate '/from' parameter detected.",
                 eventDuplicateFrom.message());
-        assertEquals(CommandType.ERROR, eventDuplicateFrom.type());
+        assertEquals(ResponseType.ERROR, eventDuplicateFrom.type());
 
         CommandResult eventDuplicateTo = this.oz.getResponse(
                 "event meeting /from 2026-10-10 1400 /to 2026-10-10 1500 /to 2026-10-10 1600");
         assertEquals("Confound it! Duplicate '/to' parameter detected.",
                 eventDuplicateTo.message());
-        assertEquals(CommandType.ERROR, eventDuplicateTo.type());
+        assertEquals(ResponseType.ERROR, eventDuplicateTo.type());
     }
 
     @Test
@@ -346,25 +346,25 @@ public class OzResponseTest {
         CommandResult eventMisplaced = this.oz.getResponse(
                 "event party /to 2026-10-10 1800 /from 2026-10-10 1400");
         assertTrue(eventMisplaced.message().contains("The '/from' parameter must precede '/to'"));
-        assertEquals(CommandType.ERROR, eventMisplaced.type());
+        assertEquals(ResponseType.ERROR, eventMisplaced.type());
 
         CommandResult todoUnexpected = this.oz.getResponse(
                 "todo read book /by tomorrow");
         assertEquals("Confound it! The todo command does not accept parameter flags like /by, /from, or /to.",
                 todoUnexpected.message());
-        assertEquals(CommandType.ERROR, todoUnexpected.type());
+        assertEquals(ResponseType.ERROR, todoUnexpected.type());
 
         CommandResult deadlineUnexpected = this.oz.getResponse(
                 "deadline submit /by 2026-10-10 /from 1000");
         assertTrue(deadlineUnexpected.message().contains("Unexpected '/from' parameter in deadline command"));
-        assertEquals(CommandType.ERROR, deadlineUnexpected.type());
+        assertEquals(ResponseType.ERROR, deadlineUnexpected.type());
     }
 
     @Test
     public void getResponse_byeWithArguments_returnsErrorMessage() {
         CommandResult response = this.oz.getResponse("bye later");
         assertEquals("Confound it! The bye command does not take arguments.", response.message());
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
@@ -407,16 +407,16 @@ public class OzResponseTest {
         // Unmarking an already unmarked task
         CommandResult redundantUnmark = this.oz.getResponse("unmark 1");
         assertEquals("Confound it! Task 1 is not marked as done yet.", redundantUnmark.message());
-        assertEquals(CommandType.ERROR, redundantUnmark.type());
+        assertEquals(ResponseType.ERROR, redundantUnmark.type());
 
         // Mark it once
         CommandResult firstMark = this.oz.getResponse("mark 1");
-        assertEquals(CommandType.CHANGE_MARK, firstMark.type());
+        assertEquals(ResponseType.CHANGE_MARK, firstMark.type());
 
         // Marking an already marked task
         CommandResult redundantMark = this.oz.getResponse("mark 1");
         assertEquals("Confound it! Task 1 is already marked as done.", redundantMark.message());
-        assertEquals(CommandType.ERROR, redundantMark.type());
+        assertEquals(ResponseType.ERROR, redundantMark.type());
     }
 
     @Test
@@ -427,7 +427,7 @@ public class OzResponseTest {
 
         Oz readOnlyOz = new Oz(storageFile.toString());
         CommandResult response = readOnlyOz.getResponse("todo attempt task");
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
         assertTrue(response.message().contains("Confound it!"));
 
         // Verify in-memory list rolled back to empty
@@ -442,7 +442,7 @@ public class OzResponseTest {
         CommandResult response = this.oz.getResponse("unmark 1 /on 2026-10-15");
         assertEquals("Confound it! The /on argument can only be used with recurring tasks.",
                 response.message());
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
@@ -452,20 +452,20 @@ public class OzResponseTest {
         CommandResult duplicateMark = this.oz.getResponse(
                 "mark 1 /on 2026-10-10 /on 2026-10-11");
         assertEquals("Confound it! Duplicate '/on' parameter detected.", duplicateMark.message());
-        assertEquals(CommandType.ERROR, duplicateMark.type());
+        assertEquals(ResponseType.ERROR, duplicateMark.type());
 
         CommandResult unexpectedMark = this.oz.getResponse("mark 1 /by 2026-10-10");
         assertTrue(unexpectedMark.message().contains("Unexpected 'flag' parameter in mark command"));
-        assertEquals(CommandType.ERROR, unexpectedMark.type());
+        assertEquals(ResponseType.ERROR, unexpectedMark.type());
 
         CommandResult duplicateUnmark = this.oz.getResponse(
                 "unmark 1 /on 2026-10-10 /on 2026-10-11");
         assertEquals("Confound it! Duplicate '/on' parameter detected.", duplicateUnmark.message());
-        assertEquals(CommandType.ERROR, duplicateUnmark.type());
+        assertEquals(ResponseType.ERROR, duplicateUnmark.type());
 
         CommandResult unexpectedUnmark = this.oz.getResponse("unmark 1 /from 2026-10-10");
         assertTrue(unexpectedUnmark.message().contains("Unexpected 'flag' parameter in unmark command"));
-        assertEquals(CommandType.ERROR, unexpectedUnmark.type());
+        assertEquals(ResponseType.ERROR, unexpectedUnmark.type());
     }
 
     @Test
@@ -475,15 +475,15 @@ public class OzResponseTest {
 
         CommandResult fromResponse = this.oz.getResponse("todo read book /from 2pm");
         assertEquals(expectedMessage, fromResponse.message());
-        assertEquals(CommandType.ERROR, fromResponse.type());
+        assertEquals(ResponseType.ERROR, fromResponse.type());
 
         CommandResult toResponse = this.oz.getResponse("todo read book /to 4pm");
         assertEquals(expectedMessage, toResponse.message());
-        assertEquals(CommandType.ERROR, toResponse.type());
+        assertEquals(ResponseType.ERROR, toResponse.type());
 
         CommandResult onResponse = this.oz.getResponse("todo read book /on 2026-10-10");
         assertEquals(expectedMessage, onResponse.message());
-        assertEquals(CommandType.ERROR, onResponse.type());
+        assertEquals(ResponseType.ERROR, onResponse.type());
     }
 
     @Test
@@ -491,13 +491,13 @@ public class OzResponseTest {
         CommandResult unexpectedTo = this.oz.getResponse(
                 "deadline submit /by 2026-10-10 /to 1000");
         assertTrue(unexpectedTo.message().contains("Unexpected '/to' parameter in deadline command"));
-        assertEquals(CommandType.ERROR, unexpectedTo.type());
+        assertEquals(ResponseType.ERROR, unexpectedTo.type());
 
         CommandResult emptyDescription = this.oz.getResponse("deadline /by 2026-10-10");
-        assertEquals(CommandType.ERROR, emptyDescription.type());
+        assertEquals(ResponseType.ERROR, emptyDescription.type());
 
         CommandResult missingBy = this.oz.getResponse("deadline return book /by");
-        assertEquals(CommandType.ERROR, missingBy.type());
+        assertEquals(ResponseType.ERROR, missingBy.type());
     }
 
     @Test
@@ -505,17 +505,17 @@ public class OzResponseTest {
         CommandResult missingFrom = this.oz.getResponse(
                 "event meeting /to 2026-10-10 1600");
         assertTrue(missingFrom.message().contains("Missing required '/from' parameter"));
-        assertEquals(CommandType.ERROR, missingFrom.type());
+        assertEquals(ResponseType.ERROR, missingFrom.type());
 
         CommandResult missingTo = this.oz.getResponse(
                 "event meeting /from 2026-10-10 1400");
         assertTrue(missingTo.message().contains("Missing required '/to' parameter"));
-        assertEquals(CommandType.ERROR, missingTo.type());
+        assertEquals(ResponseType.ERROR, missingTo.type());
 
         CommandResult unexpectedBy = this.oz.getResponse(
                 "event meeting /from 2026-10-10 1400 /to 2026-10-10 1600 /by 2026-10-10");
         assertTrue(unexpectedBy.message().contains("Unexpected '/by' parameter in event command"));
-        assertEquals(CommandType.ERROR, unexpectedBy.type());
+        assertEquals(ResponseType.ERROR, unexpectedBy.type());
     }
 
     @Test
@@ -554,7 +554,7 @@ public class OzResponseTest {
         storageFile.toFile().setReadOnly();
 
         CommandResult response = this.oz.getResponse("delete 1");
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
         assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
@@ -570,7 +570,7 @@ public class OzResponseTest {
         CommandResult response = this.oz.getResponse("delete -999999999999999999999");
         assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
                 response.message());
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
@@ -581,7 +581,7 @@ public class OzResponseTest {
         storageFile.toFile().setReadOnly();
 
         CommandResult response = this.oz.getResponse("mark 1");
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
         assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
@@ -599,7 +599,7 @@ public class OzResponseTest {
         storageFile.toFile().setReadOnly();
 
         CommandResult response = this.oz.getResponse("unmark 1");
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
         assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
@@ -617,7 +617,7 @@ public class OzResponseTest {
         storageFile.toFile().setReadOnly();
 
         CommandResult response = this.oz.getResponse("mark 1 /on 2026-10-09");
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
         assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
@@ -636,7 +636,7 @@ public class OzResponseTest {
         storageFile.toFile().setReadOnly();
 
         CommandResult response = this.oz.getResponse("unmark 1 /on 2026-10-09");
-        assertEquals(CommandType.ERROR, response.type());
+        assertEquals(ResponseType.ERROR, response.type());
         assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
@@ -649,12 +649,12 @@ public class OzResponseTest {
     public void getResponse_recurringIntervalEdgeCases_returnsErrorMessage() {
         CommandResult nonNumeric = this.oz.getResponse(
                 "recurring sync /on 2026-10-02 /start 1400 /end 1500 /every abc week");
-        assertEquals(CommandType.ERROR, nonNumeric.type());
+        assertEquals(ResponseType.ERROR, nonNumeric.type());
         assertTrue(nonNumeric.message().contains("The recurrence interval must be a positive whole number."));
 
         CommandResult overflow = this.oz.getResponse(
                 "recurring sync /on 2026-10-02 /start 1400 /end 1500 /every 99999999999999999 week");
-        assertEquals(CommandType.ERROR, overflow.type());
+        assertEquals(ResponseType.ERROR, overflow.type());
         assertTrue(overflow.message().contains("The recurrence interval must be a positive whole number."));
     }
 }

@@ -6,15 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for the {@link CommandType} enum.
+ * Unit tests for the {@link ResponseType} enum.
  */
-public class CommandTypeTest {
+public class ResponseTypeTest {
 
     @Test
     public void valueOf_validConstants_returnsEnumConstant() {
-        for (CommandType type : CommandType.values()) {
+        for (ResponseType type : ResponseType.values()) {
             assertNotNull(type);
-            assertEquals(type, CommandType.valueOf(type.name()));
+            assertEquals(type, ResponseType.valueOf(type.name()));
         }
     }
 }

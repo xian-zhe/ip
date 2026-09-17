@@ -144,7 +144,7 @@ public class DialogBox extends HBox {
      * @return DialogBox for Oz.
      */
     public static DialogBox getOzDialog(String text, Image image) {
-        return getOzDialog(text, image, CommandType.DEFAULT);
+        return getOzDialog(text, image, ResponseType.DEFAULT);
     }
 
     /**
@@ -153,28 +153,28 @@ public class DialogBox extends HBox {
      *
      * @param text        Text of Oz's response message.
      * @param image       Oz's avatar image.
-     * @param commandType Type of command used to style the dialog bubble.
+     * @param responseType Response category used to style the dialog bubble.
      * @return DialogBox for Oz.
      */
-    public static DialogBox getOzDialog(String text, Image image, CommandType commandType) {
+    public static DialogBox getOzDialog(String text, Image image, ResponseType responseType) {
         DialogBox dialogBox = new DialogBox(text, image);
         dialogBox.flip();
-        dialogBox.changeDialogStyle(commandType);
+        dialogBox.changeDialogStyle(responseType);
         return dialogBox;
     }
 
     /**
      * Applies a command-specific style class to the dialog bubble.
      *
-     * @param commandType The command type indicating which CSS style class to
-     *                    apply.
+     * @param responseType Response category indicating which CSS style class to
+     *                     apply.
      */
-    private void changeDialogStyle(CommandType commandType) {
-        if (commandType == null) {
+    private void changeDialogStyle(ResponseType responseType) {
+        if (responseType == null) {
             return;
         }
 
-        switch (commandType) {
+        switch (responseType) {
             case ADD:
                 this.dialog.getStyleClass().add(ADD_LABEL_STYLE_CLASS);
                 break;

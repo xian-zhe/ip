@@ -6,5 +6,5 @@ package oz;
  * @param message User-facing response message.
  * @param type Category used to style or interpret the response.
  */
-public record CommandResult(String message, CommandType type) {
+public record CommandResult(String message, ResponseType type) {
 }

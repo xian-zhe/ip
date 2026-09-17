@@ -239,7 +239,7 @@ public class Oz {
      */
     public CommandResult getResponse(String fullCommand) {
         if (fullCommand == null || fullCommand.isBlank()) {
-            return new CommandResult("Please enter a command.", CommandType.BLANK);
+            return new CommandResult("Please enter a command.", ResponseType.BLANK);
         }
 
         try {
@@ -253,7 +253,7 @@ public class Oz {
             String details = rawDetails == null ? "" : rawDetails.trim();
             return executeCommand(command, details);
         } catch (OzException exception) {
-            return new CommandResult("Confound it! " + exception.getMessage(), CommandType.ERROR);
+            return new CommandResult("Confound it! " + exception.getMessage(), ResponseType.ERROR);
         }
     }
 
@@ -306,7 +306,7 @@ public class Oz {
             throw new OzException(BYE_ARGUMENTS_MESSAGE);
         }
         this.isExit = true;
-        return new CommandResult("Farewell! Back to my contraptions. *oink*", CommandType.BYE);
+        return new CommandResult("Farewell! Back to my contraptions. *oink*", ResponseType.BYE);
     }
 
     /**
@@ -323,7 +323,7 @@ public class Oz {
 
         String response = formatTaskList("Here is the master task list:\n",
                 this.tasks.getTasks());
-        return new CommandResult(response, CommandType.LIST);
+        return new CommandResult(response, ResponseType.LIST);
     }
 
     /**
@@ -346,13 +346,13 @@ public class Oz {
 
         if (matchingTasks.isEmpty()) {
             return new CommandResult("No tasks found for " + dateHeader + ".",
-                    CommandType.LIST);
+                    ResponseType.LIST);
         }
 
         String response = formatTasksOnDate(
                 "Tasks occurring on " + dateHeader + ":\n",
                 matchingTasks, targetDate);
-        return new CommandResult(response, CommandType.LIST);
+        return new CommandResult(response, ResponseType.LIST);
     }
 
     /**
@@ -370,12 +370,12 @@ public class Oz {
         ArrayList<Task> matchingTasks = this.tasks.findTasksByKeyword(details);
 
         if (matchingTasks.isEmpty()) {
-            return new CommandResult("No matching tasks found in the ledger.", CommandType.FIND);
+            return new CommandResult("No matching tasks found in the ledger.", ResponseType.FIND);
         }
 
         String response = formatTaskList("Matching tasks located:\n",
                 matchingTasks);
-        return new CommandResult(response, CommandType.FIND);
+        return new CommandResult(response, ResponseType.FIND);
     }
 
     /**
@@ -414,7 +414,7 @@ public class Oz {
                 throw exception;
             }
             return new CommandResult("*Oink* Marked occurrence as done:\n  "
-                    + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
+                    + recurringEvent.toOccurrenceString(occurrenceDate), ResponseType.CHANGE_MARK);
         }
 
         int index = parseTaskIndex(details, this.tasks.size());
@@ -434,7 +434,7 @@ public class Oz {
             throw exception;
         }
         return new CommandResult("*Oink* Marked as done:\n  " + this.tasks.get(index),
-                CommandType.CHANGE_MARK);
+                ResponseType.CHANGE_MARK);
     }
 
     /**
@@ -473,7 +473,7 @@ public class Oz {
                 throw exception;
             }
             return new CommandResult("*Snort* Marked occurrence as not done yet:\n  "
-                    + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
+                    + recurringEvent.toOccurrenceString(occurrenceDate), ResponseType.CHANGE_MARK);
         }
 
         int index = parseTaskIndex(details, this.tasks.size());
@@ -493,7 +493,7 @@ public class Oz {
             throw exception;
         }
         return new CommandResult("*Snort* Marked as not done yet:\n  " + this.tasks.get(index),
-                CommandType.CHANGE_MARK);
+                ResponseType.CHANGE_MARK);
     }
 
     /**
@@ -723,7 +723,7 @@ public class Oz {
                         %s
                         Now you have %d tasks in the list.
                         """,
-                removedTask, this.tasks.size()).stripTrailing(), CommandType.DELETE);
+                removedTask, this.tasks.size()).stripTrailing(), ResponseType.DELETE);
     }
 
     /**
@@ -747,7 +747,7 @@ public class Oz {
                         %s
                         Now you have %d tasks in the list.
                         """,
-                task, this.tasks.size()).stripTrailing(), CommandType.ADD);
+                task, this.tasks.size()).stripTrailing(), ResponseType.ADD);
     }
 
     /**

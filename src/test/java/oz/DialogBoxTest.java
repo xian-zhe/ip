@@ -92,24 +92,24 @@ public class DialogBoxTest {
     }
 
     @Test
-    public void getOzDialog_commandTypes_appliesCorrectStyles() {
-        DialogBox addDialog = DialogBox.getOzDialog("Added", dummyImage, CommandType.ADD);
+    public void getOzDialog_responseTypes_appliesCorrectStyles() {
+        DialogBox addDialog = DialogBox.getOzDialog("Added", dummyImage, ResponseType.ADD);
         TextArea addMessage = (TextArea) addDialog.getChildren().get(1);
         assertTrue(addMessage.getStyleClass().contains("add-label"));
 
-        DialogBox markedDialog = DialogBox.getOzDialog("Marked", dummyImage, CommandType.CHANGE_MARK);
+        DialogBox markedDialog = DialogBox.getOzDialog("Marked", dummyImage, ResponseType.CHANGE_MARK);
         TextArea markedMessage = (TextArea) markedDialog.getChildren().get(1);
         assertTrue(markedMessage.getStyleClass().contains("marked-label"));
 
-        DialogBox deleteDialog = DialogBox.getOzDialog("Deleted", dummyImage, CommandType.DELETE);
+        DialogBox deleteDialog = DialogBox.getOzDialog("Deleted", dummyImage, ResponseType.DELETE);
         TextArea deleteMessage = (TextArea) deleteDialog.getChildren().get(1);
         assertTrue(deleteMessage.getStyleClass().contains("delete-label"));
 
-        DialogBox errorDialog = DialogBox.getOzDialog("Error", dummyImage, CommandType.ERROR);
+        DialogBox errorDialog = DialogBox.getOzDialog("Error", dummyImage, ResponseType.ERROR);
         TextArea errorMessage = (TextArea) errorDialog.getChildren().get(1);
         assertTrue(errorMessage.getStyleClass().contains("error-label"));
 
-        DialogBox defaultDialog = DialogBox.getOzDialog("Default", dummyImage, CommandType.DEFAULT);
+        DialogBox defaultDialog = DialogBox.getOzDialog("Default", dummyImage, ResponseType.DEFAULT);
         TextArea defaultMessage = (TextArea) defaultDialog.getChildren().get(1);
         assertFalse(defaultMessage.getStyleClass().contains("add-label"));
         assertFalse(defaultMessage.getStyleClass().contains("marked-label"));
