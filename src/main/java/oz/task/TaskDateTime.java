@@ -14,7 +14,7 @@ import oz.exception.OzException;
  */
 public class TaskDateTime {
     /** Date format shared by task descriptions and date-filtered list headings. */
-    public static final DateTimeFormatter DISPLAY_DATE_FORMAT =
+    private static final DateTimeFormatter DISPLAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
 
     /** Time format omitting minutes for times on the hour. */
@@ -119,22 +119,35 @@ public class TaskDateTime {
     }
 
     /**
+     * Formats a date consistently with task descriptions.
+     *
+     * @param date Date to format.
+     * @return Formatted date for user display.
+     */
+    public static String formatDate(LocalDate date) {
+        assert date != null : "The display date must be non-null";
+        return date.format(DISPLAY_DATE_FORMAT);
+    }
+
+    /**
      * Formats the date/time for user display.
      *
      * @return Formatted string for user viewing.
      */
     public String toDisplayString() {
         if (!this.hasTime) {
-            return this.dateTime.format(DISPLAY_DATE_FORMAT);
+            return formatDate(this.dateTime.toLocalDate());
         }
 
         String timePart;
         if (this.dateTime.getMinute() == 0) {
-            timePart = this.dateTime.format(DISPLAY_HOUR_FORMAT).toLowerCase();
+            timePart = this.dateTime.format(DISPLAY_HOUR_FORMAT)
+                    .toLowerCase(Locale.ENGLISH);
         } else {
-            timePart = this.dateTime.format(DISPLAY_TIME_FORMAT).toLowerCase();
+            timePart = this.dateTime.format(DISPLAY_TIME_FORMAT)
+                    .toLowerCase(Locale.ENGLISH);
         }
-        return this.dateTime.format(DISPLAY_DATE_FORMAT) + ", " + timePart;
+        return formatDate(this.dateTime.toLocalDate()) + ", " + timePart;
     }
 
     /**

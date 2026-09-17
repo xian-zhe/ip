@@ -219,6 +219,6 @@ public class RecurringEvent extends Task {
      * @return User-facing date string.
      */
     private static String formatDate(LocalDate date) {
-        return date.format(TaskDateTime.DISPLAY_DATE_FORMAT);
+        return TaskDateTime.formatDate(date);
     }
 }

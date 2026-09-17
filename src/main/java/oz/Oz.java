@@ -164,7 +164,7 @@ public class Oz {
 
         TaskDateTime targetDateTime = TaskDateTime.parse(details);
         LocalDate targetDate = targetDateTime.toLocalDate();
-        String dateHeader = targetDate.format(TaskDateTime.DISPLAY_DATE_FORMAT);
+        String dateHeader = TaskDateTime.formatDate(targetDate);
 
         List<Task> matchingTasks = this.taskService.findTasksOn(targetDate);
 
