@@ -176,11 +176,16 @@ public class Storage {
      * Saves the list of tasks to the storage file on the hard disk.
      *
      * @param tasks The list of tasks to save.
+     * @throws OzException If the file cannot be written due to permissions or I/O error.
      */
-    public void save(ArrayList<Task> tasks) {
+    public void save(ArrayList<Task> tasks) throws OzException {
         assert tasks != null : "The task collection to save must be non-null";
         assert tasks.stream().noneMatch(task -> task == null)
                 : "The task collection to save must not contain null tasks";
+        if (Files.exists(this.filePath) && !Files.isWritable(this.filePath)) {
+            throw new OzException("Access denied: storage file is read-only or write-protected.");
+        }
+
         try {
             if (this.filePath.getParent() != null) {
                 Files.createDirectories(this.filePath.getParent());
@@ -191,8 +196,8 @@ public class Storage {
             }
             Files.write(this.filePath, lines);
         } catch (IOException exception) {
-            System.out.println(DIVIDER + "OOPS! Could not save tasks to file: "
-                    + exception.getMessage() + "\n" + DIVIDER);
+            throw new OzException("Could not save tasks to storage file: "
+                    + (exception.getMessage() != null ? exception.getMessage() : "permission denied."));
         }
     }
 
@@ -200,8 +205,9 @@ public class Storage {
      * Saves the tasks from a TaskList to the storage file on the hard disk.
      *
      * @param taskList The TaskList instance to save.
+     * @throws OzException If the file cannot be written due to permissions or I/O error.
      */
-    public void save(TaskList taskList) {
+    public void save(TaskList taskList) throws OzException {
         save(taskList.getTasks());
     }
 

@@ -167,4 +167,23 @@ public class StorageTest {
         assertEquals(1, loaded.size());
         assertEquals("T | 0 | valid", loaded.get(0).toFileFormat());
     }
+
+    @Test
+    public void save_readOnlyFile_throwsOzException() throws IOException {
+        Path storageFile = this.temporaryFolder.resolve("readonly.txt");
+        Files.createFile(storageFile);
+        storageFile.toFile().setReadOnly();
+
+        Storage storage = new Storage(storageFile.toString());
+        TaskList tasks = new TaskList();
+        tasks.add(new ToDo("test task"));
+
+        OzException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                OzException.class, () -> storage.save(tasks));
+        assertTrue(exception.getMessage().contains("read-only")
+                || exception.getMessage().contains("Access denied")
+                || exception.getMessage().contains("permission"));
+
+        storageFile.toFile().setWritable(true);
+    }
 }

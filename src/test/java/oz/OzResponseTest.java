@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -292,5 +294,146 @@ public class OzResponseTest {
         Pair<String, CommandType> noMatches = this.oz.getResponse("find missing");
         assertEquals("No matching tasks found in the ledger.", noMatches.getKey());
         assertEquals(CommandType.FIND, noMatches.getValue());
+    }
+
+    @Test
+    public void getResponse_taskWithStorageDelimiter_returnsErrorMessage() {
+        String expectedMessage = "Confound it! Task input cannot contain the '|' character "
+                + "because it is reserved for storage.";
+
+        Pair<String, CommandType> todoResponse = this.oz.getResponse("todo read | book");
+        assertEquals(expectedMessage, todoResponse.getKey());
+        assertEquals(CommandType.ERROR, todoResponse.getValue());
+
+        Pair<String, CommandType> deadlineResponse = this.oz.getResponse(
+                "deadline return | book /by 2026-10-10");
+        assertEquals(expectedMessage, deadlineResponse.getKey());
+        assertEquals(CommandType.ERROR, deadlineResponse.getValue());
+
+        Pair<String, CommandType> eventResponse = this.oz.getResponse(
+                "event team | sync /from 2026-10-10 1400 /to 2026-10-10 1500");
+        assertEquals(expectedMessage, eventResponse.getKey());
+        assertEquals(CommandType.ERROR, eventResponse.getValue());
+
+        Pair<String, CommandType> recurringResponse = this.oz.getResponse(
+                "recurring team | meeting /on 2026-10-10 /start 1000 /end 1100 /every 1 week");
+        assertEquals(expectedMessage, recurringResponse.getKey());
+        assertEquals(CommandType.ERROR, recurringResponse.getValue());
+    }
+
+    @Test
+    public void getResponse_duplicateFlags_returnsErrorMessage() {
+        Pair<String, CommandType> deadlineDuplicate = this.oz.getResponse(
+                "deadline return book /by 2026-10-10 /by 2026-10-11");
+        assertEquals("Confound it! Duplicate '/by' parameter detected.",
+                deadlineDuplicate.getKey());
+        assertEquals(CommandType.ERROR, deadlineDuplicate.getValue());
+
+        Pair<String, CommandType> eventDuplicateFrom = this.oz.getResponse(
+                "event meeting /from 2026-10-10 1400 /from 2026-10-10 1500 /to 2026-10-10 1600");
+        assertEquals("Confound it! Duplicate '/from' parameter detected.",
+                eventDuplicateFrom.getKey());
+        assertEquals(CommandType.ERROR, eventDuplicateFrom.getValue());
+
+        Pair<String, CommandType> eventDuplicateTo = this.oz.getResponse(
+                "event meeting /from 2026-10-10 1400 /to 2026-10-10 1500 /to 2026-10-10 1600");
+        assertEquals("Confound it! Duplicate '/to' parameter detected.",
+                eventDuplicateTo.getKey());
+        assertEquals(CommandType.ERROR, eventDuplicateTo.getValue());
+    }
+
+    @Test
+    public void getResponse_misplacedOrUnexpectedFlags_returnsErrorMessage() {
+        Pair<String, CommandType> eventMisplaced = this.oz.getResponse(
+                "event party /to 2026-10-10 1800 /from 2026-10-10 1400");
+        assertTrue(eventMisplaced.getKey().contains("The '/from' parameter must precede '/to'"));
+        assertEquals(CommandType.ERROR, eventMisplaced.getValue());
+
+        Pair<String, CommandType> todoUnexpected = this.oz.getResponse(
+                "todo read book /by tomorrow");
+        assertEquals("Confound it! The todo command does not accept parameter flags like /by, /from, or /to.",
+                todoUnexpected.getKey());
+        assertEquals(CommandType.ERROR, todoUnexpected.getValue());
+
+        Pair<String, CommandType> deadlineUnexpected = this.oz.getResponse(
+                "deadline submit /by 2026-10-10 /from 1000");
+        assertTrue(deadlineUnexpected.getKey().contains("Unexpected '/from' parameter in deadline command"));
+        assertEquals(CommandType.ERROR, deadlineUnexpected.getValue());
+    }
+
+    @Test
+    public void getResponse_byeWithArguments_returnsErrorMessage() {
+        Pair<String, CommandType> response = this.oz.getResponse("bye later");
+        assertEquals("Confound it! The bye command does not take arguments.", response.getKey());
+        assertEquals(CommandType.ERROR, response.getValue());
+    }
+
+    @Test
+    public void getResponse_descriptiveIndexErrors_returnsDetailedMessages() {
+        // Empty list
+        Pair<String, CommandType> emptyListResponse = this.oz.getResponse("delete 1");
+        assertEquals("Confound it! Your task list is empty. Add tasks before referencing them.",
+                emptyListResponse.getKey());
+
+        // Blank task number
+        Pair<String, CommandType> blankNumberResponse = this.oz.getResponse("mark");
+        assertEquals("Confound it! Please specify a task number.", blankNumberResponse.getKey());
+
+        // Non-positive task numbers
+        Pair<String, CommandType> zeroResponse = this.oz.getResponse("delete 0");
+        assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
+                zeroResponse.getKey());
+        Pair<String, CommandType> negativeResponse = this.oz.getResponse("delete -1");
+        assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
+                negativeResponse.getKey());
+
+        // Add one task
+        this.oz.getResponse("todo single task");
+
+        // Out of bounds
+        Pair<String, CommandType> outOfBoundsResponse = this.oz.getResponse("delete 5");
+        assertEquals("Confound it! Task number 5 does not exist. Please provide a number between 1 and 1.",
+                outOfBoundsResponse.getKey());
+
+        // Non-numeric input
+        Pair<String, CommandType> nonNumericResponse = this.oz.getResponse("delete abc");
+        assertEquals("Confound it! Please provide a valid whole number for the task index.",
+                nonNumericResponse.getKey());
+    }
+
+    @Test
+    public void getResponse_redundantStateTransitions_returnsError() {
+        this.oz.getResponse("todo sample task");
+
+        // Unmarking an already unmarked task
+        Pair<String, CommandType> redundantUnmark = this.oz.getResponse("unmark 1");
+        assertEquals("Confound it! Task 1 is not marked as done yet.", redundantUnmark.getKey());
+        assertEquals(CommandType.ERROR, redundantUnmark.getValue());
+
+        // Mark it once
+        Pair<String, CommandType> firstMark = this.oz.getResponse("mark 1");
+        assertEquals(CommandType.CHANGE_MARK, firstMark.getValue());
+
+        // Marking an already marked task
+        Pair<String, CommandType> redundantMark = this.oz.getResponse("mark 1");
+        assertEquals("Confound it! Task 1 is already marked as done.", redundantMark.getKey());
+        assertEquals(CommandType.ERROR, redundantMark.getValue());
+    }
+
+    @Test
+    public void getResponse_storageSaveFails_returnsErrorAndRollsBack() throws IOException {
+        Path storageFile = this.temporaryFolder.resolve("readonly_tasks.txt");
+        Files.createFile(storageFile);
+        storageFile.toFile().setReadOnly();
+
+        Oz readOnlyOz = new Oz(storageFile.toString());
+        Pair<String, CommandType> response = readOnlyOz.getResponse("todo attempt task");
+        assertEquals(CommandType.ERROR, response.getValue());
+        assertTrue(response.getKey().contains("Confound it!"));
+
+        // Verify in-memory list rolled back to empty
+        assertEquals("Here is the master task list:", readOnlyOz.getResponse("list").getKey());
+
+        storageFile.toFile().setWritable(true);
     }
 }
