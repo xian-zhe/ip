@@ -2,6 +2,7 @@ package oz;
 
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
@@ -50,6 +51,8 @@ public class MainWindow extends AnchorPane {
     @FXML
     public void initialize() {
         scrollPane.vvalueProperty().bind(dialogContainer.heightProperty());
+        sendButton.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> userInput.getText().isBlank(), userInput.textProperty()));
     }
 
     /**
@@ -69,6 +72,10 @@ public class MainWindow extends AnchorPane {
     @FXML
     private void handleUserInput() {
         String input = userInput.getText();
+        if (input.isBlank()) {
+            return;
+        }
+
         Pair<String, CommandType> response = oz.getResponse(input);
         dialogContainer.getChildren().addAll(
                 DialogBox.getUserDialog(input),
@@ -77,6 +84,7 @@ public class MainWindow extends AnchorPane {
 
         if (oz.isExit()) {
             userInput.setDisable(true);
+            sendButton.disableProperty().unbind();
             sendButton.setDisable(true);
             PauseTransition delay = new PauseTransition(FAREWELL_DISPLAY_DURATION);
             delay.setOnFinished((event) -> Platform.exit());

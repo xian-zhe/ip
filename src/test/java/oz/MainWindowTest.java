@@ -1,6 +1,7 @@
 package oz;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -90,5 +91,19 @@ public class MainWindowTest {
     public void fxmlLoading_validFxml_stylesheetAttached() {
         assertTrue(this.rootLayout.getStylesheets().stream()
                 .anyMatch((stylesheet) -> stylesheet.contains("main.css")));
+    }
+
+    @Test
+    public void sendButton_blankAndNonBlankInput_updatesDisabledState() {
+        TextField userInput = (TextField) this.rootLayout.getChildren().get(0);
+        Button sendButton = (Button) this.rootLayout.getChildren().get(1);
+
+        assertTrue(sendButton.isDisabled());
+
+        userInput.setText("   ");
+        assertTrue(sendButton.isDisabled());
+
+        userInput.setText("list");
+        assertFalse(sendButton.isDisabled());
     }
 }
