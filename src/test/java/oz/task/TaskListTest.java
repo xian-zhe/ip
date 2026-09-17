@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -93,11 +94,11 @@ public class TaskListTest {
         taskList.add(new Deadline("pay bill", otherDateTime));
         taskList.add(new ToDo("read book"));
 
-        ArrayList<Task> matchingTasks = taskList.findTasksOn(LocalDate.of(2026, 9, 1));
+        List<Task> matchingTasks = taskList.findTasksOn(LocalDate.of(2026, 9, 1));
         assertEquals(1, matchingTasks.size());
         assertEquals("submit report", matchingTasks.get(0).description);
 
-        ArrayList<Task> noMatches = taskList.findTasksOn(LocalDate.of(2026, 12, 31));
+        List<Task> noMatches = taskList.findTasksOn(LocalDate.of(2026, 12, 31));
         assertEquals(0, noMatches.size());
     }
 
@@ -108,7 +109,7 @@ public class TaskListTest {
         taskList.add(new Deadline("return book", TaskDateTime.parse("2026-09-01 1800")));
         taskList.add(new ToDo("buy milk"));
 
-        ArrayList<Task> matchingTasks = taskList.findTasksByKeyword("book");
+        List<Task> matchingTasks = taskList.findTasksByKeyword("book");
         assertEquals(2, matchingTasks.size());
         assertEquals("[T][ ] read book", matchingTasks.get(0).toString());
         assertEquals("[D][ ] return book (by: Sep 01 2026, 6pm)", matchingTasks.get(1).toString());
@@ -120,7 +121,7 @@ public class TaskListTest {
         taskList.add(new ToDo("Read Novel"));
         taskList.add(new ToDo("write code"));
 
-        ArrayList<Task> matchingTasks = taskList.findTasksByKeyword("READ");
+        List<Task> matchingTasks = taskList.findTasksByKeyword("READ");
         assertEquals(1, matchingTasks.size());
         assertEquals("[T][ ] Read Novel", matchingTasks.get(0).toString());
     }
@@ -130,7 +131,7 @@ public class TaskListTest {
         TaskList taskList = new TaskList();
         taskList.add(new ToDo("clean room"));
 
-        ArrayList<Task> matchingTasks = taskList.findTasksByKeyword("exercise");
+        List<Task> matchingTasks = taskList.findTasksByKeyword("exercise");
         assertEquals(0, matchingTasks.size());
     }
 
@@ -153,6 +154,31 @@ public class TaskListTest {
         taskList.add(4, new ToDo("task 4"));
         assertEquals(5, taskList.size());
         assertEquals("[T][ ] task 4", taskList.get(4).toString());
+    }
+
+    /** Verifies later changes to a constructor argument do not alter the task list. */
+    @Test
+    public void constructor_mutableSource_copiesTasks() throws OzException {
+        ArrayList<Task> sourceTasks = new ArrayList<>();
+        sourceTasks.add(new ToDo("original task"));
+        TaskList taskList = new TaskList(sourceTasks);
+
+        sourceTasks.add(new ToDo("external task"));
+
+        assertEquals(1, taskList.size());
+        assertEquals("[T][ ] original task", taskList.get(0).toString());
+    }
+
+    /** Verifies callers cannot mutate the task collection returned for reading. */
+    @Test
+    public void getTasks_returnedSnapshot_cannotBeModified() {
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("original task"));
+        List<Task> tasks = taskList.getTasks();
+
+        assertThrows(UnsupportedOperationException.class, () ->
+                tasks.add(new ToDo("external task")));
+        assertEquals(1, taskList.size());
     }
 
     @Test

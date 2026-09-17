@@ -65,7 +65,7 @@ public class TaskService {
      * @return Immutable task snapshot.
      */
     public List<Task> getTasks() {
-        return List.copyOf(this.tasks.getTasks());
+        return this.tasks.getTasks();
     }
 
     /**

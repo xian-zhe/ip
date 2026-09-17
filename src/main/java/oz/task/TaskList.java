@@ -2,7 +2,7 @@ package oz.task;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.List;
 
 import oz.exception.OzException;
 
@@ -14,7 +14,7 @@ public class TaskList {
     private static final String TASK_NOT_FOUND_MESSAGE = "That task number does not exist.";
 
     /** Internal list storing task objects. */
-    private final ArrayList<Task> tasks;
+    private final List<Task> tasks;
 
     /**
      * Constructs an empty TaskList.
@@ -28,10 +28,10 @@ public class TaskList {
      *
      * @param tasks Initial list of tasks.
      */
-    public TaskList(ArrayList<Task> tasks) {
-        this.tasks = tasks != null ? tasks : new ArrayList<>();
-        assert this.tasks.stream().noneMatch(task -> task == null)
+    public TaskList(List<Task> tasks) {
+        assert tasks == null || tasks.stream().noneMatch(task -> task == null)
                 : "A task list must not contain null tasks";
+        this.tasks = tasks == null ? new ArrayList<>() : new ArrayList<>(tasks);
     }
 
     /**
@@ -90,12 +90,12 @@ public class TaskList {
     }
 
     /**
-     * Returns the underlying list of tasks.
+     * Returns an immutable snapshot of tasks in their existing order.
      *
-     * @return ArrayList containing the tasks.
+     * @return Immutable task snapshot.
      */
-    public ArrayList<Task> getTasks() {
-        return this.tasks;
+    public List<Task> getTasks() {
+        return List.copyOf(this.tasks);
     }
 
     /**
@@ -104,11 +104,11 @@ public class TaskList {
      * @param date The date to filter tasks by.
      * @return List of matching tasks occurring on that date.
      */
-    public ArrayList<Task> findTasksOn(LocalDate date) {
+    public List<Task> findTasksOn(LocalDate date) {
         assert date != null : "The target date must be non-null";
         return this.tasks.stream()
                 .filter(task -> task.occursOn(date))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .toList();
     }
 
     /**
@@ -117,10 +117,10 @@ public class TaskList {
      * @param keyword The keyword to filter tasks by.
      * @return List of tasks matching the keyword.
      */
-    public ArrayList<Task> findTasksByKeyword(String keyword) {
+    public List<Task> findTasksByKeyword(String keyword) {
         return this.tasks.stream()
                 .filter(task -> task.containsKeyword(keyword))
-                .collect(Collectors.toCollection(ArrayList::new));
+                .toList();
     }
 
     /**
