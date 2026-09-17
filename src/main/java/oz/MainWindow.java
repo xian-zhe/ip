@@ -19,6 +19,12 @@ public class MainWindow extends AnchorPane {
     /** Time allowed for reading the farewell message before the application closes. */
     private static final Duration FAREWELL_DISPLAY_DURATION = Duration.seconds(1.5);
 
+    /** Classpath location of the user avatar image. */
+    private static final String USER_IMAGE_PATH = "/images/DaUser2.png";
+
+    /** Classpath location of the Oz avatar image. */
+    private static final String OZ_IMAGE_PATH = "/images/DaOz.png";
+
     /** Scroll pane containing the chat dialog. */
     @FXML
     private ScrollPane scrollPane;
@@ -39,10 +45,10 @@ public class MainWindow extends AnchorPane {
     private Oz oz;
 
     /** User avatar image. */
-    private Image userImage = new Image(this.getClass().getResourceAsStream("/images/DaUser2.png"));
+    private Image userImage = new Image(this.getClass().getResourceAsStream(USER_IMAGE_PATH));
 
     /** Oz avatar image. */
-    private Image ozImage = new Image(this.getClass().getResourceAsStream("/images/DaOz.png"));
+    private Image ozImage = new Image(this.getClass().getResourceAsStream(OZ_IMAGE_PATH));
 
     /**
      * Initializes the controller, binding the scroll pane to the dialog container's height.

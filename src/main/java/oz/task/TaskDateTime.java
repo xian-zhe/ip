@@ -19,6 +19,27 @@ public class TaskDateTime {
     public static final DateTimeFormatter DISPLAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
 
+    /** Error shown when a required date-time value is missing. */
+    private static final String EMPTY_DATE_TIME_MESSAGE = "Date/time argument cannot be empty.";
+
+    /** Error shown when a date-time value has no supported format. */
+    private static final String INVALID_DATE_TIME_MESSAGE =
+            "Please provide a valid date/time (e.g., 2019-10-15 or 2/12/2019 1800).";
+
+    /** Error shown when a required date value is missing. */
+    private static final String EMPTY_DATE_MESSAGE = "Date argument cannot be empty.";
+
+    /** Error shown when a date value has no supported format. */
+    private static final String INVALID_DATE_MESSAGE =
+            "Please provide a valid date (e.g., 2019-10-15 or 2/12/2019).";
+
+    /** Error shown when a required time value is missing. */
+    private static final String EMPTY_TIME_MESSAGE = "Time argument cannot be empty.";
+
+    /** Error shown when a time value has no supported format. */
+    private static final String INVALID_TIME_MESSAGE =
+            "Please provide a valid time (e.g., 1400, 14:00, or 2pm).";
+
     /** Time format omitting minutes for times on the hour. */
     private static final DateTimeFormatter DISPLAY_HOUR_FORMAT =
             DateTimeFormatter.ofPattern("ha", Locale.ENGLISH);
@@ -59,6 +80,14 @@ public class TaskDateTime {
         createFormatter("yyyy/M/d"),
         createFormatter("d-M-yyyy"),
         DateTimeFormatter.ISO_LOCAL_DATE
+    };
+
+    /** Supported input formatters for strings containing only a time. */
+    private static final DateTimeFormatter[] INPUT_TIME_FORMATTERS = new DateTimeFormatter[] {
+        createFormatter("HHmm"),
+        createFormatter("H:mm"),
+        createFormatter("h:mma"),
+        createFormatter("ha")
     };
 
     /** Parsed date-time object. */
@@ -125,7 +154,7 @@ public class TaskDateTime {
      */
     public static TaskDateTime parse(String input) throws OzException {
         if (input == null || input.isBlank()) {
-            throw new OzException("Date/time argument cannot be empty.");
+            throw new OzException(EMPTY_DATE_TIME_MESSAGE);
         }
 
         String trimmed = input.trim();
@@ -148,7 +177,65 @@ public class TaskDateTime {
             }
         }
 
-        throw new OzException("Please provide a valid date/time (e.g., 2019-10-15 or 2/12/2019 1800).");
+        throw new OzException(INVALID_DATE_TIME_MESSAGE);
+    }
+
+    /**
+     * Parses a raw date string without accepting a time component.
+     *
+     * @param input Raw date string.
+     * @return Parsed local date.
+     * @throws OzException If the input is empty or does not match an accepted date format.
+     */
+    public static LocalDate parseDate(String input) throws OzException {
+        if (input == null || input.isBlank()) {
+            throw new OzException(EMPTY_DATE_MESSAGE);
+        }
+
+        String trimmed = input.trim();
+        for (DateTimeFormatter formatter : INPUT_DATE_FORMATTERS) {
+            try {
+                return LocalDate.parse(trimmed, formatter);
+            } catch (DateTimeParseException ignored) {
+                // Continue trying other formats
+            }
+        }
+
+        throw new OzException(INVALID_DATE_MESSAGE);
+    }
+
+    /**
+     * Parses a raw time string without accepting a date component.
+     *
+     * @param input Raw time string.
+     * @return Parsed local time.
+     * @throws OzException If the input is empty or does not match an accepted time format.
+     */
+    public static LocalTime parseTime(String input) throws OzException {
+        if (input == null || input.isBlank()) {
+            throw new OzException(EMPTY_TIME_MESSAGE);
+        }
+
+        String trimmed = input.trim();
+        for (DateTimeFormatter formatter : INPUT_TIME_FORMATTERS) {
+            try {
+                return LocalTime.parse(trimmed, formatter);
+            } catch (DateTimeParseException ignored) {
+                // Continue trying other formats
+            }
+        }
+
+        throw new OzException(INVALID_TIME_MESSAGE);
+    }
+
+    /**
+     * Produces a copy shifted by the requested number of days.
+     *
+     * @param days Number of days to add, which may be negative.
+     * @return Shifted date-time retaining whether a time was explicitly provided.
+     */
+    public TaskDateTime plusDays(long days) {
+        return new TaskDateTime(this.dateTime.plusDays(days), this.hasTime);
     }
 
     /**

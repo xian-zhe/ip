@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import org.junit.jupiter.api.Test;
 
@@ -140,6 +141,30 @@ public class TaskDateTimeTest {
 
         OzException nullException = assertThrows(OzException.class, () -> TaskDateTime.parse(null));
         assertEquals("Date/time argument cannot be empty.", nullException.getMessage());
+    }
+
+    @Test
+    public void parseDate_dateOnlyAcceptedAndDateTimeRejected() throws OzException {
+        assertEquals(LocalDate.of(2026, 10, 2), TaskDateTime.parseDate("2/10/2026"));
+        assertThrows(OzException.class, () -> TaskDateTime.parseDate("2026-10-02 1400"));
+    }
+
+    @Test
+    public void parseTime_supportedFormatsAcceptedAndDateTimeRejected() throws OzException {
+        assertEquals(LocalTime.of(14, 0), TaskDateTime.parseTime("1400"));
+        assertEquals(LocalTime.of(14, 30), TaskDateTime.parseTime("14:30"));
+        assertEquals(LocalTime.of(14, 0), TaskDateTime.parseTime("2pm"));
+        assertEquals(LocalTime.of(9, 15), TaskDateTime.parseTime("9:15AM"));
+        assertThrows(OzException.class, () -> TaskDateTime.parseTime("2026-10-02 1400"));
+    }
+
+    @Test
+    public void plusDays_dateAndDateTime_preservesTimePresence() throws OzException {
+        TaskDateTime date = TaskDateTime.parse("2026-10-02").plusDays(7);
+        TaskDateTime dateTime = TaskDateTime.parse("2026-10-02 1430").plusDays(7);
+
+        assertEquals("Oct 09 2026", date.toDisplayString());
+        assertEquals("Oct 09 2026, 2:30pm", dateTime.toDisplayString());
     }
 
     @Test

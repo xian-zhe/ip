@@ -10,6 +10,9 @@ import oz.exception.OzException;
  * Represents the list of tasks and provides operations to manipulate tasks.
  */
 public class TaskList {
+    /** Error shown when a task index does not identify an existing task. */
+    private static final String TASK_NOT_FOUND_MESSAGE = "That task number does not exist.";
+
     /** Internal list storing task objects. */
     private final ArrayList<Task> tasks;
 
@@ -138,7 +141,7 @@ public class TaskList {
      */
     private void checkIndex(int index) throws OzException {
         if (index < 0 || index >= this.tasks.size()) {
-            throw new OzException("That task number does not exist.");
+            throw new OzException(TASK_NOT_FOUND_MESSAGE);
         }
     }
 }

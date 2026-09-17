@@ -15,6 +15,7 @@ import org.junit.jupiter.api.io.TempDir;
 import oz.exception.OzException;
 import oz.task.Deadline;
 import oz.task.Event;
+import oz.task.RecurringEvent;
 import oz.task.Task;
 import oz.task.TaskDateTime;
 import oz.task.TaskList;
@@ -108,5 +109,62 @@ public class StorageTest {
         ArrayList<Task> loaded = new Storage(storageFile.toString()).load();
         assertEquals(1, loaded.size());
         assertEquals("T | 0 | choose tea | coffee", loaded.get(0).toFileFormat());
+    }
+
+    @Test
+    public void save_recurringEvent_roundTripsRuleAndCompletedOccurrences()
+            throws OzException, IOException {
+        Path storageFile = this.temporaryFolder.resolve("recurring.txt");
+        Storage storage = new Storage(storageFile.toString());
+        TaskList tasks = new TaskList();
+        RecurringEvent recurringEvent = new RecurringEvent("project meeting",
+                TaskDateTime.parse("2026-10-02 1400"),
+                TaskDateTime.parse("2026-10-02 1500"), 2,
+                TaskDateTime.parseDate("2026-12-31"));
+        recurringEvent.markOccurrence(TaskDateTime.parseDate("2026-10-16"));
+        tasks.add(recurringEvent);
+
+        storage.save(tasks);
+
+        String expected = "R | 0 | project meeting | 2026-10-02 1400 | "
+                + "2026-10-02 1500 | 2 | 2026-12-31 | 2026-10-16";
+        assertEquals(List.of(expected), Files.readAllLines(storageFile));
+        ArrayList<Task> loaded = storage.load();
+        assertEquals(1, loaded.size());
+        assertEquals(expected, loaded.get(0).toFileFormat());
+        assertEquals(recurringEvent.toString(), loaded.get(0).toString());
+    }
+
+    @Test
+    public void save_indefiniteRecurringEvent_roundTripsEmptyOptionalFields()
+            throws OzException, IOException {
+        Path storageFile = this.temporaryFolder.resolve("indefinite.txt");
+        Storage storage = new Storage(storageFile.toString());
+        TaskList tasks = new TaskList();
+        tasks.add(new RecurringEvent("weekly meeting",
+                TaskDateTime.parse("2026-10-02 1400"),
+                TaskDateTime.parse("2026-10-02 1500"), 1, null));
+
+        storage.save(tasks);
+
+        String expected = "R | 0 | weekly meeting | 2026-10-02 1400 | "
+                + "2026-10-02 1500 | 1 | - | -";
+        assertEquals(List.of(expected), Files.readAllLines(storageFile));
+        assertEquals(expected, storage.load().get(0).toFileFormat());
+    }
+
+    @Test
+    public void load_corruptedRecurringEntries_skipsInvalidRecords() throws IOException {
+        Path storageFile = this.temporaryFolder.resolve("recurring.txt");
+        Files.write(storageFile, List.of(
+                "R | 1 | meeting | 2026-10-02 1400 | 2026-10-02 1500 | 1 | - | -",
+                "R | 0 | meeting | 2026-10-02 1400 | 2026-10-03 1500 | 1 | - | -",
+                "R | 0 | meeting | 2026-10-02 1400 | 2026-10-02 1500 | 0 | - | -",
+                "R | 0 | meeting | 2026-10-02 1400 | 2026-10-02 1500 | 1 | - | 2026-10-03",
+                "T | 0 | valid"));
+
+        ArrayList<Task> loaded = new Storage(storageFile.toString()).load();
+        assertEquals(1, loaded.size());
+        assertEquals("T | 0 | valid", loaded.get(0).toFileFormat());
     }
 }
