@@ -293,4 +293,29 @@ public class OzResponseTest {
         assertEquals("No matching tasks found in the ledger.", noMatches.getKey());
         assertEquals(CommandType.FIND, noMatches.getValue());
     }
+
+    @Test
+    public void getResponse_taskWithStorageDelimiter_returnsErrorMessage() {
+        String expectedMessage = "Confound it! Task input cannot contain the '|' character "
+                + "because it is reserved for storage.";
+
+        Pair<String, CommandType> todoResponse = this.oz.getResponse("todo read | book");
+        assertEquals(expectedMessage, todoResponse.getKey());
+        assertEquals(CommandType.ERROR, todoResponse.getValue());
+
+        Pair<String, CommandType> deadlineResponse = this.oz.getResponse(
+                "deadline return | book /by 2026-10-10");
+        assertEquals(expectedMessage, deadlineResponse.getKey());
+        assertEquals(CommandType.ERROR, deadlineResponse.getValue());
+
+        Pair<String, CommandType> eventResponse = this.oz.getResponse(
+                "event team | sync /from 2026-10-10 1400 /to 2026-10-10 1500");
+        assertEquals(expectedMessage, eventResponse.getKey());
+        assertEquals(CommandType.ERROR, eventResponse.getValue());
+
+        Pair<String, CommandType> recurringResponse = this.oz.getResponse(
+                "recurring team | meeting /on 2026-10-10 /start 1000 /end 1100 /every 1 week");
+        assertEquals(expectedMessage, recurringResponse.getKey());
+        assertEquals(CommandType.ERROR, recurringResponse.getValue());
+    }
 }

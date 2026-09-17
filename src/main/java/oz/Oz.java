@@ -57,6 +57,10 @@ public class Oz {
     private static final String MARK_RECURRING_USAGE_MESSAGE =
             "Please specify which occurrence to mark. Use: mark <number> /on <date>.";
 
+    /** Error shown when task input contains the storage delimiter '|'. */
+    private static final String RESERVED_DELIMITER_MESSAGE =
+            "Task input cannot contain the '|' character because it is reserved for storage.";
+
     /** Usage message for unmarking a recurring occurrence. */
     private static final String UNMARK_RECURRING_USAGE_MESSAGE =
             "Please specify which occurrence to unmark. Use: unmark <number> /on <date>.";
@@ -430,6 +434,7 @@ public class Oz {
         if (details.isBlank()) {
             throw new OzException(EMPTY_TODO_DESCRIPTION_MESSAGE);
         }
+        validateNoStorageDelimiter(details);
 
         Task task = new ToDo(details);
         return addTask(task);
@@ -443,6 +448,7 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private Pair<String, CommandType> addDeadline(String details) throws OzException {
+        validateNoStorageDelimiter(details);
         Matcher deadlineMatcher = DEADLINE_ARGUMENTS_PATTERN.matcher(details);
         if (!deadlineMatcher.matches()) {
             throw new OzException(DEADLINE_USAGE_MESSAGE);
@@ -470,6 +476,7 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private Pair<String, CommandType> addEvent(String details) throws OzException {
+        validateNoStorageDelimiter(details);
         Matcher eventMatcher = EVENT_ARGUMENTS_PATTERN.matcher(details);
         if (!eventMatcher.matches()) {
             throw new OzException(EVENT_USAGE_MESSAGE);
@@ -499,6 +506,7 @@ public class Oz {
      * @throws OzException If the recurring event arguments are invalid.
      */
     private Pair<String, CommandType> addRecurringEvent(String details) throws OzException {
+        validateNoStorageDelimiter(details);
         Matcher recurringEventMatcher = RECURRING_EVENT_ARGUMENTS_PATTERN.matcher(details);
         if (!recurringEventMatcher.matches()) {
             throw new OzException(RECURRING_EVENT_USAGE_MESSAGE);
@@ -666,6 +674,20 @@ public class Oz {
             return index;
         } catch (NumberFormatException exception) {
             throw new OzException(TASK_NUMBER_TOO_LARGE_MESSAGE);
+        }
+    }
+
+    /**
+     * Validates that the input does not contain the storage delimiter '|'.
+     * Credit to user Gnanes99 (https://github.com/Gnanes99) for this check.
+     *
+     * @param input Raw input text to validate.
+     * @throws OzException If the input contains the '|' character.
+     */
+    private static void validateNoStorageDelimiter(String input) throws OzException {
+        // Credit to Gnanes99 (https://github.com/Gnanes99): forbid '|' to prevent storage corruption.
+        if (input.contains("|")) {
+            throw new OzException(RESERVED_DELIMITER_MESSAGE);
         }
     }
 
