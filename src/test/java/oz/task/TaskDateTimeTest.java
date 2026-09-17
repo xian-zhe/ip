@@ -177,4 +177,27 @@ public class TaskDateTimeTest {
         assertTrue(earlier.isBefore(later));
         assertFalse(later.isBefore(earlier));
     }
+
+    @Test
+    public void parse_nonExistentDates_exceptionThrown() {
+        OzException feb30 = assertThrows(OzException.class, () ->
+                TaskDateTime.parse("2024-02-30"));
+        assertEquals("That date does not exist on the calendar (e.g., February 30).",
+                feb30.getMessage());
+
+        OzException feb29NonLeap = assertThrows(OzException.class, () ->
+                TaskDateTime.parse("2023-02-29"));
+        assertEquals("That date does not exist on the calendar (e.g., February 30).",
+                feb29NonLeap.getMessage());
+
+        OzException apr31 = assertThrows(OzException.class, () ->
+                TaskDateTime.parse("31/4/2023 1400"));
+        assertEquals("That date does not exist on the calendar (e.g., February 30).",
+                apr31.getMessage());
+
+        OzException dateFeb30 = assertThrows(OzException.class, () ->
+                TaskDateTime.parseDate("2023-02-30"));
+        assertEquals("That date does not exist on the calendar (e.g., February 30).",
+                dateFeb30.getMessage());
+    }
 }

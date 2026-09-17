@@ -6,6 +6,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
 import java.util.Locale;
 
 import oz.exception.OzException;
@@ -18,6 +20,10 @@ public class TaskDateTime {
     /** Date format shared by task descriptions and date-filtered list headings. */
     public static final DateTimeFormatter DISPLAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
+
+    /** Error shown when a date does not exist on the calendar. */
+    private static final String NON_EXISTENT_DATE_MESSAGE =
+            "That date does not exist on the calendar (e.g., February 30).";
 
     /** Error shown when a required date-time value is missing. */
     private static final String EMPTY_DATE_TIME_MESSAGE = "Date/time argument cannot be empty.";
@@ -50,36 +56,36 @@ public class TaskDateTime {
 
     /** Formatter for saving date-only values to storage. */
     private static final DateTimeFormatter STORAGE_DATE_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+            DateTimeFormatter.ofPattern("uuuu-MM-dd", Locale.ENGLISH);
 
     /** Formatter for saving date-time values to storage. */
     private static final DateTimeFormatter STORAGE_DATETIME_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HHmm", Locale.ENGLISH);
+            DateTimeFormatter.ofPattern("uuuu-MM-dd HHmm", Locale.ENGLISH);
 
     /** Supported input formatters for strings containing both date and time. */
     private static final DateTimeFormatter[] INPUT_DATETIME_FORMATTERS = new DateTimeFormatter[] {
-        createFormatter("yyyy-MM-dd HHmm"),
-        createFormatter("d/M/yyyy HHmm"),
-        createFormatter("yyyy/M/d HHmm"),
-        createFormatter("d-M-yyyy HHmm"),
-        createFormatter("yyyy-MM-dd HH:mm"),
-        createFormatter("d/M/yyyy HH:mm"),
-        createFormatter("yyyy/M/d HH:mm"),
-        createFormatter("d-M-yyyy HH:mm"),
-        createFormatter("d/M/yyyy h:mma"),
-        createFormatter("d/M/yyyy ha"),
-        createFormatter("yyyy-MM-dd h:mma"),
-        createFormatter("yyyy-MM-dd ha"),
-        DateTimeFormatter.ISO_LOCAL_DATE_TIME
+        createFormatter("uuuu-MM-dd HHmm"),
+        createFormatter("d/M/uuuu HHmm"),
+        createFormatter("uuuu/M/d HHmm"),
+        createFormatter("d-M-uuuu HHmm"),
+        createFormatter("uuuu-MM-dd HH:mm"),
+        createFormatter("d/M/uuuu HH:mm"),
+        createFormatter("uuuu/M/d HH:mm"),
+        createFormatter("d-M-uuuu HH:mm"),
+        createFormatter("d/M/uuuu h:mma"),
+        createFormatter("d/M/uuuu ha"),
+        createFormatter("uuuu-MM-dd h:mma"),
+        createFormatter("uuuu-MM-dd ha"),
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME.withResolverStyle(ResolverStyle.STRICT)
     };
 
     /** Supported input formatters for strings containing only a date. */
     private static final DateTimeFormatter[] INPUT_DATE_FORMATTERS = new DateTimeFormatter[] {
-        createFormatter("yyyy-MM-dd"),
-        createFormatter("d/M/yyyy"),
-        createFormatter("yyyy/M/d"),
-        createFormatter("d-M-yyyy"),
-        DateTimeFormatter.ISO_LOCAL_DATE
+        createFormatter("uuuu-MM-dd"),
+        createFormatter("d/M/uuuu"),
+        createFormatter("uuuu/M/d"),
+        createFormatter("d-M-uuuu"),
+        DateTimeFormatter.ISO_LOCAL_DATE.withResolverStyle(ResolverStyle.STRICT)
     };
 
     /** Supported input formatters for strings containing only a time. */
@@ -133,16 +139,19 @@ public class TaskDateTime {
     }
 
     /**
-     * Constructs a case-insensitive DateTimeFormatter from the given pattern.
+     * Constructs a strict, case-insensitive DateTimeFormatter from the given pattern.
      *
      * @param pattern Date/time format pattern string.
-     * @return Case-insensitive DateTimeFormatter instance.
+     * @return Strict, case-insensitive DateTimeFormatter instance.
      */
     private static DateTimeFormatter createFormatter(String pattern) {
         return new DateTimeFormatterBuilder()
                 .parseCaseInsensitive()
                 .appendPattern(pattern)
-                .toFormatter(Locale.ENGLISH);
+                .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+                .toFormatter(Locale.ENGLISH)
+                .withResolverStyle(ResolverStyle.STRICT);
     }
 
     /**
@@ -158,13 +167,16 @@ public class TaskDateTime {
         }
 
         String trimmed = input.trim();
+        String invalidCalendarMessage = null;
 
         for (DateTimeFormatter formatter : INPUT_DATETIME_FORMATTERS) {
             try {
                 LocalDateTime parsedDateTime = LocalDateTime.parse(trimmed, formatter);
                 return fromDateTime(parsedDateTime);
-            } catch (DateTimeParseException ignored) {
-                // Continue trying other formats
+            } catch (DateTimeParseException exception) {
+                if (exception.getMessage() != null && exception.getMessage().contains("Invalid date")) {
+                    invalidCalendarMessage = NON_EXISTENT_DATE_MESSAGE;
+                }
             }
         }
 
@@ -172,9 +184,15 @@ public class TaskDateTime {
             try {
                 LocalDate parsedDate = LocalDate.parse(trimmed, formatter);
                 return fromDate(parsedDate);
-            } catch (DateTimeParseException ignored) {
-                // Continue trying other formats
+            } catch (DateTimeParseException exception) {
+                if (exception.getMessage() != null && exception.getMessage().contains("Invalid date")) {
+                    invalidCalendarMessage = NON_EXISTENT_DATE_MESSAGE;
+                }
             }
+        }
+
+        if (invalidCalendarMessage != null) {
+            throw new OzException(invalidCalendarMessage);
         }
 
         throw new OzException(INVALID_DATE_TIME_MESSAGE);
@@ -193,12 +211,19 @@ public class TaskDateTime {
         }
 
         String trimmed = input.trim();
+        String invalidCalendarMessage = null;
         for (DateTimeFormatter formatter : INPUT_DATE_FORMATTERS) {
             try {
                 return LocalDate.parse(trimmed, formatter);
-            } catch (DateTimeParseException ignored) {
-                // Continue trying other formats
+            } catch (DateTimeParseException exception) {
+                if (exception.getMessage() != null && exception.getMessage().contains("Invalid date")) {
+                    invalidCalendarMessage = NON_EXISTENT_DATE_MESSAGE;
+                }
             }
+        }
+
+        if (invalidCalendarMessage != null) {
+            throw new OzException(invalidCalendarMessage);
         }
 
         throw new OzException(INVALID_DATE_MESSAGE);
