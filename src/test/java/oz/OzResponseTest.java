@@ -365,4 +365,37 @@ public class OzResponseTest {
         assertEquals("Confound it! The bye command does not take arguments.", response.getKey());
         assertEquals(CommandType.ERROR, response.getValue());
     }
+
+    @Test
+    public void getResponse_descriptiveIndexErrors_returnsDetailedMessages() {
+        // Empty list
+        Pair<String, CommandType> emptyListResponse = this.oz.getResponse("delete 1");
+        assertEquals("Confound it! Your task list is empty. Add tasks before referencing them.",
+                emptyListResponse.getKey());
+
+        // Blank task number
+        Pair<String, CommandType> blankNumberResponse = this.oz.getResponse("mark");
+        assertEquals("Confound it! Please specify a task number.", blankNumberResponse.getKey());
+
+        // Non-positive task numbers
+        Pair<String, CommandType> zeroResponse = this.oz.getResponse("delete 0");
+        assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
+                zeroResponse.getKey());
+        Pair<String, CommandType> negativeResponse = this.oz.getResponse("delete -1");
+        assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
+                negativeResponse.getKey());
+
+        // Add one task
+        this.oz.getResponse("todo single task");
+
+        // Out of bounds
+        Pair<String, CommandType> outOfBoundsResponse = this.oz.getResponse("delete 5");
+        assertEquals("Confound it! Task number 5 does not exist. Please provide a number between 1 and 1.",
+                outOfBoundsResponse.getKey());
+
+        // Non-numeric input
+        Pair<String, CommandType> nonNumericResponse = this.oz.getResponse("delete abc");
+        assertEquals("Confound it! Please provide a valid whole number for the task index.",
+                nonNumericResponse.getKey());
+    }
 }

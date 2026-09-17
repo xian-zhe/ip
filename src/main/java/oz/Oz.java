@@ -134,12 +134,25 @@ public class Oz {
     private static final String INVALID_RECURRENCE_INTERVAL_MESSAGE =
             "The recurrence interval must be a positive whole number.";
 
+    /** Error shown when no task number is provided. */
+    private static final String EMPTY_TASK_NUMBER_MESSAGE =
+            "Please specify a task number.";
+
+    /** Error shown when the task list is empty. */
+    private static final String EMPTY_TASK_LIST_MESSAGE =
+            "Your task list is empty. Add tasks before referencing them.";
+
+    /** Error shown when a task number is not positive. */
+    private static final String NON_POSITIVE_TASK_NUMBER_MESSAGE =
+            "Task number must be a positive whole number starting from 1.";
+
+    /** Error template shown when a task number is out of bounds. */
+    private static final String TASK_INDEX_OUT_OF_BOUNDS_MESSAGE_FORMAT =
+            "Task number %d does not exist. Please provide a number between 1 and %d.";
+
     /** Error shown when a task number is not numeric. */
     private static final String INVALID_TASK_NUMBER_MESSAGE =
-            "Please provide a valid task number.";
-
-    /** Error shown when a task number is outside the task list. */
-    private static final String TASK_NOT_FOUND_MESSAGE = "That task number does not exist.";
+            "Please provide a valid whole number for the task index.";
 
     /** Error shown when a numeric task number cannot fit in an integer. */
     private static final String TASK_NUMBER_TOO_LARGE_MESSAGE = "That task number is too large.";
@@ -792,22 +805,41 @@ public class Oz {
     private static int parseTaskIndex(String argument, int taskCount)
             throws OzException {
         assert taskCount >= 0 : "The task count must not be negative";
-        if (!argument.matches("\\d+")) {
+        String trimmed = argument == null ? "" : argument.trim();
+        if (trimmed.isEmpty()) {
+            throw new OzException(EMPTY_TASK_NUMBER_MESSAGE);
+        }
+
+        int taskNumber;
+        try {
+            taskNumber = Integer.parseInt(trimmed);
+        } catch (NumberFormatException exception) {
+            if (trimmed.startsWith("-") && trimmed.substring(1).matches("\\d+")) {
+                throw new OzException(NON_POSITIVE_TASK_NUMBER_MESSAGE);
+            }
+            if (trimmed.matches("\\d+")) {
+                throw new OzException(TASK_NUMBER_TOO_LARGE_MESSAGE);
+            }
             throw new OzException(INVALID_TASK_NUMBER_MESSAGE);
         }
 
-        try {
-            int taskNumber = Integer.parseInt(argument);
-            if (taskNumber < 1 || taskNumber > taskCount) {
-                throw new OzException(TASK_NOT_FOUND_MESSAGE);
-            }
-            int index = taskNumber - 1;
-            assert index >= 0 && index < taskCount
-                    : "A validated task number must map to an existing index";
-            return index;
-        } catch (NumberFormatException exception) {
-            throw new OzException(TASK_NUMBER_TOO_LARGE_MESSAGE);
+        if (taskNumber <= 0) {
+            throw new OzException(NON_POSITIVE_TASK_NUMBER_MESSAGE);
         }
+
+        if (taskCount == 0) {
+            throw new OzException(EMPTY_TASK_LIST_MESSAGE);
+        }
+
+        if (taskNumber > taskCount) {
+            throw new OzException(String.format(
+                    TASK_INDEX_OUT_OF_BOUNDS_MESSAGE_FORMAT, taskNumber, taskCount));
+        }
+
+        int index = taskNumber - 1;
+        assert index >= 0 && index < taskCount
+                : "A validated task number must map to an existing index";
+        return index;
     }
 
     /**
