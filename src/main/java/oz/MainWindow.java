@@ -19,9 +19,6 @@ public class MainWindow extends AnchorPane {
     /** Time allowed for reading the farewell message before the application closes. */
     private static final Duration FAREWELL_DISPLAY_DURATION = Duration.seconds(1.5);
 
-    /** Classpath location of the user avatar image. */
-    private static final String USER_IMAGE_PATH = "/images/DaUser2.png";
-
     /** Classpath location of the Oz avatar image. */
     private static final String OZ_IMAGE_PATH = "/images/DaOz.png";
 
@@ -43,9 +40,6 @@ public class MainWindow extends AnchorPane {
 
     /** The Oz chatbot instance handling command logic. */
     private Oz oz;
-
-    /** User avatar image. */
-    private Image userImage = new Image(this.getClass().getResourceAsStream(USER_IMAGE_PATH));
 
     /** Oz avatar image. */
     private Image ozImage = new Image(this.getClass().getResourceAsStream(OZ_IMAGE_PATH));
@@ -77,7 +71,7 @@ public class MainWindow extends AnchorPane {
         String input = userInput.getText();
         Pair<String, CommandType> response = oz.getResponse(input);
         dialogContainer.getChildren().addAll(
-                DialogBox.getUserDialog(input, userImage),
+                DialogBox.getUserDialog(input),
                 DialogBox.getOzDialog(response.getKey(), ozImage, response.getValue()));
         userInput.clear();
 

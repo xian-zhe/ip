@@ -80,12 +80,13 @@ public class DialogBox extends HBox {
     /**
      * Returns a dialog box for the user, aligned to the right.
      *
-     * @param text  Text of the user's message.
-     * @param image User's avatar image.
+     * @param text Text of the user's message.
      * @return DialogBox for the user.
      */
-    public static DialogBox getUserDialog(String text, Image image) {
-        return new DialogBox(text, image);
+    public static DialogBox getUserDialog(String text) {
+        DialogBox dialogBox = new DialogBox(text, null);
+        dialogBox.getChildren().remove(dialogBox.displayPicture);
+        return dialogBox;
     }
 
     /**

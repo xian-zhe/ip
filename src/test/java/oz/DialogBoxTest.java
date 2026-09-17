@@ -38,25 +38,19 @@ public class DialogBoxTest {
     }
 
     @Test
-    public void getUserDialog_validTextAndImage_alignedRightWithLabelFirst() {
+    public void getUserDialog_validText_alignedRightWithoutAvatar() {
         String message = "User test message";
-        DialogBox dialogBox = DialogBox.getUserDialog(message, dummyImage);
+        DialogBox dialogBox = DialogBox.getUserDialog(message);
 
         assertEquals(Pos.TOP_RIGHT, dialogBox.getAlignment());
-        assertEquals(2, dialogBox.getChildren().size());
+        assertEquals(1, dialogBox.getChildren().size());
 
         assertInstanceOf(Label.class, dialogBox.getChildren().get(0));
-        assertInstanceOf(ImageView.class, dialogBox.getChildren().get(1));
 
         Label label = (Label) dialogBox.getChildren().get(0);
         assertEquals(message, label.getText());
         assertTrue(label.isWrapText());
         assertFalse(label.getStyleClass().contains("reply-label"));
-
-        ImageView imageView = (ImageView) dialogBox.getChildren().get(1);
-        assertEquals(dummyImage, imageView.getImage());
-        assertEquals(99.0, imageView.getFitWidth());
-        assertEquals(99.0, imageView.getFitHeight());
     }
 
     @Test
@@ -73,6 +67,8 @@ public class DialogBoxTest {
 
         ImageView imageView = (ImageView) dialogBox.getChildren().get(0);
         assertEquals(dummyImage, imageView.getImage());
+        assertEquals(40.0, imageView.getFitWidth());
+        assertEquals(40.0, imageView.getFitHeight());
 
         Label label = (Label) dialogBox.getChildren().get(1);
         assertEquals(message, label.getText());
@@ -83,7 +79,7 @@ public class DialogBoxTest {
     @Test
     public void getUserDialog_multilineText_preservesTextAndFormatting() {
         String multilineMessage = "Here are the tasks:\n1. [T][ ] task 1\n2. [T][X] task 2";
-        DialogBox dialogBox = DialogBox.getUserDialog(multilineMessage, dummyImage);
+        DialogBox dialogBox = DialogBox.getUserDialog(multilineMessage);
 
         Label label = (Label) dialogBox.getChildren().get(0);
         assertEquals(multilineMessage, label.getText());
