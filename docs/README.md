@@ -9,24 +9,24 @@ Use the `recurring` command to add a same-day event that repeats every specified
 number of weeks:
 
 ```text
-recurring <description> /from <start> /to <end> /every <interval> week|weeks
+recurring <description> /on <date> /start <time> /end <time> /every <interval> week|weeks
 ```
 
 The interval number is mandatory and must be positive:
 
 ```text
-recurring project meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 1 week
+recurring project meeting /on 2026-10-02 /start 1400 /end 1500 /every 1 week
 ```
 
 An optional inclusive `/until` date limits the series:
 
 ```text
-recurring tutorial /from 2026-10-02 1000 /to 2026-10-02 1200 /every 2 weeks /until 2026-12-31
+recurring tutorial /on 2026-10-02 /start 1000 /end 1200 /every 2 weeks /until 2026-12-31
 ```
 
-Recurring events must start and end on the same date. Only weekly recurrence is
-supported. Commands such as `/every week`, `/every 0 weeks`, and `/every 1 month`
-are rejected.
+The date is supplied once with `/on`; `/start` and `/end` accept times without dates.
+Only weekly recurrence is supported. Commands such as `/every week`,
+`/every 0 weeks`, and `/every 1 month` are rejected.
 
 ## Viewing recurring events
 
@@ -76,14 +76,11 @@ completion states. Deleting or rescheduling only one occurrence is not supported
 
 ## Supported date formats
 
-Recurring event start and end values accept the same date and date-time formats as
-ordinary events. Examples include:
+The `/on` and `/until` arguments accept dates without times, such as `2026-12-31`
+or `31/12/2026`. The `/start` and `/end` arguments accept times in formats such as:
 
 ```text
-2026-10-02 1400
-2/10/2026 14:00
-2026-10-02 2pm
+1400
+14:00
+2pm
 ```
-
-The `/until` and `/on` arguments accept dates without times, such as `2026-12-31`
-or `31/12/2026`.

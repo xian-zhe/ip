@@ -107,7 +107,7 @@ public class OzResponseTest {
     @Test
     public void getResponse_recurringCommand_seriesAddedAndReported() {
         Pair<String, CommandType> response = this.oz.getResponse(
-                "recurring project meeting /from 2026-10-02 1400 /to 2026-10-02 1500 "
+                "recurring project meeting /on 2026-10-02 /start 1400 /end 1500 "
                         + "/every 1 week /until 2026-12-31");
 
         assertEquals(CommandType.ADD, response.getValue());
@@ -120,11 +120,11 @@ public class OzResponseTest {
     @Test
     public void getResponse_invalidRecurringCommands_returnErrorsWithoutAddingTasks() {
         String[] invalidCommands = {
-            "recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every week",
-            "recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 0 weeks",
-            "recurring meeting /from 2026-10-02 1400 /to 2026-10-03 1500 /every 1 week",
-            "recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 1 month",
-            "recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 "
+            "recurring meeting /on 2026-10-02 /start 1400 /end 1500 /every week",
+            "recurring meeting /on 2026-10-02 /start 1400 /end 1500 /every 0 weeks",
+            "recurring meeting /on 2026-10-02 /start 1500 /end 1400 /every 1 week",
+            "recurring meeting /on 2026-10-02 /start 1400 /end 1500 /every 1 month",
+            "recurring meeting /on 2026-10-02 /start 1400 /end 1500 "
                     + "/every 1 week /until 2026-10-01"
         };
 
@@ -138,7 +138,7 @@ public class OzResponseTest {
 
     @Test
     public void getResponse_recurringOccurrence_markAndUnmarkRequiresDate() {
-        this.oz.getResponse("recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 "
+        this.oz.getResponse("recurring meeting /on 2026-10-02 /start 1400 /end 1500 "
                 + "/every 1 week");
 
         assertEquals("OOPS! Please specify which occurrence to mark. "
@@ -161,7 +161,7 @@ public class OzResponseTest {
 
     @Test
     public void getResponse_onCommand_recurringOccurrenceUsesCalculatedDateAndStatus() {
-        this.oz.getResponse("recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 "
+        this.oz.getResponse("recurring meeting /on 2026-10-02 /start 1400 /end 1500 "
                 + "/every 2 weeks /until 2026-10-30");
         this.oz.getResponse("mark 1 /on 2026-10-16");
 

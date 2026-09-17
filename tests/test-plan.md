@@ -21,7 +21,7 @@ Expected: the build succeeds and all existing and recurring-event tests pass.
 1. Enter:
 
    ```text
-   recurring project meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 1 week
+   recurring project meeting /on 2026-10-02 /start 1400 /end 1500 /every 1 week
    ```
 
 2. Enter `list`.
@@ -34,7 +34,7 @@ Expected: one `[R]` task is shown with the first start and end times and
 Enter:
 
 ```text
-recurring tutorial /from 2026-10-02 1000 /to 2026-10-02 1200 /every 2 weeks /until 2026-10-30
+recurring tutorial /on 2026-10-02 /start 1000 /end 1200 /every 2 weeks /until 2026-10-30
 ```
 
 Expected: the task is added and its display ends with
@@ -82,11 +82,11 @@ does not modify any occurrence.
 Each command below must return an error and must not add a task:
 
 ```text
-recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every week
-recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 0 weeks
-recurring meeting /from 2026-10-02 1400 /to 2026-10-03 1500 /every 1 week
-recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 1 month
-recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 1 week /until 2026-10-01
+recurring meeting /on 2026-10-02 /start 1400 /end 1500 /every week
+recurring meeting /on 2026-10-02 /start 1400 /end 1500 /every 0 weeks
+recurring meeting /on 2026-10-02 /start 1500 /end 1400 /every 1 week
+recurring meeting /on 2026-10-02 /start 1400 /end 1500 /every 1 month
+recurring meeting /on 2026-10-02 /start 1400 /end 1500 /every 1 week /until 2026-10-01
 ```
 
 ## Preserve ordinary task behavior

@@ -1,6 +1,8 @@
 package oz;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -89,7 +91,7 @@ public class Oz {
 
     /** Usage message for adding a recurring event. */
     private static final String RECURRING_EVENT_USAGE_MESSAGE =
-            "Use: recurring <description> /from <start> /to <end> "
+            "Use: recurring <description> /on <date> /start <time> /end <time> "
                     + "/every <interval> week|weeks [/until <date>].";
 
     /** Error shown when a recurring event description is missing. */
@@ -128,7 +130,8 @@ public class Oz {
 
     /** Regex pattern parsing a weekly recurring event and optional end date. */
     private static final Pattern RECURRING_EVENT_ARGUMENTS_PATTERN = Pattern.compile(
-            "^(?<description>.+?)\\s+/from\\s+(?<fromTime>.+?)\\s+/to\\s+(?<toTime>.+?)"
+            "^(?<description>.+?)\\s+/on\\s+(?<eventDate>.+?)"
+                    + "\\s+/start\\s+(?<startTime>.+?)\\s+/end\\s+(?<endTime>.+?)"
                     + "\\s+/every\\s+(?<interval>\\S+)\\s+(?<unit>\\S+)"
                     + "(?:\\s+/until\\s+(?<untilDate>.+))?$");
 
@@ -503,8 +506,9 @@ public class Oz {
         }
 
         String description = recurringEventMatcher.group("description").trim();
-        String fromTimeArgument = recurringEventMatcher.group("fromTime").trim();
-        String toTimeArgument = recurringEventMatcher.group("toTime").trim();
+        String eventDateArgument = recurringEventMatcher.group("eventDate").trim();
+        String startTimeArgument = recurringEventMatcher.group("startTime").trim();
+        String endTimeArgument = recurringEventMatcher.group("endTime").trim();
         String intervalArgument = recurringEventMatcher.group("interval").trim();
         String unitArgument = recurringEventMatcher.group("unit").trim();
         String untilDateArgument = recurringEventMatcher.group("untilDate");
@@ -518,8 +522,13 @@ public class Oz {
         }
 
         int weekInterval = parseRecurrenceInterval(intervalArgument);
-        TaskDateTime firstStartDateTime = TaskDateTime.parse(fromTimeArgument);
-        TaskDateTime firstEndDateTime = TaskDateTime.parse(toTimeArgument);
+        LocalDate eventDate = TaskDateTime.parseDate(eventDateArgument);
+        LocalTime startTime = TaskDateTime.parseTime(startTimeArgument);
+        LocalTime endTime = TaskDateTime.parseTime(endTimeArgument);
+        TaskDateTime firstStartDateTime = TaskDateTime.fromDateTime(
+                LocalDateTime.of(eventDate, startTime));
+        TaskDateTime firstEndDateTime = TaskDateTime.fromDateTime(
+                LocalDateTime.of(eventDate, endTime));
         LocalDate untilDate = untilDateArgument == null
                 ? null
                 : TaskDateTime.parseDate(untilDateArgument.trim());
