@@ -208,7 +208,7 @@ public class TaskService {
      */
     private void saveOrRollback(RollbackAction rollbackAction) throws OzException {
         try {
-            this.storage.save(this.tasks);
+            this.storage.save(this.tasks.getTasks());
         } catch (OzException saveException) {
             try {
                 rollbackAction.run();

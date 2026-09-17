@@ -8,7 +8,6 @@ import java.util.List;
 
 import oz.exception.OzException;
 import oz.task.Task;
-import oz.task.TaskList;
 
 /**
  * Handles loading tasks from a storage file and saving tasks to the storage
@@ -74,10 +73,10 @@ public class Storage {
     /**
      * Saves the list of tasks to the storage file on the hard disk.
      *
-     * @param tasks The list of tasks to save.
+     * @param tasks Tasks to save.
      * @throws OzException If the file cannot be written due to permissions or I/O error.
      */
-    public void save(ArrayList<Task> tasks) throws OzException {
+    public void save(List<Task> tasks) throws OzException {
         assert tasks != null : "The task collection to save must be non-null";
         assert tasks.stream().noneMatch(task -> task == null)
                 : "The task collection to save must not contain null tasks";
@@ -98,16 +97,6 @@ public class Storage {
             throw new OzException("Could not save tasks to storage file: "
                     + (exception.getMessage() != null ? exception.getMessage() : "permission denied."));
         }
-    }
-
-    /**
-     * Saves the tasks from a TaskList to the storage file on the hard disk.
-     *
-     * @param taskList The TaskList instance to save.
-     * @throws OzException If the file cannot be written due to permissions or I/O error.
-     */
-    public void save(TaskList taskList) throws OzException {
-        save(taskList.getTasks());
     }
 
 }
