@@ -1,8 +1,6 @@
 package oz;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -11,14 +9,12 @@ import java.util.regex.Pattern;
 import oz.exception.OzException;
 import oz.parser.CommandParser;
 import oz.parser.ParsedCommand;
+import oz.parser.TaskParser;
 import oz.storage.Storage;
-import oz.task.Deadline;
-import oz.task.Event;
 import oz.task.RecurringEvent;
 import oz.task.Task;
 import oz.task.TaskDateTime;
 import oz.task.TaskList;
-import oz.task.ToDo;
 
 /**
  * Main entry point and controller for the Oz chatbot.
@@ -38,16 +34,6 @@ public class Oz {
 
     /** Error template shown when duplicate parameter flags are detected. */
     private static final String DUPLICATE_FLAG_MESSAGE_FORMAT = "Duplicate '%s' parameter detected.";
-
-    /** Error shown when an unexpected parameter flag is supplied to todo. */
-    private static final String TODO_UNEXPECTED_FLAG_MESSAGE =
-            "The todo command does not accept parameter flags like /by, /from, or /to.";
-
-    /** Error template shown when a required parameter flag is missing. */
-    private static final String MISSING_FLAG_MESSAGE_FORMAT = "Missing required '%s' parameter. %s";
-
-    /** Error template shown when parameters are supplied out of order. */
-    private static final String MISPLACED_FLAG_MESSAGE_FORMAT = "The '%s' parameter must precede '%s'. %s";
 
     /** Error template shown when an unexpected parameter flag is supplied. */
     private static final String UNEXPECTED_FLAG_MESSAGE_FORMAT = "Unexpected '%s' parameter in %s command. %s";
@@ -71,51 +57,9 @@ public class Oz {
     /** Error template shown when unmarking an incomplete task. */
     private static final String TASK_ALREADY_NOT_DONE_MESSAGE_FORMAT = "Task %d is not marked as done yet.";
 
-    /** Error shown when task input contains the storage delimiter '|'. */
-    private static final String RESERVED_DELIMITER_MESSAGE =
-            "Task input cannot contain the '|' character because it is reserved for storage.";
-
     /** Usage message for unmarking a recurring occurrence. */
     private static final String UNMARK_RECURRING_USAGE_MESSAGE =
             "Please specify which occurrence to unmark. Use: unmark <number> /on <date>.";
-
-    /** Error shown when a todo description is missing. */
-    private static final String EMPTY_TODO_DESCRIPTION_MESSAGE = "The description of a todo cannot be empty.";
-
-    /** Usage message for adding a deadline. */
-    private static final String DEADLINE_USAGE_MESSAGE = "Use: deadline <description> /by <date>.";
-
-    /** Error shown when a deadline description is missing. */
-    private static final String EMPTY_DEADLINE_DESCRIPTION_MESSAGE = "The description of a deadline cannot be empty.";
-
-    /** Error shown when a deadline date-time is missing. */
-    private static final String EMPTY_DEADLINE_DATE_TIME_MESSAGE = "The deadline date/time (/by) cannot be empty.";
-
-    /** Usage message for adding an event. */
-    private static final String EVENT_USAGE_MESSAGE = "Use: event <description> /from <start> /to <end>.";
-
-    /** Error shown when an event description is missing. */
-    private static final String EMPTY_EVENT_DESCRIPTION_MESSAGE = "The description of an event cannot be empty.";
-
-    /** Error shown when an event start or end is missing. */
-    private static final String EMPTY_EVENT_DATE_TIME_MESSAGE =
-            "The event start (/from) and end (/to) dates cannot be empty.";
-
-    /** Usage message for adding a recurring event. */
-    private static final String RECURRING_EVENT_USAGE_MESSAGE =
-            "Use: recurring <description> /on <date> /start <time> /end <time> "
-            + "/every <interval> week|weeks [/until <date>].";
-
-    /** Error shown when a recurring event description is missing. */
-    private static final String EMPTY_RECURRING_DESCRIPTION_MESSAGE =
-            "The description of a recurring event cannot be empty.";
-
-    /** Error shown when a recurrence unit is not weekly. */
-    private static final String INVALID_RECURRENCE_UNIT_MESSAGE = "The recurrence unit must be week or weeks.";
-
-    /** Error shown when a recurrence interval is not positive. */
-    private static final String INVALID_RECURRENCE_INTERVAL_MESSAGE =
-            "The recurrence interval must be a positive whole number.";
 
     /** Error shown when no task number is provided. */
     private static final String EMPTY_TASK_NUMBER_MESSAGE = "Please specify a task number.";
@@ -136,21 +80,6 @@ public class Oz {
 
     /** Error shown when a numeric task number cannot fit in an integer. */
     private static final String TASK_NUMBER_TOO_LARGE_MESSAGE = "That task number is too large.";
-
-    /** Regex pattern parsing deadline description and /by argument. */
-    private static final Pattern DEADLINE_ARGUMENTS_PATTERN = Pattern
-            .compile("^(?<description>.+?)\\s+/by\\s+(?<byTime>.+)$");
-
-    /** Regex pattern parsing event description, /from, and /to arguments. */
-    private static final Pattern EVENT_ARGUMENTS_PATTERN = Pattern
-            .compile("^(?<description>.+?)\\s+/from\\s+(?<fromTime>.+?)\\s+/to\\s+(?<toTime>.+)$");
-
-    /** Regex pattern parsing a weekly recurring event and optional end date. */
-    private static final Pattern RECURRING_EVENT_ARGUMENTS_PATTERN = Pattern.compile(
-            "^(?<description>.+?)\\s+/on\\s+(?<eventDate>.+?)"
-                    + "\\s+/start\\s+(?<startTime>.+?)\\s+/end\\s+(?<endTime>.+?)"
-                    + "\\s+/every\\s+(?<interval>\\S+)\\s+(?<unit>\\S+)"
-                    + "(?:\\s+/until\\s+(?<untilDate>.+))?$");
 
     /** Regex pattern parsing a task number and occurrence date. */
     private static final Pattern OCCURRENCE_ARGUMENTS_PATTERN = Pattern
@@ -451,19 +380,7 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private CommandResult addTodo(String details) throws OzException {
-        if (details.isBlank()) {
-            throw new OzException(EMPTY_TODO_DESCRIPTION_MESSAGE);
-        }
-        validateNoStorageDelimiter(details);
-        if (countFlagOccurrences(details, "/by") > 0
-                || countFlagOccurrences(details, "/from") > 0
-                || countFlagOccurrences(details, "/to") > 0
-                || countFlagOccurrences(details, "/on") > 0) {
-            throw new OzException(TODO_UNEXPECTED_FLAG_MESSAGE);
-        }
-
-        Task task = new ToDo(details);
-        return addTask(task);
+        return addTask(TaskParser.parseTodo(details));
     }
 
     /**
@@ -474,40 +391,7 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private CommandResult addDeadline(String details) throws OzException {
-        validateNoStorageDelimiter(details);
-        int byCount = countFlagOccurrences(details, "/by");
-        if (byCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/by"));
-        }
-        if (byCount == 0) {
-            throw new OzException(DEADLINE_USAGE_MESSAGE);
-        }
-        if (countFlagOccurrences(details, "/from") > 0) {
-            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
-                    "/from", "deadline", DEADLINE_USAGE_MESSAGE));
-        }
-        if (countFlagOccurrences(details, "/to") > 0) {
-            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
-                    "/to", "deadline", DEADLINE_USAGE_MESSAGE));
-        }
-
-        Matcher deadlineMatcher = DEADLINE_ARGUMENTS_PATTERN.matcher(details);
-        if (!deadlineMatcher.matches()) {
-            throw new OzException(DEADLINE_USAGE_MESSAGE);
-        }
-
-        String deadlineDescription = deadlineMatcher.group("description").trim();
-        String deadlineTimeArgument = deadlineMatcher.group("byTime").trim();
-        if (deadlineDescription.isEmpty()) {
-            throw new OzException(EMPTY_DEADLINE_DESCRIPTION_MESSAGE);
-        }
-        if (deadlineTimeArgument.isEmpty()) {
-            throw new OzException(EMPTY_DEADLINE_DATE_TIME_MESSAGE);
-        }
-
-        TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
-        Task task = new Deadline(deadlineDescription, deadlineTime);
-        return addTask(task);
+        return addTask(TaskParser.parseDeadline(details));
     }
 
     /**
@@ -518,54 +402,7 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private CommandResult addEvent(String details) throws OzException {
-        validateNoStorageDelimiter(details);
-        int fromCount = countFlagOccurrences(details, "/from");
-        int toCount = countFlagOccurrences(details, "/to");
-        if (fromCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/from"));
-        }
-        if (toCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/to"));
-        }
-        if (fromCount == 0 && toCount == 0) {
-            throw new OzException(EVENT_USAGE_MESSAGE);
-        }
-        if (fromCount == 0) {
-            throw new OzException(String.format(MISSING_FLAG_MESSAGE_FORMAT,
-                    "/from", EVENT_USAGE_MESSAGE));
-        }
-        if (toCount == 0) {
-            throw new OzException(String.format(MISSING_FLAG_MESSAGE_FORMAT,
-                    "/to", EVENT_USAGE_MESSAGE));
-        }
-        if (details.indexOf("/to") < details.indexOf("/from")) {
-            throw new OzException(String.format(MISPLACED_FLAG_MESSAGE_FORMAT,
-                    "/from", "/to", EVENT_USAGE_MESSAGE));
-        }
-        if (countFlagOccurrences(details, "/by") > 0) {
-            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
-                    "/by", "event", EVENT_USAGE_MESSAGE));
-        }
-
-        Matcher eventMatcher = EVENT_ARGUMENTS_PATTERN.matcher(details);
-        if (!eventMatcher.matches()) {
-            throw new OzException(EVENT_USAGE_MESSAGE);
-        }
-
-        String eventDescription = eventMatcher.group("description").trim();
-        String fromTimeArgument = eventMatcher.group("fromTime").trim();
-        String toTimeArgument = eventMatcher.group("toTime").trim();
-        if (eventDescription.isEmpty()) {
-            throw new OzException(EMPTY_EVENT_DESCRIPTION_MESSAGE);
-        }
-        if (fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
-            throw new OzException(EMPTY_EVENT_DATE_TIME_MESSAGE);
-        }
-
-        TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
-        TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
-        Task task = new Event(eventDescription, fromTime, toTime);
-        return addTask(task);
+        return addTask(TaskParser.parseEvent(details));
     }
 
     /**
@@ -576,76 +413,7 @@ public class Oz {
      * @throws OzException If the recurring event arguments are invalid.
      */
     private CommandResult addRecurringEvent(String details) throws OzException {
-        validateNoStorageDelimiter(details);
-        int onCount = countFlagOccurrences(details, "/on");
-        int startCount = countFlagOccurrences(details, "/start");
-        int endCount = countFlagOccurrences(details, "/end");
-        int everyCount = countFlagOccurrences(details, "/every");
-        int untilCount = countFlagOccurrences(details, "/until");
-        if (onCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
-        }
-        if (startCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/start"));
-        }
-        if (endCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/end"));
-        }
-        if (everyCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/every"));
-        }
-        if (untilCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/until"));
-        }
-        if (onCount == 0 || startCount == 0 || endCount == 0 || everyCount == 0) {
-            throw new OzException(RECURRING_EVENT_USAGE_MESSAGE);
-        }
-        int onIdx = details.indexOf("/on");
-        int startIdx = details.indexOf("/start");
-        int endIdx = details.indexOf("/end");
-        int everyIdx = details.indexOf("/every");
-        int untilIdx = details.indexOf("/until");
-        if (!(onIdx < startIdx && startIdx < endIdx && endIdx < everyIdx
-                && (untilIdx == -1 || everyIdx < untilIdx))) {
-            throw new OzException("Recurring parameters are out of order. "
-                    + RECURRING_EVENT_USAGE_MESSAGE);
-        }
-
-        Matcher recurringEventMatcher = RECURRING_EVENT_ARGUMENTS_PATTERN.matcher(details);
-        if (!recurringEventMatcher.matches()) {
-            throw new OzException(RECURRING_EVENT_USAGE_MESSAGE);
-        }
-
-        String description = recurringEventMatcher.group("description").trim();
-        String eventDateArgument = recurringEventMatcher.group("eventDate").trim();
-        String startTimeArgument = recurringEventMatcher.group("startTime").trim();
-        String endTimeArgument = recurringEventMatcher.group("endTime").trim();
-        String intervalArgument = recurringEventMatcher.group("interval").trim();
-        String unitArgument = recurringEventMatcher.group("unit").trim();
-        String untilDateArgument = recurringEventMatcher.group("untilDate");
-
-        if (description.isEmpty()) {
-            throw new OzException(EMPTY_RECURRING_DESCRIPTION_MESSAGE);
-        }
-        if (!unitArgument.equalsIgnoreCase("week")
-                && !unitArgument.equalsIgnoreCase("weeks")) {
-            throw new OzException(INVALID_RECURRENCE_UNIT_MESSAGE);
-        }
-
-        int weekInterval = parseRecurrenceInterval(intervalArgument);
-        LocalDate eventDate = TaskDateTime.parseDate(eventDateArgument);
-        LocalTime startTime = TaskDateTime.parseTime(startTimeArgument);
-        LocalTime endTime = TaskDateTime.parseTime(endTimeArgument);
-        TaskDateTime firstStartDateTime = TaskDateTime.fromDateTime(
-                LocalDateTime.of(eventDate, startTime));
-        TaskDateTime firstEndDateTime = TaskDateTime.fromDateTime(
-                LocalDateTime.of(eventDate, endTime));
-        LocalDate untilDate = untilDateArgument == null
-                ? null
-                : TaskDateTime.parseDate(untilDateArgument.trim());
-        Task task = new RecurringEvent(description, firstStartDateTime,
-                firstEndDateTime, weekInterval, untilDate);
-        return addTask(task);
+        return addTask(TaskParser.parseRecurringEvent(details));
     }
 
     /**
@@ -744,29 +512,6 @@ public class Oz {
     }
 
     /**
-     * Parses and validates a positive recurrence interval.
-     *
-     * @param argument Raw interval argument.
-     * @return Positive interval in weeks.
-     * @throws OzException If the argument is not a positive whole number.
-     */
-    private static int parseRecurrenceInterval(String argument) throws OzException {
-        if (!argument.matches("\\d+")) {
-            throw new OzException(INVALID_RECURRENCE_INTERVAL_MESSAGE);
-        }
-
-        try {
-            int interval = Integer.parseInt(argument);
-            if (interval <= 0) {
-                throw new OzException(INVALID_RECURRENCE_INTERVAL_MESSAGE);
-            }
-            return interval;
-        } catch (NumberFormatException exception) {
-            throw new OzException(INVALID_RECURRENCE_INTERVAL_MESSAGE);
-        }
-    }
-
-    /**
      * Parses the zero-based task index from user command arguments.
      *
      * @param argument  Argument string containing the 1-based task number.
@@ -828,23 +573,6 @@ public class Oz {
             count++;
         }
         return count;
-    }
-
-    /**
-     * Validates that the input does not contain the storage delimiter '|'.
-     * Credit to user Gnanes99 (https://github.com/Gnanes99) for this check.
-     * see https://github.com/NUS-CS2103-AY2627-S1/forum/issues/238 for the whole
-     * thread
-     *
-     * @param input Raw input text to validate.
-     * @throws OzException If the input contains the '|' character.
-     */
-    private static void validateNoStorageDelimiter(String input) throws OzException {
-        // Credit to Gnanes99 (https://github.com/Gnanes99): forbid '|' to prevent
-        // storage corruption.
-        if (input.contains("|")) {
-            throw new OzException(RESERVED_DELIMITER_MESSAGE);
-        }
     }
 
     /**
