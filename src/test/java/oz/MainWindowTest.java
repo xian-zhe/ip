@@ -1,6 +1,7 @@
 package oz;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,7 +19,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
 
 /**
  * Tests that the {@link MainWindow} layout and controller are correctly loaded via FXML.
@@ -71,6 +74,8 @@ public class MainWindowTest {
         assertNotNull(this.rootLayout);
         assertEquals(400.0, this.rootLayout.getPrefWidth());
         assertEquals(600.0, this.rootLayout.getPrefHeight());
+        assertEquals(320.0, this.rootLayout.getMinWidth());
+        assertEquals(400.0, this.rootLayout.getMinHeight());
     }
 
     @Test
@@ -82,11 +87,39 @@ public class MainWindowTest {
 
         Button sendButton = (Button) this.rootLayout.getChildren().get(1);
         assertEquals("Send", sendButton.getText());
+
+        TextField userInput = (TextField) this.rootLayout.getChildren().get(0);
+        assertEquals("Enter a command, e.g. list", userInput.getPromptText());
     }
 
     @Test
     public void fxmlLoading_validFxml_stylesheetAttached() {
         assertTrue(this.rootLayout.getStylesheets().stream()
                 .anyMatch((stylesheet) -> stylesheet.contains("main.css")));
+    }
+
+    @Test
+    public void sendButton_blankAndNonBlankInput_updatesDisabledState() {
+        TextField userInput = (TextField) this.rootLayout.getChildren().get(0);
+        Button sendButton = (Button) this.rootLayout.getChildren().get(1);
+
+        assertTrue(sendButton.isDisabled());
+
+        userInput.setText("   ");
+        assertTrue(sendButton.isDisabled());
+
+        userInput.setText("list");
+        assertFalse(sendButton.isDisabled());
+    }
+
+    @Test
+    public void setOz_validOz_displaysWelcomeMessage() {
+        ScrollPane scrollPane = (ScrollPane) this.rootLayout.getChildren().get(2);
+        VBox dialogContainer = (VBox) scrollPane.getContent();
+
+        assertEquals(1, dialogContainer.getChildren().size());
+        DialogBox welcomeDialog = (DialogBox) dialogContainer.getChildren().get(0);
+        TextArea welcomeMessage = (TextArea) welcomeDialog.getChildren().get(1);
+        assertTrue(welcomeMessage.getText().contains("Try 'list'"));
     }
 }

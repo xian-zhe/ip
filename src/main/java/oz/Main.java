@@ -23,6 +23,12 @@ public class Main extends Application {
     /** Classpath location of the application icon. */
     private static final String APP_ICON_IMAGE_PATH = "/images/icon.png";
 
+    /** Minimum stage width that keeps the command controls usable. */
+    private static final double MINIMUM_STAGE_WIDTH = 320;
+
+    /** Minimum stage height that leaves room for conversation history. */
+    private static final double MINIMUM_STAGE_HEIGHT = 400;
+
     /** The Oz chatbot instance handling application logic. */
     private Oz oz = new Oz(Oz.DEFAULT_STORAGE_PATH);
 
@@ -41,6 +47,9 @@ public class Main extends Application {
             stage.setTitle(APP_TITLE);
             stage.getIcons().add(new Image(Main.class.getResourceAsStream(APP_ICON_IMAGE_PATH)));
             stage.setScene(scene);
+            stage.setMinWidth(MINIMUM_STAGE_WIDTH);
+            stage.setMinHeight(MINIMUM_STAGE_HEIGHT);
+            stage.setResizable(true);
             fxmlLoader.<MainWindow>getController().setOz(oz); // Injects the Oz instance
             stage.show();
         } catch (IOException exception) {
