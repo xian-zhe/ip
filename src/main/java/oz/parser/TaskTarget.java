@@ -15,13 +15,4 @@ public record TaskTarget(int taskIndex, LocalDate occurrenceDate) {
     public TaskTarget {
         assert taskIndex >= 0 : "A parsed task target must have a non-negative index";
     }
-
-    /**
-     * Returns whether this target identifies a recurring occurrence.
-     *
-     * @return True if an occurrence date was supplied; false otherwise.
-     */
-    public boolean hasOccurrenceDate() {
-        return this.occurrenceDate != null;
-    }
 }

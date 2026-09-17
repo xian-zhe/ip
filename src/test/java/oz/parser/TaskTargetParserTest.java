@@ -1,10 +1,8 @@
 package oz.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 
@@ -29,7 +27,6 @@ public class TaskTargetParserTest {
 
         assertEquals(1, target.taskIndex());
         assertEquals(LocalDate.of(2026, 9, 17), target.occurrenceDate());
-        assertTrue(target.hasOccurrenceDate());
     }
 
     /** Verifies an unmark target can identify an ordinary task. */
@@ -39,7 +36,6 @@ public class TaskTargetParserTest {
 
         assertEquals(2, target.taskIndex());
         assertNull(target.occurrenceDate());
-        assertFalse(target.hasOccurrenceDate());
     }
 
     /** Verifies duplicate occurrence flags are rejected before index parsing. */

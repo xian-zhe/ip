@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import oz.exception.OzException;
+import oz.formatter.TaskResponseFormatter;
 import oz.parser.CommandParser;
 import oz.parser.ParsedCommand;
 import oz.parser.TaskParser;
@@ -11,7 +12,6 @@ import oz.parser.TaskTarget;
 import oz.parser.TaskTargetParser;
 import oz.service.TaskService;
 import oz.storage.Storage;
-import oz.task.RecurringEvent;
 import oz.task.Task;
 import oz.task.TaskDateTime;
 
@@ -145,7 +145,7 @@ public class Oz {
             throw new OzException(LIST_ARGUMENTS_MESSAGE);
         }
 
-        String response = formatTaskList("Here is the master task list:\n",
+        String response = TaskResponseFormatter.formatTaskList("Here is the master task list:\n",
                 this.taskService.getTasks());
         return new CommandResult(response, ResponseType.LIST);
     }
@@ -173,7 +173,7 @@ public class Oz {
                     ResponseType.LIST);
         }
 
-        String response = formatTasksOnDate(
+        String response = TaskResponseFormatter.formatTasksOnDate(
                 "Tasks occurring on " + dateHeader + ":\n",
                 matchingTasks, targetDate);
         return new CommandResult(response, ResponseType.LIST);
@@ -197,7 +197,7 @@ public class Oz {
             return new CommandResult("No matching tasks found in the ledger.", ResponseType.FIND);
         }
 
-        String response = formatTaskList("Matching tasks located:\n",
+        String response = TaskResponseFormatter.formatTaskList("Matching tasks located:\n",
                 matchingTasks);
         return new CommandResult(response, ResponseType.FIND);
     }
@@ -212,16 +212,8 @@ public class Oz {
     private CommandResult markTask(String details) throws OzException {
         TaskTarget target = TaskTargetParser.parseMarkTarget(details, this.taskService.size());
         Task task = this.taskService.markTask(target.taskIndex(), target.occurrenceDate());
-        if (target.hasOccurrenceDate()) {
-            assert task instanceof RecurringEvent
-                    : "A task marked for an occurrence must be recurring";
-            RecurringEvent recurringEvent = (RecurringEvent) task;
-            return new CommandResult("*Oink* Marked occurrence as done:\n  "
-                    + recurringEvent.toOccurrenceString(target.occurrenceDate()),
-                    ResponseType.CHANGE_MARK);
-        }
-
-        return new CommandResult("*Oink* Marked as done:\n  " + task,
+        return new CommandResult(TaskResponseFormatter.formatMarkedTask(
+                task, target.occurrenceDate()),
                 ResponseType.CHANGE_MARK);
     }
 
@@ -235,16 +227,8 @@ public class Oz {
     private CommandResult unmarkTask(String details) throws OzException {
         TaskTarget target = TaskTargetParser.parseUnmarkTarget(details, this.taskService.size());
         Task task = this.taskService.unmarkTask(target.taskIndex(), target.occurrenceDate());
-        if (target.hasOccurrenceDate()) {
-            assert task instanceof RecurringEvent
-                    : "A task unmarked for an occurrence must be recurring";
-            RecurringEvent recurringEvent = (RecurringEvent) task;
-            return new CommandResult("*Snort* Marked occurrence as not done yet:\n  "
-                    + recurringEvent.toOccurrenceString(target.occurrenceDate()),
-                    ResponseType.CHANGE_MARK);
-        }
-
-        return new CommandResult("*Snort* Marked as not done yet:\n  " + task,
+        return new CommandResult(TaskResponseFormatter.formatUnmarkedTask(
+                task, target.occurrenceDate()),
                 ResponseType.CHANGE_MARK);
     }
 
@@ -302,13 +286,8 @@ public class Oz {
     private CommandResult deleteTask(String details) throws OzException {
         int index = TaskTargetParser.parseIndex(details, this.taskService.size());
         Task removedTask = this.taskService.delete(index);
-        return new CommandResult(String.format(
-                """
-                        Scrapped! Removed task:
-                        %s
-                        Now you have %d tasks in the list.
-                        """,
-                removedTask, this.taskService.size()).stripTrailing(), ResponseType.DELETE);
+        return new CommandResult(TaskResponseFormatter.formatDeletedTask(
+                removedTask, this.taskService.size()), ResponseType.DELETE);
     }
 
     /**
@@ -320,59 +299,8 @@ public class Oz {
      */
     private CommandResult addTask(Task task) throws OzException {
         Task addedTask = this.taskService.add(task);
-        return new CommandResult(String.format(
-                """
-                        *Snort* Added to the list:
-                        %s
-                        Now you have %d tasks in the list.
-                        """,
-                addedTask, this.taskService.size()).stripTrailing(), ResponseType.ADD);
-    }
-
-    /**
-     * Formats tasks in their existing order with consecutive display numbers.
-     *
-     * @param header         Heading to place before the numbered tasks, including
-     *                       its newline.
-     * @param tasksToDisplay Tasks to include in the response.
-     * @return Heading and numbered task descriptions without trailing whitespace.
-     */
-    private static String formatTaskList(String header, List<Task> tasksToDisplay) {
-        StringBuilder response = new StringBuilder(header);
-        for (int i = 0; i < tasksToDisplay.size(); i++) {
-            response.append(i + 1)
-                    .append(". ")
-                    .append(tasksToDisplay.get(i))
-                    .append("\n");
-        }
-        return response.toString().stripTrailing();
-    }
-
-    /**
-     * Formats tasks for a date query, expanding recurring series to their
-     * occurrence view.
-     *
-     * @param header         Heading to place before the numbered tasks.
-     * @param tasksToDisplay Tasks occurring on the target date.
-     * @param targetDate     Date whose occurrences should be displayed.
-     * @return Heading and numbered task descriptions without trailing whitespace.
-     * @throws OzException If a recurring task cannot produce its expected
-     *                     occurrence.
-     */
-    private static String formatTasksOnDate(String header, List<Task> tasksToDisplay,
-            LocalDate targetDate) throws OzException {
-        StringBuilder response = new StringBuilder(header);
-        for (int i = 0; i < tasksToDisplay.size(); i++) {
-            Task task = tasksToDisplay.get(i);
-            String taskDescription = task instanceof RecurringEvent recurringEvent
-                    ? recurringEvent.toOccurrenceString(targetDate)
-                    : task.toString();
-            response.append(i + 1)
-                    .append(". ")
-                    .append(taskDescription)
-                    .append("\n");
-        }
-        return response.toString().stripTrailing();
+        return new CommandResult(TaskResponseFormatter.formatAddedTask(
+                addedTask, this.taskService.size()), ResponseType.ADD);
     }
 
     /**
