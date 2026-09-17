@@ -2,13 +2,13 @@ package oz;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import oz.exception.OzException;
 import oz.parser.CommandParser;
 import oz.parser.ParsedCommand;
 import oz.parser.TaskParser;
+import oz.parser.TaskTarget;
+import oz.parser.TaskTargetParser;
 import oz.service.TaskService;
 import oz.storage.Storage;
 import oz.task.RecurringEvent;
@@ -31,41 +31,11 @@ public class Oz {
     /** Error shown when the bye command receives arguments. */
     private static final String BYE_ARGUMENTS_MESSAGE = "The bye command does not take arguments.";
 
-    /** Error template shown when duplicate parameter flags are detected. */
-    private static final String DUPLICATE_FLAG_MESSAGE_FORMAT = "Duplicate '%s' parameter detected.";
-
-    /** Error template shown when an unexpected parameter flag is supplied. */
-    private static final String UNEXPECTED_FLAG_MESSAGE_FORMAT = "Unexpected '%s' parameter in %s command. %s";
-
     /** Usage message for date-filtered task listing. */
     private static final String ON_USAGE_MESSAGE = "Use: on <date> (e.g., on 2019-10-15 or on 2/12/2019).";
 
     /** Error shown when find receives no keyword. */
     private static final String EMPTY_FIND_KEYWORD_MESSAGE = "The keyword for find cannot be empty.";
-
-    /** Error shown when no task number is provided. */
-    private static final String EMPTY_TASK_NUMBER_MESSAGE = "Please specify a task number.";
-
-    /** Error shown when the task list is empty. */
-    private static final String EMPTY_TASK_LIST_MESSAGE = "Your task list is empty. Add tasks before referencing them.";
-
-    /** Error shown when a task number is not positive. */
-    private static final String NON_POSITIVE_TASK_NUMBER_MESSAGE =
-            "Task number must be a positive whole number starting from 1.";
-
-    /** Error template shown when a task number is out of bounds. */
-    private static final String TASK_INDEX_OUT_OF_BOUNDS_MESSAGE_FORMAT =
-            "Task number %d does not exist. Please provide a number between 1 and %d.";
-
-    /** Error shown when a task number is not numeric. */
-    private static final String INVALID_TASK_NUMBER_MESSAGE = "Please provide a valid whole number for the task index.";
-
-    /** Error shown when a numeric task number cannot fit in an integer. */
-    private static final String TASK_NUMBER_TOO_LARGE_MESSAGE = "That task number is too large.";
-
-    /** Regex pattern parsing a task number and occurrence date. */
-    private static final Pattern OCCURRENCE_ARGUMENTS_PATTERN = Pattern
-            .compile("^(?<taskNumber>\\d+)\\s+/on\\s+(?<occurrenceDate>.+)$");
 
     /** Service coordinating task state and persistence. */
     private final TaskService taskService;
@@ -240,31 +210,17 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private CommandResult markTask(String details) throws OzException {
-        if (countFlagOccurrences(details, "/on") > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
-        }
-        if (countFlagOccurrences(details, "/by") > 0
-                || countFlagOccurrences(details, "/from") > 0
-                || countFlagOccurrences(details, "/to") > 0) {
-            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
-                    "flag", "mark", "Use: mark <number> [/on <date>]."));
-        }
-
-        Matcher occurrenceMatcher = OCCURRENCE_ARGUMENTS_PATTERN.matcher(details);
-        if (occurrenceMatcher.matches()) {
-            int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.taskService.size());
-            LocalDate occurrenceDate = TaskDateTime.parseDate(
-                    occurrenceMatcher.group("occurrenceDate").trim());
-            Task task = this.taskService.markTask(index, occurrenceDate);
+        TaskTarget target = TaskTargetParser.parseMarkTarget(details, this.taskService.size());
+        Task task = this.taskService.markTask(target.taskIndex(), target.occurrenceDate());
+        if (target.hasOccurrenceDate()) {
             assert task instanceof RecurringEvent
                     : "A task marked for an occurrence must be recurring";
             RecurringEvent recurringEvent = (RecurringEvent) task;
             return new CommandResult("*Oink* Marked occurrence as done:\n  "
-                    + recurringEvent.toOccurrenceString(occurrenceDate), ResponseType.CHANGE_MARK);
+                    + recurringEvent.toOccurrenceString(target.occurrenceDate()),
+                    ResponseType.CHANGE_MARK);
         }
 
-        int index = parseTaskIndex(details, this.taskService.size());
-        Task task = this.taskService.markTask(index, null);
         return new CommandResult("*Oink* Marked as done:\n  " + task,
                 ResponseType.CHANGE_MARK);
     }
@@ -277,31 +233,17 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private CommandResult unmarkTask(String details) throws OzException {
-        if (countFlagOccurrences(details, "/on") > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
-        }
-        if (countFlagOccurrences(details, "/by") > 0
-                || countFlagOccurrences(details, "/from") > 0
-                || countFlagOccurrences(details, "/to") > 0) {
-            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
-                    "flag", "unmark", "Use: unmark <number> [/on <date>]."));
-        }
-
-        Matcher occurrenceMatcher = OCCURRENCE_ARGUMENTS_PATTERN.matcher(details);
-        if (occurrenceMatcher.matches()) {
-            int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.taskService.size());
-            LocalDate occurrenceDate = TaskDateTime.parseDate(
-                    occurrenceMatcher.group("occurrenceDate").trim());
-            Task task = this.taskService.unmarkTask(index, occurrenceDate);
+        TaskTarget target = TaskTargetParser.parseUnmarkTarget(details, this.taskService.size());
+        Task task = this.taskService.unmarkTask(target.taskIndex(), target.occurrenceDate());
+        if (target.hasOccurrenceDate()) {
             assert task instanceof RecurringEvent
                     : "A task unmarked for an occurrence must be recurring";
             RecurringEvent recurringEvent = (RecurringEvent) task;
             return new CommandResult("*Snort* Marked occurrence as not done yet:\n  "
-                    + recurringEvent.toOccurrenceString(occurrenceDate), ResponseType.CHANGE_MARK);
+                    + recurringEvent.toOccurrenceString(target.occurrenceDate()),
+                    ResponseType.CHANGE_MARK);
         }
 
-        int index = parseTaskIndex(details, this.taskService.size());
-        Task task = this.taskService.unmarkTask(index, null);
         return new CommandResult("*Snort* Marked as not done yet:\n  " + task,
                 ResponseType.CHANGE_MARK);
     }
@@ -358,7 +300,7 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private CommandResult deleteTask(String details) throws OzException {
-        int index = parseTaskIndex(details, this.taskService.size());
+        int index = TaskTargetParser.parseIndex(details, this.taskService.size());
         Task removedTask = this.taskService.delete(index);
         return new CommandResult(String.format(
                 """
@@ -431,70 +373,6 @@ public class Oz {
                     .append("\n");
         }
         return response.toString().stripTrailing();
-    }
-
-    /**
-     * Parses the zero-based task index from user command arguments.
-     *
-     * @param argument  Argument string containing the 1-based task number.
-     * @param taskCount Current total number of tasks in the list.
-     * @return 0-based task index.
-     * @throws OzException If the input is invalid or out of range.
-     */
-    private static int parseTaskIndex(String argument, int taskCount)
-            throws OzException {
-        assert taskCount >= 0 : "The task count must not be negative";
-        String trimmed = argument == null ? "" : argument.trim();
-        if (trimmed.isEmpty()) {
-            throw new OzException(EMPTY_TASK_NUMBER_MESSAGE);
-        }
-
-        int taskNumber;
-        try {
-            taskNumber = Integer.parseInt(trimmed);
-        } catch (NumberFormatException exception) {
-            if (trimmed.startsWith("-") && trimmed.substring(1).matches("\\d+")) {
-                throw new OzException(NON_POSITIVE_TASK_NUMBER_MESSAGE);
-            }
-            if (trimmed.matches("\\d+")) {
-                throw new OzException(TASK_NUMBER_TOO_LARGE_MESSAGE);
-            }
-            throw new OzException(INVALID_TASK_NUMBER_MESSAGE);
-        }
-
-        if (taskNumber <= 0) {
-            throw new OzException(NON_POSITIVE_TASK_NUMBER_MESSAGE);
-        }
-
-        if (taskCount == 0) {
-            throw new OzException(EMPTY_TASK_LIST_MESSAGE);
-        }
-
-        if (taskNumber > taskCount) {
-            throw new OzException(String.format(
-                    TASK_INDEX_OUT_OF_BOUNDS_MESSAGE_FORMAT, taskNumber, taskCount));
-        }
-
-        int index = taskNumber - 1;
-        assert index >= 0 && index < taskCount
-                : "A validated task number must map to an existing index";
-        return index;
-    }
-
-    /**
-     * Counts occurrences of a parameter flag in the argument string.
-     *
-     * @param input Raw arguments string.
-     * @param flag  Parameter flag including the leading slash (e.g., "/by").
-     * @return Number of times the flag appears as a distinct argument word.
-     */
-    private static int countFlagOccurrences(String input, String flag) {
-        Matcher matcher = Pattern.compile("(?<=\\s|^)" + Pattern.quote(flag) + "(?=\\s|$)").matcher(input);
-        int count = 0;
-        while (matcher.find()) {
-            count++;
-        }
-        return count;
     }
 
     /**
