@@ -18,9 +18,6 @@ import oz.task.ToDo;
  * Parses task-creation command arguments into validated task objects.
  */
 public final class TaskParser {
-    /** Error template shown when duplicate parameter flags are detected. */
-    private static final String DUPLICATE_FLAG_MESSAGE_FORMAT = "Duplicate '%s' parameter detected.";
-
     /** Error shown when an unexpected parameter flag is supplied to todo. */
     private static final String TODO_UNEXPECTED_FLAG_MESSAGE =
             "The todo command does not accept parameter flags like /by, /from, or /to.";
@@ -35,10 +32,6 @@ public final class TaskParser {
     /** Error template shown when an unexpected parameter flag is supplied. */
     private static final String UNEXPECTED_FLAG_MESSAGE_FORMAT =
             "Unexpected '%s' parameter in %s command. %s";
-
-    /** Error shown when task input contains the storage delimiter. */
-    private static final String RESERVED_DELIMITER_MESSAGE =
-            "Task input cannot contain the '|' character because it is reserved for storage.";
 
     /** Error shown when a todo description is missing. */
     private static final String EMPTY_TODO_DESCRIPTION_MESSAGE =
@@ -118,11 +111,9 @@ public final class TaskParser {
         if (arguments.isBlank()) {
             throw new OzException(EMPTY_TODO_DESCRIPTION_MESSAGE);
         }
-        validateNoStorageDelimiter(arguments);
-        if (countFlagOccurrences(arguments, "/by") > 0
-                || countFlagOccurrences(arguments, "/from") > 0
-                || countFlagOccurrences(arguments, "/to") > 0
-                || countFlagOccurrences(arguments, "/on") > 0) {
+        CommandArgumentValidator.validateNoStorageDelimiter(arguments);
+        if (CommandArgumentValidator.containsAnyFlag(
+                arguments, "/by", "/from", "/to", "/on")) {
             throw new OzException(TODO_UNEXPECTED_FLAG_MESSAGE);
         }
         return new ToDo(arguments);
@@ -136,19 +127,16 @@ public final class TaskParser {
      * @throws OzException If the arguments are invalid.
      */
     public static Task parseDeadline(String arguments) throws OzException {
-        validateNoStorageDelimiter(arguments);
-        int byCount = countFlagOccurrences(arguments, "/by");
-        if (byCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/by"));
-        }
-        if (byCount == 0) {
+        CommandArgumentValidator.validateNoStorageDelimiter(arguments);
+        CommandArgumentValidator.validateNoDuplicateFlags(arguments, "/by");
+        if (!CommandArgumentValidator.containsFlag(arguments, "/by")) {
             throw new OzException(DEADLINE_USAGE_MESSAGE);
         }
-        if (countFlagOccurrences(arguments, "/from") > 0) {
+        if (CommandArgumentValidator.containsFlag(arguments, "/from")) {
             throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
                     "/from", "deadline", DEADLINE_USAGE_MESSAGE));
         }
-        if (countFlagOccurrences(arguments, "/to") > 0) {
+        if (CommandArgumentValidator.containsFlag(arguments, "/to")) {
             throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
                     "/to", "deadline", DEADLINE_USAGE_MESSAGE));
         }
@@ -179,31 +167,28 @@ public final class TaskParser {
      * @throws OzException If the arguments are invalid.
      */
     public static Task parseEvent(String arguments) throws OzException {
-        validateNoStorageDelimiter(arguments);
-        int fromCount = countFlagOccurrences(arguments, "/from");
-        int toCount = countFlagOccurrences(arguments, "/to");
-        if (fromCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/from"));
-        }
-        if (toCount > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/to"));
-        }
-        if (fromCount == 0 && toCount == 0) {
+        CommandArgumentValidator.validateNoStorageDelimiter(arguments);
+        CommandArgumentValidator.validateNoDuplicateFlags(arguments, "/from", "/to");
+        boolean hasFromFlag = CommandArgumentValidator.containsFlag(arguments, "/from");
+        boolean hasToFlag = CommandArgumentValidator.containsFlag(arguments, "/to");
+        if (!hasFromFlag && !hasToFlag) {
             throw new OzException(EVENT_USAGE_MESSAGE);
         }
-        if (fromCount == 0) {
+        if (!hasFromFlag) {
             throw new OzException(String.format(MISSING_FLAG_MESSAGE_FORMAT,
                     "/from", EVENT_USAGE_MESSAGE));
         }
-        if (toCount == 0) {
+        if (!hasToFlag) {
             throw new OzException(String.format(MISSING_FLAG_MESSAGE_FORMAT,
                     "/to", EVENT_USAGE_MESSAGE));
         }
-        if (arguments.indexOf("/to") < arguments.indexOf("/from")) {
+        int fromFlagIndex = CommandArgumentValidator.findFlagIndex(arguments, "/from");
+        int toFlagIndex = CommandArgumentValidator.findFlagIndex(arguments, "/to");
+        if (toFlagIndex < fromFlagIndex) {
             throw new OzException(String.format(MISPLACED_FLAG_MESSAGE_FORMAT,
                     "/from", "/to", EVENT_USAGE_MESSAGE));
         }
-        if (countFlagOccurrences(arguments, "/by") > 0) {
+        if (CommandArgumentValidator.containsFlag(arguments, "/by")) {
             throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
                     "/by", "event", EVENT_USAGE_MESSAGE));
         }
@@ -236,7 +221,7 @@ public final class TaskParser {
      * @throws OzException If the arguments are invalid.
      */
     public static Task parseRecurringEvent(String arguments) throws OzException {
-        validateNoStorageDelimiter(arguments);
+        CommandArgumentValidator.validateNoStorageDelimiter(arguments);
         validateRecurringFlags(arguments);
 
         Matcher recurringEventMatcher = RECURRING_EVENT_ARGUMENTS_PATTERN.matcher(arguments);
@@ -282,18 +267,14 @@ public final class TaskParser {
      * @throws OzException If required flags are missing, repeated, or misplaced.
      */
     private static void validateRecurringFlags(String arguments) throws OzException {
-        String[] flags = {"/on", "/start", "/end", "/every", "/until"};
-        for (String flag : flags) {
-            if (countFlagOccurrences(arguments, flag) > 1) {
-                throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, flag));
-            }
-        }
+        CommandArgumentValidator.validateNoDuplicateFlags(
+                arguments, "/on", "/start", "/end", "/every", "/until");
 
-        int onIndex = arguments.indexOf("/on");
-        int startIndex = arguments.indexOf("/start");
-        int endIndex = arguments.indexOf("/end");
-        int everyIndex = arguments.indexOf("/every");
-        int untilIndex = arguments.indexOf("/until");
+        int onIndex = CommandArgumentValidator.findFlagIndex(arguments, "/on");
+        int startIndex = CommandArgumentValidator.findFlagIndex(arguments, "/start");
+        int endIndex = CommandArgumentValidator.findFlagIndex(arguments, "/end");
+        int everyIndex = CommandArgumentValidator.findFlagIndex(arguments, "/every");
+        int untilIndex = CommandArgumentValidator.findFlagIndex(arguments, "/until");
         if (onIndex == -1 || startIndex == -1 || endIndex == -1 || everyIndex == -1) {
             throw new OzException(RECURRING_EVENT_USAGE_MESSAGE);
         }
@@ -331,32 +312,4 @@ public final class TaskParser {
         }
     }
 
-    /**
-     * Counts appearances of a parameter flag as a distinct argument word.
-     *
-     * @param input Command arguments to inspect.
-     * @param flag Parameter flag including its leading slash.
-     * @return Number of distinct appearances of the flag.
-     */
-    private static int countFlagOccurrences(String input, String flag) {
-        Matcher matcher = Pattern.compile(
-                "(?<=\\s|^)" + Pattern.quote(flag) + "(?=\\s|$)").matcher(input);
-        int count = 0;
-        while (matcher.find()) {
-            count++;
-        }
-        return count;
-    }
-
-    /**
-     * Rejects task text that would corrupt the pipe-delimited storage format.
-     *
-     * @param input Task arguments to validate.
-     * @throws OzException If the input contains the storage delimiter.
-     */
-    private static void validateNoStorageDelimiter(String input) throws OzException {
-        if (input.contains("|")) {
-            throw new OzException(RESERVED_DELIMITER_MESSAGE);
-        }
-    }
 }

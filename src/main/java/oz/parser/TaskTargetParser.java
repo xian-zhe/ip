@@ -11,10 +11,6 @@ import oz.task.TaskDateTime;
  * Parses task indexes and optional recurring occurrence dates.
  */
 public final class TaskTargetParser {
-    /** Error template shown when duplicate parameter flags are detected. */
-    private static final String DUPLICATE_FLAG_MESSAGE_FORMAT =
-            "Duplicate '%s' parameter detected.";
-
     /** Error template shown when an unexpected parameter flag is supplied. */
     private static final String UNEXPECTED_FLAG_MESSAGE_FORMAT =
             "Unexpected '%s' parameter in %s command. %s";
@@ -143,12 +139,9 @@ public final class TaskTargetParser {
      */
     private static void validateMutationFlags(String arguments, String commandWord)
             throws OzException {
-        if (countFlagOccurrences(arguments, "/on") > 1) {
-            throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
-        }
-        if (countFlagOccurrences(arguments, "/by") > 0
-                || countFlagOccurrences(arguments, "/from") > 0
-                || countFlagOccurrences(arguments, "/to") > 0) {
+        CommandArgumentValidator.validateNoDuplicateFlags(arguments, "/on");
+        if (CommandArgumentValidator.containsAnyFlag(
+                arguments, "/by", "/from", "/to")) {
             String usage = "Use: " + commandWord + " <number> [/on <date>].";
             throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
                     "flag", commandWord, usage));
@@ -176,20 +169,4 @@ public final class TaskTargetParser {
         }
     }
 
-    /**
-     * Counts distinct occurrences of a parameter flag.
-     *
-     * @param input Raw argument string.
-     * @param flag Parameter flag including its leading slash.
-     * @return Number of distinct flag occurrences.
-     */
-    private static int countFlagOccurrences(String input, String flag) {
-        Matcher matcher = Pattern.compile(
-                "(?<=\\s|^)" + Pattern.quote(flag) + "(?=\\s|$)").matcher(input);
-        int count = 0;
-        while (matcher.find()) {
-            count++;
-        }
-        return count;
-    }
 }
