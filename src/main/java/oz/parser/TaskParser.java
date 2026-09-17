@@ -1,15 +1,11 @@
 package oz.parser;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import oz.exception.OzException;
 import oz.task.Deadline;
 import oz.task.Event;
-import oz.task.RecurringEvent;
 import oz.task.Task;
 import oz.task.TaskDateTime;
 import oz.task.ToDo;
@@ -60,27 +56,6 @@ public final class TaskParser {
     private static final String EMPTY_EVENT_DATE_TIME_MESSAGE =
             "The event start (/from) and end (/to) dates cannot be empty.";
 
-    /** Usage message for adding a recurring event. */
-    private static final String RECURRING_EVENT_USAGE_MESSAGE =
-            "Use: recurring <description> /on <date> /start <time> /end <time> "
-                    + "/every <interval> week|weeks [/until <date>].";
-
-    /** Error shown when recurring parameters are out of order. */
-    private static final String RECURRING_PARAMETER_ORDER_MESSAGE =
-            "Recurring parameters are out of order. ";
-
-    /** Error shown when a recurring event description is missing. */
-    private static final String EMPTY_RECURRING_DESCRIPTION_MESSAGE =
-            "The description of a recurring event cannot be empty.";
-
-    /** Error shown when a recurrence unit is not weekly. */
-    private static final String INVALID_RECURRENCE_UNIT_MESSAGE =
-            "The recurrence unit must be week or weeks.";
-
-    /** Error shown when a recurrence interval is not positive. */
-    private static final String INVALID_RECURRENCE_INTERVAL_MESSAGE =
-            "The recurrence interval must be a positive whole number.";
-
     /** Pattern parsing deadline description and deadline argument. */
     private static final Pattern DEADLINE_ARGUMENTS_PATTERN = Pattern
             .compile("^(?<description>.+?)\\s+/by\\s+(?<byTime>.+)$");
@@ -88,13 +63,6 @@ public final class TaskParser {
     /** Pattern parsing event description, start, and end arguments. */
     private static final Pattern EVENT_ARGUMENTS_PATTERN = Pattern
             .compile("^(?<description>.+?)\\s+/from\\s+(?<fromTime>.+?)\\s+/to\\s+(?<toTime>.+)$");
-
-    /** Pattern parsing a weekly recurring event and optional end date. */
-    private static final Pattern RECURRING_EVENT_ARGUMENTS_PATTERN = Pattern.compile(
-            "^(?<description>.+?)\\s+/on\\s+(?<eventDate>.+?)"
-                    + "\\s+/start\\s+(?<startTime>.+?)\\s+/end\\s+(?<endTime>.+?)"
-                    + "\\s+/every\\s+(?<interval>\\S+)\\s+(?<unit>\\S+)"
-                    + "(?:\\s+/until\\s+(?<untilDate>.+))?$");
 
     /** Prevents instantiation of this stateless parser. */
     private TaskParser() {
@@ -222,94 +190,7 @@ public final class TaskParser {
      */
     public static Task parseRecurringEvent(String arguments) throws OzException {
         CommandArgumentValidator.validateNoStorageDelimiter(arguments);
-        validateRecurringFlags(arguments);
-
-        Matcher recurringEventMatcher = RECURRING_EVENT_ARGUMENTS_PATTERN.matcher(arguments);
-        if (!recurringEventMatcher.matches()) {
-            throw new OzException(RECURRING_EVENT_USAGE_MESSAGE);
-        }
-
-        String description = recurringEventMatcher.group("description").trim();
-        String eventDateArgument = recurringEventMatcher.group("eventDate").trim();
-        String startTimeArgument = recurringEventMatcher.group("startTime").trim();
-        String endTimeArgument = recurringEventMatcher.group("endTime").trim();
-        String intervalArgument = recurringEventMatcher.group("interval").trim();
-        String unitArgument = recurringEventMatcher.group("unit").trim();
-        String untilDateArgument = recurringEventMatcher.group("untilDate");
-
-        if (description.isEmpty()) {
-            throw new OzException(EMPTY_RECURRING_DESCRIPTION_MESSAGE);
-        }
-        if (!unitArgument.equalsIgnoreCase("week")
-                && !unitArgument.equalsIgnoreCase("weeks")) {
-            throw new OzException(INVALID_RECURRENCE_UNIT_MESSAGE);
-        }
-
-        int weekInterval = parseRecurrenceInterval(intervalArgument);
-        LocalDate eventDate = TaskDateTime.parseDate(eventDateArgument);
-        LocalTime startTime = TaskDateTime.parseTime(startTimeArgument);
-        LocalTime endTime = TaskDateTime.parseTime(endTimeArgument);
-        TaskDateTime firstStartDateTime = TaskDateTime.fromDateTime(
-                LocalDateTime.of(eventDate, startTime));
-        TaskDateTime firstEndDateTime = TaskDateTime.fromDateTime(
-                LocalDateTime.of(eventDate, endTime));
-        LocalDate untilDate = untilDateArgument == null
-                ? null
-                : TaskDateTime.parseDate(untilDateArgument.trim());
-        return new RecurringEvent(description, firstStartDateTime,
-                firstEndDateTime, weekInterval, untilDate);
-    }
-
-    /**
-     * Validates recurring-event flag presence, uniqueness, and order.
-     *
-     * @param arguments Recurring event command arguments.
-     * @throws OzException If required flags are missing, repeated, or misplaced.
-     */
-    private static void validateRecurringFlags(String arguments) throws OzException {
-        CommandArgumentValidator.validateNoDuplicateFlags(
-                arguments, "/on", "/start", "/end", "/every", "/until");
-
-        int onIndex = CommandArgumentValidator.findFlagIndex(arguments, "/on");
-        int startIndex = CommandArgumentValidator.findFlagIndex(arguments, "/start");
-        int endIndex = CommandArgumentValidator.findFlagIndex(arguments, "/end");
-        int everyIndex = CommandArgumentValidator.findFlagIndex(arguments, "/every");
-        int untilIndex = CommandArgumentValidator.findFlagIndex(arguments, "/until");
-        if (onIndex == -1 || startIndex == -1 || endIndex == -1 || everyIndex == -1) {
-            throw new OzException(RECURRING_EVENT_USAGE_MESSAGE);
-        }
-
-        boolean areRequiredFlagsOrdered = onIndex < startIndex
-                && startIndex < endIndex
-                && endIndex < everyIndex;
-        boolean isUntilFlagOrdered = untilIndex == -1 || everyIndex < untilIndex;
-        if (!areRequiredFlagsOrdered || !isUntilFlagOrdered) {
-            throw new OzException(RECURRING_PARAMETER_ORDER_MESSAGE
-                    + RECURRING_EVENT_USAGE_MESSAGE);
-        }
-    }
-
-    /**
-     * Parses and validates a positive recurrence interval.
-     *
-     * @param argument Raw recurrence interval.
-     * @return Positive interval in weeks.
-     * @throws OzException If the argument is not a positive whole number.
-     */
-    private static int parseRecurrenceInterval(String argument) throws OzException {
-        if (!argument.matches("\\d+")) {
-            throw new OzException(INVALID_RECURRENCE_INTERVAL_MESSAGE);
-        }
-
-        try {
-            int interval = Integer.parseInt(argument);
-            if (interval <= 0) {
-                throw new OzException(INVALID_RECURRENCE_INTERVAL_MESSAGE);
-            }
-            return interval;
-        } catch (NumberFormatException exception) {
-            throw new OzException(INVALID_RECURRENCE_INTERVAL_MESSAGE);
-        }
+        return RecurringEventParser.parse(arguments);
     }
 
 }
