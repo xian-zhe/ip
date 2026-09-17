@@ -9,6 +9,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import oz.exception.OzException;
+import oz.parser.CommandParser;
+import oz.parser.ParsedCommand;
 import oz.storage.Storage;
 import oz.task.Deadline;
 import oz.task.Event;
@@ -24,9 +26,6 @@ import oz.task.ToDo;
 public class Oz {
     /** Default task file shared by the console and graphical entry points. */
     public static final String DEFAULT_STORAGE_PATH = "data/oz.txt";
-
-    /** Error shown when the general command pattern cannot parse an input. */
-    private static final String UNRECOGNIZED_INPUT_MESSAGE = "I could not understand that input.";
 
     /** Error shown when a command word is unknown. */
     private static final String UNKNOWN_COMMAND_MESSAGE = "Unknown command. Check your blueprint syntax.";
@@ -138,10 +137,6 @@ public class Oz {
     /** Error shown when a numeric task number cannot fit in an integer. */
     private static final String TASK_NUMBER_TOO_LARGE_MESSAGE = "That task number is too large.";
 
-    /** Regex pattern matching user command and optional arguments. */
-    private static final Pattern COMMAND_PATTERN = Pattern
-            .compile("^(?<command>\\S+)(?:\\s+(?<details>.*))?$");
-
     /** Regex pattern parsing deadline description and /by argument. */
     private static final Pattern DEADLINE_ARGUMENTS_PATTERN = Pattern
             .compile("^(?<description>.+?)\\s+/by\\s+(?<byTime>.+)$");
@@ -202,15 +197,8 @@ public class Oz {
         }
 
         try {
-            Matcher commandMatcher = COMMAND_PATTERN.matcher(fullCommand.trim());
-            if (!commandMatcher.matches()) {
-                throw new OzException(UNRECOGNIZED_INPUT_MESSAGE);
-            }
-
-            String command = commandMatcher.group("command");
-            String rawDetails = commandMatcher.group("details");
-            String details = rawDetails == null ? "" : rawDetails.trim();
-            return executeCommand(command, details);
+            ParsedCommand command = CommandParser.parse(fullCommand);
+            return executeCommand(command.commandWord(), command.arguments());
         } catch (OzException exception) {
             return new CommandResult("Confound it! " + exception.getMessage(), ResponseType.ERROR);
         }
