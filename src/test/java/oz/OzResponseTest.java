@@ -436,4 +436,226 @@ public class OzResponseTest {
 
         storageFile.toFile().setWritable(true);
     }
+
+    @Test
+    public void getResponse_unmarkRecurringOccurrenceOnNonRecurring_returnsErrorMessage() {
+        this.oz.getResponse("todo read book");
+        Pair<String, CommandType> response = this.oz.getResponse("unmark 1 /on 2026-10-15");
+        assertEquals("Confound it! The /on argument can only be used with recurring tasks.",
+                response.getKey());
+        assertEquals(CommandType.ERROR, response.getValue());
+    }
+
+    @Test
+    public void getResponse_markAndUnmarkDuplicateOrUnexpectedFlags_returnsErrorMessage() {
+        this.oz.getResponse("todo dummy task");
+
+        Pair<String, CommandType> duplicateMark = this.oz.getResponse(
+                "mark 1 /on 2026-10-10 /on 2026-10-11");
+        assertEquals("Confound it! Duplicate '/on' parameter detected.", duplicateMark.getKey());
+        assertEquals(CommandType.ERROR, duplicateMark.getValue());
+
+        Pair<String, CommandType> unexpectedMark = this.oz.getResponse("mark 1 /by 2026-10-10");
+        assertTrue(unexpectedMark.getKey().contains("Unexpected 'flag' parameter in mark command"));
+        assertEquals(CommandType.ERROR, unexpectedMark.getValue());
+
+        Pair<String, CommandType> duplicateUnmark = this.oz.getResponse(
+                "unmark 1 /on 2026-10-10 /on 2026-10-11");
+        assertEquals("Confound it! Duplicate '/on' parameter detected.", duplicateUnmark.getKey());
+        assertEquals(CommandType.ERROR, duplicateUnmark.getValue());
+
+        Pair<String, CommandType> unexpectedUnmark = this.oz.getResponse("unmark 1 /from 2026-10-10");
+        assertTrue(unexpectedUnmark.getKey().contains("Unexpected 'flag' parameter in unmark command"));
+        assertEquals(CommandType.ERROR, unexpectedUnmark.getValue());
+    }
+
+    @Test
+    public void getResponse_todoUnexpectedFlags_returnsErrorMessage() {
+        String expectedMessage = "Confound it! The todo command does not accept parameter "
+                + "flags like /by, /from, or /to.";
+
+        Pair<String, CommandType> fromResponse = this.oz.getResponse("todo read book /from 2pm");
+        assertEquals(expectedMessage, fromResponse.getKey());
+        assertEquals(CommandType.ERROR, fromResponse.getValue());
+
+        Pair<String, CommandType> toResponse = this.oz.getResponse("todo read book /to 4pm");
+        assertEquals(expectedMessage, toResponse.getKey());
+        assertEquals(CommandType.ERROR, toResponse.getValue());
+
+        Pair<String, CommandType> onResponse = this.oz.getResponse("todo read book /on 2026-10-10");
+        assertEquals(expectedMessage, onResponse.getKey());
+        assertEquals(CommandType.ERROR, onResponse.getValue());
+    }
+
+    @Test
+    public void getResponse_deadlineUnexpectedFlagsAndMissingFields_returnsErrorMessage() {
+        Pair<String, CommandType> unexpectedTo = this.oz.getResponse(
+                "deadline submit /by 2026-10-10 /to 1000");
+        assertTrue(unexpectedTo.getKey().contains("Unexpected '/to' parameter in deadline command"));
+        assertEquals(CommandType.ERROR, unexpectedTo.getValue());
+
+        Pair<String, CommandType> emptyDescription = this.oz.getResponse("deadline /by 2026-10-10");
+        assertEquals(CommandType.ERROR, emptyDescription.getValue());
+
+        Pair<String, CommandType> missingBy = this.oz.getResponse("deadline return book /by");
+        assertEquals(CommandType.ERROR, missingBy.getValue());
+    }
+
+    @Test
+    public void getResponse_eventMissingOrUnexpectedFlags_returnsErrorMessage() {
+        Pair<String, CommandType> missingFrom = this.oz.getResponse(
+                "event meeting /to 2026-10-10 1600");
+        assertTrue(missingFrom.getKey().contains("Missing required '/from' parameter"));
+        assertEquals(CommandType.ERROR, missingFrom.getValue());
+
+        Pair<String, CommandType> missingTo = this.oz.getResponse(
+                "event meeting /from 2026-10-10 1400");
+        assertTrue(missingTo.getKey().contains("Missing required '/to' parameter"));
+        assertEquals(CommandType.ERROR, missingTo.getValue());
+
+        Pair<String, CommandType> unexpectedBy = this.oz.getResponse(
+                "event meeting /from 2026-10-10 1400 /to 2026-10-10 1600 /by 2026-10-10");
+        assertTrue(unexpectedBy.getKey().contains("Unexpected '/by' parameter in event command"));
+        assertEquals(CommandType.ERROR, unexpectedBy.getValue());
+    }
+
+    @Test
+    public void getResponse_recurringDuplicateAndOrderFlags_returnsErrorMessage() {
+        Pair<String, CommandType> dupOn = this.oz.getResponse(
+                "recurring team sync /on 2026-10-02 /on 2026-10-09 /start 1400 /end 1500 /every 1 week");
+        assertEquals("Confound it! Duplicate '/on' parameter detected.", dupOn.getKey());
+
+        Pair<String, CommandType> dupStart = this.oz.getResponse(
+                "recurring team sync /on 2026-10-02 /start 1400 /start 1500 /end 1500 /every 1 week");
+        assertEquals("Confound it! Duplicate '/start' parameter detected.", dupStart.getKey());
+
+        Pair<String, CommandType> dupEnd = this.oz.getResponse(
+                "recurring team sync /on 2026-10-02 /start 1400 /end 1500 /end 1600 /every 1 week");
+        assertEquals("Confound it! Duplicate '/end' parameter detected.", dupEnd.getKey());
+
+        Pair<String, CommandType> dupEvery = this.oz.getResponse(
+                "recurring team sync /on 2026-10-02 /start 1400 /end 1500 /every 1 week /every 2 weeks");
+        assertEquals("Confound it! Duplicate '/every' parameter detected.", dupEvery.getKey());
+
+        Pair<String, CommandType> dupUntil = this.oz.getResponse(
+                "recurring team sync /on 2026-10-02 /start 1400 /end 1500 /every 1 week "
+                        + "/until 2026-12-31 /until 2026-12-30");
+        assertEquals("Confound it! Duplicate '/until' parameter detected.", dupUntil.getKey());
+
+        Pair<String, CommandType> outOfOrder = this.oz.getResponse(
+                "recurring team sync /start 1400 /on 2026-10-02 /end 1500 /every 1 week");
+        assertTrue(outOfOrder.getKey().contains("Recurring parameters are out of order"));
+    }
+
+    @Test
+    public void getResponse_deleteStorageSaveFails_restoresTaskAndReturnsError() throws IOException {
+        this.oz.getResponse("todo task to delete");
+
+        Path storageFile = temporaryFolder.resolve("test_tasks.txt");
+        storageFile.toFile().setReadOnly();
+
+        Pair<String, CommandType> response = this.oz.getResponse("delete 1");
+        assertEquals(CommandType.ERROR, response.getValue());
+        assertTrue(response.getKey().contains("Confound it!"));
+
+        storageFile.toFile().setWritable(true);
+
+        // Verify that the task was restored into the task list upon rollback
+        Pair<String, CommandType> listResponse = this.oz.getResponse("list");
+        assertTrue(listResponse.getKey().contains("1. [T][ ] task to delete"));
+    }
+
+    @Test
+    public void getResponse_parseTaskIndexNegativeOverflow_returnsNonPositiveError() {
+        this.oz.getResponse("todo sample");
+        Pair<String, CommandType> response = this.oz.getResponse("delete -999999999999999999999");
+        assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
+                response.getKey());
+        assertEquals(CommandType.ERROR, response.getValue());
+    }
+
+    @Test
+    public void getResponse_markStorageSaveFails_restoresTaskDoneStateAndReturnsError() throws IOException {
+        this.oz.getResponse("todo task to mark");
+
+        Path storageFile = temporaryFolder.resolve("test_tasks.txt");
+        storageFile.toFile().setReadOnly();
+
+        Pair<String, CommandType> response = this.oz.getResponse("mark 1");
+        assertEquals(CommandType.ERROR, response.getValue());
+        assertTrue(response.getKey().contains("Confound it!"));
+
+        storageFile.toFile().setWritable(true);
+
+        Pair<String, CommandType> listResponse = this.oz.getResponse("list");
+        assertTrue(listResponse.getKey().contains("1. [T][ ] task to mark"));
+    }
+
+    @Test
+    public void getResponse_unmarkStorageSaveFails_restoresTaskDoneStateAndReturnsError() throws IOException {
+        this.oz.getResponse("todo task to unmark");
+        this.oz.getResponse("mark 1");
+
+        Path storageFile = temporaryFolder.resolve("test_tasks.txt");
+        storageFile.toFile().setReadOnly();
+
+        Pair<String, CommandType> response = this.oz.getResponse("unmark 1");
+        assertEquals(CommandType.ERROR, response.getValue());
+        assertTrue(response.getKey().contains("Confound it!"));
+
+        storageFile.toFile().setWritable(true);
+
+        Pair<String, CommandType> listResponse = this.oz.getResponse("list");
+        assertTrue(listResponse.getKey().contains("1. [T][X] task to unmark"));
+    }
+
+    @Test
+    public void getResponse_markOccurrenceStorageSaveFails_restoresOccurrenceStateAndReturnsError()
+            throws IOException {
+        this.oz.getResponse("recurring sync /on 2026-10-02 /start 1400 /end 1500 /every 1 week");
+
+        Path storageFile = temporaryFolder.resolve("test_tasks.txt");
+        storageFile.toFile().setReadOnly();
+
+        Pair<String, CommandType> response = this.oz.getResponse("mark 1 /on 2026-10-09");
+        assertEquals(CommandType.ERROR, response.getValue());
+        assertTrue(response.getKey().contains("Confound it!"));
+
+        storageFile.toFile().setWritable(true);
+
+        Pair<String, CommandType> onResponse = this.oz.getResponse("on 2026-10-09");
+        assertTrue(onResponse.getKey().contains("[R][ ] sync"));
+    }
+
+    @Test
+    public void getResponse_unmarkOccurrenceStorageSaveFails_restoresOccurrenceStateAndReturnsError()
+            throws IOException {
+        this.oz.getResponse("recurring sync /on 2026-10-02 /start 1400 /end 1500 /every 1 week");
+        this.oz.getResponse("mark 1 /on 2026-10-09");
+
+        Path storageFile = temporaryFolder.resolve("test_tasks.txt");
+        storageFile.toFile().setReadOnly();
+
+        Pair<String, CommandType> response = this.oz.getResponse("unmark 1 /on 2026-10-09");
+        assertEquals(CommandType.ERROR, response.getValue());
+        assertTrue(response.getKey().contains("Confound it!"));
+
+        storageFile.toFile().setWritable(true);
+
+        Pair<String, CommandType> onResponse = this.oz.getResponse("on 2026-10-09");
+        assertTrue(onResponse.getKey().contains("[R][X] sync"));
+    }
+
+    @Test
+    public void getResponse_recurringIntervalEdgeCases_returnsErrorMessage() {
+        Pair<String, CommandType> nonNumeric = this.oz.getResponse(
+                "recurring sync /on 2026-10-02 /start 1400 /end 1500 /every abc week");
+        assertEquals(CommandType.ERROR, nonNumeric.getValue());
+        assertTrue(nonNumeric.getKey().contains("The recurrence interval must be a positive whole number."));
+
+        Pair<String, CommandType> overflow = this.oz.getResponse(
+                "recurring sync /on 2026-10-02 /start 1400 /end 1500 /every 99999999999999999 week");
+        assertEquals(CommandType.ERROR, overflow.getValue());
+        assertTrue(overflow.getKey().contains("The recurrence interval must be a positive whole number."));
+    }
 }

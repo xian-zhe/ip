@@ -133,4 +133,31 @@ public class TaskListTest {
         ArrayList<Task> matchingTasks = taskList.findTasksByKeyword("exercise");
         assertEquals(0, matchingTasks.size());
     }
+
+    @Test
+    public void add_withIndex_insertsTaskAtSpecifiedIndex() throws OzException {
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("task 1"));
+        taskList.add(new ToDo("task 3"));
+
+        taskList.add(1, new ToDo("task 2"));
+        assertEquals(3, taskList.size());
+        assertEquals("[T][ ] task 1", taskList.get(0).toString());
+        assertEquals("[T][ ] task 2", taskList.get(1).toString());
+        assertEquals("[T][ ] task 3", taskList.get(2).toString());
+
+        taskList.add(0, new ToDo("task 0"));
+        assertEquals(4, taskList.size());
+        assertEquals("[T][ ] task 0", taskList.get(0).toString());
+
+        taskList.add(4, new ToDo("task 4"));
+        assertEquals(5, taskList.size());
+        assertEquals("[T][ ] task 4", taskList.get(4).toString());
+    }
+
+    @Test
+    public void constructor_nullTaskList_initializesEmptyList() {
+        TaskList taskList = new TaskList(null);
+        assertEquals(0, taskList.size());
+    }
 }
