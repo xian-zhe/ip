@@ -1,7 +1,6 @@
 package oz;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,11 +9,11 @@ import oz.exception.OzException;
 import oz.parser.CommandParser;
 import oz.parser.ParsedCommand;
 import oz.parser.TaskParser;
+import oz.service.TaskService;
 import oz.storage.Storage;
 import oz.task.RecurringEvent;
 import oz.task.Task;
 import oz.task.TaskDateTime;
-import oz.task.TaskList;
 
 /**
  * Main entry point and controller for the Oz chatbot.
@@ -44,23 +43,6 @@ public class Oz {
     /** Error shown when find receives no keyword. */
     private static final String EMPTY_FIND_KEYWORD_MESSAGE = "The keyword for find cannot be empty.";
 
-    /** Error shown when an occurrence date is supplied for an ordinary task. */
-    private static final String ON_RECURRING_ONLY_MESSAGE = "The /on argument can only be used with recurring tasks.";
-
-    /** Usage message for marking a recurring occurrence. */
-    private static final String MARK_RECURRING_USAGE_MESSAGE =
-            "Please specify which occurrence to mark. Use: mark <number> /on <date>.";
-
-    /** Error template shown when marking an already completed task. */
-    private static final String TASK_ALREADY_DONE_MESSAGE_FORMAT = "Task %d is already marked as done.";
-
-    /** Error template shown when unmarking an incomplete task. */
-    private static final String TASK_ALREADY_NOT_DONE_MESSAGE_FORMAT = "Task %d is not marked as done yet.";
-
-    /** Usage message for unmarking a recurring occurrence. */
-    private static final String UNMARK_RECURRING_USAGE_MESSAGE =
-            "Please specify which occurrence to unmark. Use: unmark <number> /on <date>.";
-
     /** Error shown when no task number is provided. */
     private static final String EMPTY_TASK_NUMBER_MESSAGE = "Please specify a task number.";
 
@@ -85,11 +67,8 @@ public class Oz {
     private static final Pattern OCCURRENCE_ARGUMENTS_PATTERN = Pattern
             .compile("^(?<taskNumber>\\d+)\\s+/on\\s+(?<occurrenceDate>.+)$");
 
-    /** Storage manager for reading and writing tasks to disk. */
-    private final Storage storage;
-
-    /** In-memory task list. */
-    private final TaskList tasks;
+    /** Service coordinating task state and persistence. */
+    private final TaskService taskService;
 
     /** Flag indicating whether an exit command was issued. */
     private boolean isExit = false;
@@ -101,8 +80,7 @@ public class Oz {
      * @param filePath Path to the task storage file.
      */
     public Oz(String filePath) {
-        this.storage = new Storage(filePath);
-        this.tasks = new TaskList(this.storage.load());
+        this.taskService = new TaskService(new Storage(filePath));
     }
 
     /**
@@ -198,7 +176,7 @@ public class Oz {
         }
 
         String response = formatTaskList("Here is the master task list:\n",
-                this.tasks.getTasks());
+                this.taskService.getTasks());
         return new CommandResult(response, ResponseType.LIST);
     }
 
@@ -218,7 +196,7 @@ public class Oz {
         LocalDate targetDate = targetDateTime.toLocalDate();
         String dateHeader = targetDate.format(TaskDateTime.DISPLAY_DATE_FORMAT);
 
-        ArrayList<Task> matchingTasks = this.tasks.findTasksOn(targetDate);
+        List<Task> matchingTasks = this.taskService.findTasksOn(targetDate);
 
         if (matchingTasks.isEmpty()) {
             return new CommandResult("No tasks found for " + dateHeader + ".",
@@ -243,7 +221,7 @@ public class Oz {
             throw new OzException(EMPTY_FIND_KEYWORD_MESSAGE);
         }
 
-        ArrayList<Task> matchingTasks = this.tasks.findTasksByKeyword(details);
+        List<Task> matchingTasks = this.taskService.findTasksByKeyword(details);
 
         if (matchingTasks.isEmpty()) {
             return new CommandResult("No matching tasks found in the ledger.", ResponseType.FIND);
@@ -274,42 +252,20 @@ public class Oz {
 
         Matcher occurrenceMatcher = OCCURRENCE_ARGUMENTS_PATTERN.matcher(details);
         if (occurrenceMatcher.matches()) {
-            int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.tasks.size());
-            Task task = this.tasks.get(index);
-            if (!(task instanceof RecurringEvent recurringEvent)) {
-                throw new OzException(ON_RECURRING_ONLY_MESSAGE);
-            }
-
+            int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.taskService.size());
             LocalDate occurrenceDate = TaskDateTime.parseDate(
                     occurrenceMatcher.group("occurrenceDate").trim());
-            recurringEvent.markOccurrence(occurrenceDate);
-            try {
-                this.storage.save(this.tasks);
-            } catch (OzException exception) {
-                recurringEvent.unmarkOccurrence(occurrenceDate);
-                throw exception;
-            }
+            Task task = this.taskService.markTask(index, occurrenceDate);
+            assert task instanceof RecurringEvent
+                    : "A task marked for an occurrence must be recurring";
+            RecurringEvent recurringEvent = (RecurringEvent) task;
             return new CommandResult("*Oink* Marked occurrence as done:\n  "
                     + recurringEvent.toOccurrenceString(occurrenceDate), ResponseType.CHANGE_MARK);
         }
 
-        int index = parseTaskIndex(details, this.tasks.size());
-        Task task = this.tasks.get(index);
-        if (task instanceof RecurringEvent) {
-            throw new OzException(MARK_RECURRING_USAGE_MESSAGE);
-        }
-        if (task.isDone()) {
-            throw new OzException(String.format(TASK_ALREADY_DONE_MESSAGE_FORMAT, index + 1));
-        }
-
-        this.tasks.markAsDone(index);
-        try {
-            this.storage.save(this.tasks);
-        } catch (OzException exception) {
-            this.tasks.markAsNotDone(index);
-            throw exception;
-        }
-        return new CommandResult("*Oink* Marked as done:\n  " + this.tasks.get(index),
+        int index = parseTaskIndex(details, this.taskService.size());
+        Task task = this.taskService.markTask(index, null);
+        return new CommandResult("*Oink* Marked as done:\n  " + task,
                 ResponseType.CHANGE_MARK);
     }
 
@@ -333,42 +289,20 @@ public class Oz {
 
         Matcher occurrenceMatcher = OCCURRENCE_ARGUMENTS_PATTERN.matcher(details);
         if (occurrenceMatcher.matches()) {
-            int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.tasks.size());
-            Task task = this.tasks.get(index);
-            if (!(task instanceof RecurringEvent recurringEvent)) {
-                throw new OzException(ON_RECURRING_ONLY_MESSAGE);
-            }
-
+            int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.taskService.size());
             LocalDate occurrenceDate = TaskDateTime.parseDate(
                     occurrenceMatcher.group("occurrenceDate").trim());
-            recurringEvent.unmarkOccurrence(occurrenceDate);
-            try {
-                this.storage.save(this.tasks);
-            } catch (OzException exception) {
-                recurringEvent.markOccurrence(occurrenceDate);
-                throw exception;
-            }
+            Task task = this.taskService.unmarkTask(index, occurrenceDate);
+            assert task instanceof RecurringEvent
+                    : "A task unmarked for an occurrence must be recurring";
+            RecurringEvent recurringEvent = (RecurringEvent) task;
             return new CommandResult("*Snort* Marked occurrence as not done yet:\n  "
                     + recurringEvent.toOccurrenceString(occurrenceDate), ResponseType.CHANGE_MARK);
         }
 
-        int index = parseTaskIndex(details, this.tasks.size());
-        Task task = this.tasks.get(index);
-        if (task instanceof RecurringEvent) {
-            throw new OzException(UNMARK_RECURRING_USAGE_MESSAGE);
-        }
-        if (!task.isDone()) {
-            throw new OzException(String.format(TASK_ALREADY_NOT_DONE_MESSAGE_FORMAT, index + 1));
-        }
-
-        this.tasks.markAsNotDone(index);
-        try {
-            this.storage.save(this.tasks);
-        } catch (OzException exception) {
-            this.tasks.markAsDone(index);
-            throw exception;
-        }
-        return new CommandResult("*Snort* Marked as not done yet:\n  " + this.tasks.get(index),
+        int index = parseTaskIndex(details, this.taskService.size());
+        Task task = this.taskService.unmarkTask(index, null);
+        return new CommandResult("*Snort* Marked as not done yet:\n  " + task,
                 ResponseType.CHANGE_MARK);
     }
 
@@ -424,21 +358,15 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private CommandResult deleteTask(String details) throws OzException {
-        int index = parseTaskIndex(details, this.tasks.size());
-        Task removedTask = this.tasks.delete(index);
-        try {
-            this.storage.save(this.tasks);
-        } catch (OzException exception) {
-            this.tasks.add(index, removedTask);
-            throw exception;
-        }
+        int index = parseTaskIndex(details, this.taskService.size());
+        Task removedTask = this.taskService.delete(index);
         return new CommandResult(String.format(
                 """
                         Scrapped! Removed task:
                         %s
                         Now you have %d tasks in the list.
                         """,
-                removedTask, this.tasks.size()).stripTrailing(), ResponseType.DELETE);
+                removedTask, this.taskService.size()).stripTrailing(), ResponseType.DELETE);
     }
 
     /**
@@ -449,20 +377,14 @@ public class Oz {
      * @throws OzException If saving the updated task list to storage fails.
      */
     private CommandResult addTask(Task task) throws OzException {
-        this.tasks.add(task);
-        try {
-            this.storage.save(this.tasks);
-        } catch (OzException exception) {
-            this.tasks.delete(this.tasks.size() - 1);
-            throw exception;
-        }
+        Task addedTask = this.taskService.add(task);
         return new CommandResult(String.format(
                 """
                         *Snort* Added to the list:
                         %s
                         Now you have %d tasks in the list.
                         """,
-                task, this.tasks.size()).stripTrailing(), ResponseType.ADD);
+                addedTask, this.taskService.size()).stripTrailing(), ResponseType.ADD);
     }
 
     /**
