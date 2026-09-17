@@ -46,7 +46,8 @@ public class Oz {
     private static final String DUPLICATE_FLAG_MESSAGE_FORMAT = "Duplicate '%s' parameter detected.";
 
     /** Error shown when an unexpected parameter flag is supplied to todo. */
-    private static final String TODO_UNEXPECTED_FLAG_MESSAGE = "The todo command does not accept parameter flags like /by, /from, or /to.";
+    private static final String TODO_UNEXPECTED_FLAG_MESSAGE =
+            "The todo command does not accept parameter flags like /by, /from, or /to.";
 
     /** Error template shown when a required parameter flag is missing. */
     private static final String MISSING_FLAG_MESSAGE_FORMAT = "Missing required '%s' parameter. %s";
@@ -67,7 +68,8 @@ public class Oz {
     private static final String ON_RECURRING_ONLY_MESSAGE = "The /on argument can only be used with recurring tasks.";
 
     /** Usage message for marking a recurring occurrence. */
-    private static final String MARK_RECURRING_USAGE_MESSAGE = "Please specify which occurrence to mark. Use: mark <number> /on <date>.";
+    private static final String MARK_RECURRING_USAGE_MESSAGE =
+            "Please specify which occurrence to mark. Use: mark <number> /on <date>.";
 
     /** Error template shown when marking an already completed task. */
     private static final String TASK_ALREADY_DONE_MESSAGE_FORMAT = "Task %d is already marked as done.";
@@ -76,10 +78,12 @@ public class Oz {
     private static final String TASK_ALREADY_NOT_DONE_MESSAGE_FORMAT = "Task %d is not marked as done yet.";
 
     /** Error shown when task input contains the storage delimiter '|'. */
-    private static final String RESERVED_DELIMITER_MESSAGE = "Task input cannot contain the '|' character because it is reserved for storage.";
+    private static final String RESERVED_DELIMITER_MESSAGE =
+            "Task input cannot contain the '|' character because it is reserved for storage.";
 
     /** Usage message for unmarking a recurring occurrence. */
-    private static final String UNMARK_RECURRING_USAGE_MESSAGE = "Please specify which occurrence to unmark. Use: unmark <number> /on <date>.";
+    private static final String UNMARK_RECURRING_USAGE_MESSAGE =
+            "Please specify which occurrence to unmark. Use: unmark <number> /on <date>.";
 
     /** Error shown when a todo description is missing. */
     private static final String EMPTY_TODO_DESCRIPTION_MESSAGE = "The description of a todo cannot be empty.";
@@ -100,20 +104,24 @@ public class Oz {
     private static final String EMPTY_EVENT_DESCRIPTION_MESSAGE = "The description of an event cannot be empty.";
 
     /** Error shown when an event start or end is missing. */
-    private static final String EMPTY_EVENT_DATE_TIME_MESSAGE = "The event start (/from) and end (/to) dates cannot be empty.";
+    private static final String EMPTY_EVENT_DATE_TIME_MESSAGE =
+            "The event start (/from) and end (/to) dates cannot be empty.";
 
     /** Usage message for adding a recurring event. */
-    private static final String RECURRING_EVENT_USAGE_MESSAGE = "Use: recurring <description> /on <date> /start <time> /end <time> "
+    private static final String RECURRING_EVENT_USAGE_MESSAGE =
+            "Use: recurring <description> /on <date> /start <time> /end <time> "
             + "/every <interval> week|weeks [/until <date>].";
 
     /** Error shown when a recurring event description is missing. */
-    private static final String EMPTY_RECURRING_DESCRIPTION_MESSAGE = "The description of a recurring event cannot be empty.";
+    private static final String EMPTY_RECURRING_DESCRIPTION_MESSAGE =
+            "The description of a recurring event cannot be empty.";
 
     /** Error shown when a recurrence unit is not weekly. */
     private static final String INVALID_RECURRENCE_UNIT_MESSAGE = "The recurrence unit must be week or weeks.";
 
     /** Error shown when a recurrence interval is not positive. */
-    private static final String INVALID_RECURRENCE_INTERVAL_MESSAGE = "The recurrence interval must be a positive whole number.";
+    private static final String INVALID_RECURRENCE_INTERVAL_MESSAGE =
+            "The recurrence interval must be a positive whole number.";
 
     /** Error shown when no task number is provided. */
     private static final String EMPTY_TASK_NUMBER_MESSAGE = "Please specify a task number.";
@@ -122,10 +130,12 @@ public class Oz {
     private static final String EMPTY_TASK_LIST_MESSAGE = "Your task list is empty. Add tasks before referencing them.";
 
     /** Error shown when a task number is not positive. */
-    private static final String NON_POSITIVE_TASK_NUMBER_MESSAGE = "Task number must be a positive whole number starting from 1.";
+    private static final String NON_POSITIVE_TASK_NUMBER_MESSAGE =
+            "Task number must be a positive whole number starting from 1.";
 
     /** Error template shown when a task number is out of bounds. */
-    private static final String TASK_INDEX_OUT_OF_BOUNDS_MESSAGE_FORMAT = "Task number %d does not exist. Please provide a number between 1 and %d.";
+    private static final String TASK_INDEX_OUT_OF_BOUNDS_MESSAGE_FORMAT =
+            "Task number %d does not exist. Please provide a number between 1 and %d.";
 
     /** Error shown when a task number is not numeric. */
     private static final String INVALID_TASK_NUMBER_MESSAGE = "Please provide a valid whole number for the task index.";
@@ -879,7 +889,7 @@ public class Oz {
      * Credit to user Gnanes99 (https://github.com/Gnanes99) for this check.
      * see https://github.com/NUS-CS2103-AY2627-S1/forum/issues/238 for the whole
      * thread
-     * 
+     *
      * @param input Raw input text to validate.
      * @throws OzException If the input contains the '|' character.
      */
