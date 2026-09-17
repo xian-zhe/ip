@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,9 +24,6 @@ import oz.task.ToDo;
 public class Oz {
     /** Default task file shared by the console and graphical entry points. */
     public static final String DEFAULT_STORAGE_PATH = "data/oz.txt";
-
-    /** Visual divider line for console output. */
-    private static final String DIVIDER = "____________________________________________________________\n";
 
     /** Error shown when the general command pattern cannot parse an input. */
     private static final String UNRECOGNIZED_INPUT_MESSAGE = "I could not understand that input.";
@@ -195,47 +191,10 @@ public class Oz {
     }
 
     /**
-     * Runs the main command loop of the chatbot.
-     */
-    public void run() {
-        String banner = """
-                  ___    ____\s
-                 / _ \\  |_  /
-                | | | |   / /\s
-                | |_| |  / /_\s
-                 \\___/  /____|
-                """;
-        String greeting = DIVIDER
-                + banner
-                + "Greetings! *oink* What tasks are on today's agenda?\n";
-
-        String bye = DIVIDER
-                + "  Farewell! Back to my contraptions. *oink*\n"
-                + DIVIDER;
-
-        System.out.print(greeting);
-
-        try (Scanner scanner = new Scanner(System.in)) {
-            while (scanner.hasNextLine()) {
-                String fullCommand = scanner.nextLine().trim();
-                if (fullCommand.equals("bye")) {
-                    this.isExit = true;
-                    break;
-                }
-
-                CommandResult reply = getResponse(fullCommand);
-                System.out.print(DIVIDER + reply.message() + "\n" + DIVIDER);
-            }
-        }
-
-        System.out.print(bye);
-    }
-
-    /**
      * Processes a user command and returns the response message.
      *
      * @param fullCommand Full command string entered by the user.
-     * @return A pair containing the response message and the command type tag.
+     * @return Result containing the response message and its presentation type.
      */
     public CommandResult getResponse(String fullCommand) {
         if (fullCommand == null || fullCommand.isBlank()) {
@@ -906,6 +865,7 @@ public class Oz {
      * @param args Command-line arguments.
      */
     public static void main(String[] args) {
-        new Oz(DEFAULT_STORAGE_PATH).run();
+        Oz oz = new Oz(DEFAULT_STORAGE_PATH);
+        new ConsoleUi(oz).run();
     }
 }

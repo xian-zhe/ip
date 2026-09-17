@@ -13,10 +13,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 /**
- * Tests the interactive console loop of {@link Oz#run()}.
+ * Tests the interactive console interface.
  */
-public class OzRunTest {
+public class ConsoleUiTest {
 
+    /** Temporary folder for test storage files. */
     @TempDir
     Path temporaryFolder;
 
@@ -36,7 +37,7 @@ public class OzRunTest {
 
             Path storagePath = this.temporaryFolder.resolve("cli_tasks.txt");
             Oz oz = new Oz(storagePath.toString());
-            oz.run();
+            new ConsoleUi(oz).run();
 
             String output = testOut.toString(StandardCharsets.UTF_8);
             assertTrue(output.contains("Greetings! *oink*"));
