@@ -152,6 +152,40 @@ public class TaskDateTime {
     }
 
     /**
+     * Parses a raw date string without accepting a time component.
+     *
+     * @param input Raw date string.
+     * @return Parsed local date.
+     * @throws OzException If the input is empty or does not match an accepted date format.
+     */
+    public static LocalDate parseDate(String input) throws OzException {
+        if (input == null || input.isBlank()) {
+            throw new OzException("Date argument cannot be empty.");
+        }
+
+        String trimmed = input.trim();
+        for (DateTimeFormatter formatter : INPUT_DATE_FORMATTERS) {
+            try {
+                return LocalDate.parse(trimmed, formatter);
+            } catch (DateTimeParseException ignored) {
+                // Continue trying other formats
+            }
+        }
+
+        throw new OzException("Please provide a valid date (e.g., 2019-10-15 or 2/12/2019).");
+    }
+
+    /**
+     * Produces a copy shifted by the requested number of days.
+     *
+     * @param days Number of days to add, which may be negative.
+     * @return Shifted date-time retaining whether a time was explicitly provided.
+     */
+    public TaskDateTime plusDays(long days) {
+        return new TaskDateTime(this.dateTime.plusDays(days), this.hasTime);
+    }
+
+    /**
      * Formats the date/time for user display.
      *
      * @return Formatted string for user viewing.

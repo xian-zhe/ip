@@ -3,12 +3,14 @@ package oz.storage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 import oz.exception.OzException;
 import oz.task.Deadline;
 import oz.task.Event;
+import oz.task.RecurringEvent;
 import oz.task.Task;
 import oz.task.TaskDateTime;
 import oz.task.TaskList;
@@ -46,6 +48,21 @@ public class Storage {
     /** Position of an event's end date or date-time. */
     private static final int EVENT_END_FIELD_INDEX = 4;
 
+    /** Position of a recurring event's first start date or date-time. */
+    private static final int RECURRING_START_FIELD_INDEX = 3;
+
+    /** Position of a recurring event's first end date or date-time. */
+    private static final int RECURRING_END_FIELD_INDEX = 4;
+
+    /** Position of a recurring event's weekly interval. */
+    private static final int RECURRING_INTERVAL_FIELD_INDEX = 5;
+
+    /** Position of a recurring event's optional inclusive end date. */
+    private static final int RECURRING_UNTIL_FIELD_INDEX = 6;
+
+    /** Position of a recurring event's completed occurrence dates. */
+    private static final int RECURRING_COMPLETED_FIELD_INDEX = 7;
+
     /** Number of fields in a todo entry and in the initial header split. */
     private static final int TODO_FIELD_COUNT = 3;
 
@@ -54,6 +71,9 @@ public class Storage {
 
     /** Number of fields in an event entry. */
     private static final int EVENT_FIELD_COUNT = 5;
+
+    /** Number of fields in a recurring event entry. */
+    private static final int RECURRING_EVENT_FIELD_COUNT = 8;
 
     /** Path to the task storage file on disk. */
     private final Path filePath;
@@ -157,6 +177,10 @@ public class Storage {
         if (!status.equals(Task.STORAGE_NOT_DONE) && !status.equals(Task.STORAGE_DONE)) {
             throw new OzException("Invalid completion status (must be 0 or 1): " + status);
         }
+        if (type.equals(RecurringEvent.TYPE_CODE)
+                && !status.equals(RecurringEvent.STORAGE_SERIES_STATUS)) {
+            throw new OzException("A recurring series status must be 0.");
+        }
         boolean isDone = status.equals(Task.STORAGE_DONE);
 
         Task task = parseTaskDetails(type, line);
@@ -183,6 +207,8 @@ public class Storage {
                 return parseDeadline(line);
             case Event.TYPE_CODE:
                 return parseEvent(line);
+            case RecurringEvent.TYPE_CODE:
+                return parseRecurringEvent(line);
             default:
                 throw new OzException("Unknown task type: " + type);
         }
@@ -247,5 +273,83 @@ public class Storage {
         TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
         TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
         return new Event(eventDescription, fromTime, toTime);
+    }
+
+    /**
+     * Parses and validates a stored weekly recurring event.
+     *
+     * @param line Complete recurring event entry from storage.
+     * @return Recurring event with its occurrence completion state restored.
+     * @throws OzException If required fields or completed occurrence dates are invalid.
+     */
+    private Task parseRecurringEvent(String line) throws OzException {
+        String[] recurringParts = line.split(FIELD_SEPARATOR_PATTERN, RECURRING_EVENT_FIELD_COUNT);
+        if (recurringParts.length < RECURRING_EVENT_FIELD_COUNT) {
+            throw new OzException("Recurring event requires all recurrence fields.");
+        }
+
+        String description = recurringParts[DESCRIPTION_FIELD_INDEX].trim();
+        String firstStartArgument = recurringParts[RECURRING_START_FIELD_INDEX].trim();
+        String firstEndArgument = recurringParts[RECURRING_END_FIELD_INDEX].trim();
+        String intervalArgument = recurringParts[RECURRING_INTERVAL_FIELD_INDEX].trim();
+        String untilArgument = recurringParts[RECURRING_UNTIL_FIELD_INDEX].trim();
+        String completedDatesArgument = recurringParts[RECURRING_COMPLETED_FIELD_INDEX].trim();
+        if (description.isEmpty() || firstStartArgument.isEmpty() || firstEndArgument.isEmpty()
+                || intervalArgument.isEmpty() || untilArgument.isEmpty()
+                || completedDatesArgument.isEmpty()) {
+            throw new OzException("Recurring event fields cannot be empty.");
+        }
+
+        int weekInterval = parsePositiveInterval(intervalArgument);
+        LocalDate untilDate = untilArgument.equals(RecurringEvent.STORAGE_NONE)
+                ? null
+                : TaskDateTime.parseDate(untilArgument);
+        RecurringEvent recurringEvent = new RecurringEvent(description,
+                TaskDateTime.parse(firstStartArgument), TaskDateTime.parse(firstEndArgument),
+                weekInterval, untilDate);
+        restoreCompletedOccurrences(recurringEvent, completedDatesArgument);
+        return recurringEvent;
+    }
+
+    /**
+     * Parses a positive weekly interval stored in a recurring record.
+     *
+     * @param argument Stored interval value.
+     * @return Positive interval.
+     * @throws OzException If the value is not a positive integer.
+     */
+    private int parsePositiveInterval(String argument) throws OzException {
+        if (!argument.matches("\\d+")) {
+            throw new OzException("Recurring interval must be a positive whole number.");
+        }
+
+        try {
+            int interval = Integer.parseInt(argument);
+            if (interval <= 0) {
+                throw new OzException("Recurring interval must be a positive whole number.");
+            }
+            return interval;
+        } catch (NumberFormatException exception) {
+            throw new OzException("Recurring interval must be a positive whole number.");
+        }
+    }
+
+    /**
+     * Restores occurrence completion dates from a stored comma-separated list.
+     *
+     * @param recurringEvent Recurring series being restored.
+     * @param argument Stored completion dates or the no-value marker.
+     * @throws OzException If any date is invalid, duplicated, or not an occurrence.
+     */
+    private void restoreCompletedOccurrences(RecurringEvent recurringEvent, String argument)
+            throws OzException {
+        if (argument.equals(RecurringEvent.STORAGE_NONE)) {
+            return;
+        }
+
+        String[] completedDates = argument.split(",", -1);
+        for (String completedDate : completedDates) {
+            recurringEvent.markOccurrence(TaskDateTime.parseDate(completedDate.trim()));
+        }
     }
 }

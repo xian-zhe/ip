@@ -12,6 +12,7 @@ import oz.exception.OzException;
 import oz.storage.Storage;
 import oz.task.Deadline;
 import oz.task.Event;
+import oz.task.RecurringEvent;
 import oz.task.Task;
 import oz.task.TaskDateTime;
 import oz.task.TaskList;
@@ -38,6 +39,16 @@ public class Oz {
     /** Regex pattern parsing event description, /from, and /to arguments. */
     private static final Pattern EVENT_ARGUMENTS_PATTERN = Pattern
             .compile("^(?<description>.+?)\\s+/from\\s+(?<fromTime>.+?)\\s+/to\\s+(?<toTime>.+)$");
+
+    /** Regex pattern parsing a weekly recurring event and optional end date. */
+    private static final Pattern RECURRING_EVENT_ARGUMENTS_PATTERN = Pattern.compile(
+            "^(?<description>.+?)\\s+/from\\s+(?<fromTime>.+?)\\s+/to\\s+(?<toTime>.+?)"
+                    + "\\s+/every\\s+(?<interval>\\S+)\\s+(?<unit>\\S+)"
+                    + "(?:\\s+/until\\s+(?<untilDate>.+))?$");
+
+    /** Regex pattern parsing a task number and occurrence date. */
+    private static final Pattern OCCURRENCE_ARGUMENTS_PATTERN = Pattern
+            .compile("^(?<taskNumber>\\d+)\\s+/on\\s+(?<occurrenceDate>.+)$");
 
     /** Storage manager for reading and writing tasks to disk. */
     private final Storage storage;
@@ -160,6 +171,8 @@ public class Oz {
                 return addDeadline(details);
             case "event":
                 return addEvent(details);
+            case "recurring":
+                return addRecurringEvent(details);
             case "delete":
                 return deleteTask(details);
             default:
@@ -217,8 +230,9 @@ public class Oz {
                     CommandType.LIST);
         }
 
-        String response = formatTaskList("Here are the tasks occurring on " + dateHeader + ":\n",
-                matchingTasks);
+        String response = formatTasksOnDate(
+                "Here are the tasks occurring on " + dateHeader + ":\n",
+                matchingTasks, targetDate);
         return new Pair<>(response, CommandType.LIST);
     }
 
@@ -253,7 +267,29 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private Pair<String, CommandType> markTask(String details) throws OzException {
+        Matcher occurrenceMatcher = OCCURRENCE_ARGUMENTS_PATTERN.matcher(details);
+        if (occurrenceMatcher.matches()) {
+            int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.tasks.size());
+            Task task = this.tasks.get(index);
+            if (!(task instanceof RecurringEvent recurringEvent)) {
+                throw new OzException("The /on argument can only be used with recurring tasks.");
+            }
+
+            LocalDate occurrenceDate = TaskDateTime.parseDate(
+                    occurrenceMatcher.group("occurrenceDate").trim());
+            recurringEvent.markOccurrence(occurrenceDate);
+            this.storage.save(this.tasks);
+            return new Pair<>("Nice! I've marked this occurrence as done:\n  "
+                    + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
+        }
+
         int index = parseTaskIndex(details, this.tasks.size());
+        Task task = this.tasks.get(index);
+        if (task instanceof RecurringEvent) {
+            throw new OzException("Please specify which occurrence to mark. "
+                    + "Use: mark <number> /on <date>.");
+        }
+
         this.tasks.markAsDone(index);
         this.storage.save(this.tasks);
         return new Pair<>("Nice! I've marked this task as done:\n  " + this.tasks.get(index),
@@ -268,7 +304,29 @@ public class Oz {
      * @throws OzException If the command arguments are invalid.
      */
     private Pair<String, CommandType> unmarkTask(String details) throws OzException {
+        Matcher occurrenceMatcher = OCCURRENCE_ARGUMENTS_PATTERN.matcher(details);
+        if (occurrenceMatcher.matches()) {
+            int index = parseTaskIndex(occurrenceMatcher.group("taskNumber"), this.tasks.size());
+            Task task = this.tasks.get(index);
+            if (!(task instanceof RecurringEvent recurringEvent)) {
+                throw new OzException("The /on argument can only be used with recurring tasks.");
+            }
+
+            LocalDate occurrenceDate = TaskDateTime.parseDate(
+                    occurrenceMatcher.group("occurrenceDate").trim());
+            recurringEvent.unmarkOccurrence(occurrenceDate);
+            this.storage.save(this.tasks);
+            return new Pair<>("OK! I've marked this occurrence as not done yet:\n  "
+                    + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
+        }
+
         int index = parseTaskIndex(details, this.tasks.size());
+        Task task = this.tasks.get(index);
+        if (task instanceof RecurringEvent) {
+            throw new OzException("Please specify which occurrence to unmark. "
+                    + "Use: unmark <number> /on <date>.");
+        }
+
         this.tasks.markAsNotDone(index);
         this.storage.save(this.tasks);
         return new Pair<>("OK! I've marked this task as not done yet:\n  " + this.tasks.get(index),
@@ -348,6 +406,46 @@ public class Oz {
     }
 
     /**
+     * Parses and adds a same-day event that repeats at a weekly interval.
+     *
+     * @param details Arguments supplied after the command word.
+     * @return Response message and command type.
+     * @throws OzException If the recurring event arguments are invalid.
+     */
+    private Pair<String, CommandType> addRecurringEvent(String details) throws OzException {
+        Matcher recurringEventMatcher = RECURRING_EVENT_ARGUMENTS_PATTERN.matcher(details);
+        if (!recurringEventMatcher.matches()) {
+            throw new OzException("Use: recurring <description> /from <start> /to <end> "
+                    + "/every <interval> week|weeks [/until <date>].");
+        }
+
+        String description = recurringEventMatcher.group("description").trim();
+        String fromTimeArgument = recurringEventMatcher.group("fromTime").trim();
+        String toTimeArgument = recurringEventMatcher.group("toTime").trim();
+        String intervalArgument = recurringEventMatcher.group("interval").trim();
+        String unitArgument = recurringEventMatcher.group("unit").trim();
+        String untilDateArgument = recurringEventMatcher.group("untilDate");
+
+        if (description.isEmpty()) {
+            throw new OzException("The description of a recurring event cannot be empty.");
+        }
+        if (!unitArgument.equalsIgnoreCase("week")
+                && !unitArgument.equalsIgnoreCase("weeks")) {
+            throw new OzException("The recurrence unit must be week or weeks.");
+        }
+
+        int weekInterval = parseRecurrenceInterval(intervalArgument);
+        TaskDateTime firstStartDateTime = TaskDateTime.parse(fromTimeArgument);
+        TaskDateTime firstEndDateTime = TaskDateTime.parse(toTimeArgument);
+        LocalDate untilDate = untilDateArgument == null
+                ? null
+                : TaskDateTime.parseDate(untilDateArgument.trim());
+        Task task = new RecurringEvent(description, firstStartDateTime,
+                firstEndDateTime, weekInterval, untilDate);
+        return addTask(task);
+    }
+
+    /**
      * Deletes the selected task and saves the updated list.
      *
      * @param details Arguments supplied after the command word.
@@ -401,6 +499,54 @@ public class Oz {
                     .append("\n");
         }
         return response.toString().stripTrailing();
+    }
+
+    /**
+     * Formats tasks for a date query, expanding recurring series to their occurrence view.
+     *
+     * @param header Heading to place before the numbered tasks.
+     * @param tasksToDisplay Tasks occurring on the target date.
+     * @param targetDate Date whose occurrences should be displayed.
+     * @return Heading and numbered task descriptions without trailing whitespace.
+     * @throws OzException If a recurring task cannot produce its expected occurrence.
+     */
+    private static String formatTasksOnDate(String header, List<Task> tasksToDisplay,
+            LocalDate targetDate) throws OzException {
+        StringBuilder response = new StringBuilder(header);
+        for (int i = 0; i < tasksToDisplay.size(); i++) {
+            Task task = tasksToDisplay.get(i);
+            String taskDescription = task instanceof RecurringEvent recurringEvent
+                    ? recurringEvent.toOccurrenceString(targetDate)
+                    : task.toString();
+            response.append(i + 1)
+                    .append(". ")
+                    .append(taskDescription)
+                    .append("\n");
+        }
+        return response.toString().stripTrailing();
+    }
+
+    /**
+     * Parses and validates a positive recurrence interval.
+     *
+     * @param argument Raw interval argument.
+     * @return Positive interval in weeks.
+     * @throws OzException If the argument is not a positive whole number.
+     */
+    private static int parseRecurrenceInterval(String argument) throws OzException {
+        if (!argument.matches("\\d+")) {
+            throw new OzException("The recurrence interval must be a positive whole number.");
+        }
+
+        try {
+            int interval = Integer.parseInt(argument);
+            if (interval <= 0) {
+                throw new OzException("The recurrence interval must be a positive whole number.");
+            }
+            return interval;
+        } catch (NumberFormatException exception) {
+            throw new OzException("The recurrence interval must be a positive whole number.");
+        }
     }
 
     /**

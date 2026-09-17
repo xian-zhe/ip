@@ -105,6 +105,81 @@ public class OzResponseTest {
     }
 
     @Test
+    public void getResponse_recurringCommand_seriesAddedAndReported() {
+        Pair<String, CommandType> response = this.oz.getResponse(
+                "recurring project meeting /from 2026-10-02 1400 /to 2026-10-02 1500 "
+                        + "/every 1 week /until 2026-12-31");
+
+        assertEquals(CommandType.ADD, response.getValue());
+        assertEquals("Got it. I've added this task:\n"
+                + "[R] project meeting (from: Oct 02 2026, 2pm to: Oct 02 2026, 3pm; "
+                + "repeats: every 1 week until Dec 31 2026)\n"
+                + "Now you have 1 tasks in the list.", response.getKey());
+    }
+
+    @Test
+    public void getResponse_invalidRecurringCommands_returnErrorsWithoutAddingTasks() {
+        String[] invalidCommands = {
+            "recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every week",
+            "recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 0 weeks",
+            "recurring meeting /from 2026-10-02 1400 /to 2026-10-03 1500 /every 1 week",
+            "recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 /every 1 month",
+            "recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 "
+                    + "/every 1 week /until 2026-10-01"
+        };
+
+        for (String command : invalidCommands) {
+            Pair<String, CommandType> response = this.oz.getResponse(command);
+            assertEquals(CommandType.ERROR, response.getValue(), command);
+            assertTrue(response.getKey().startsWith("OOPS! "), command);
+        }
+        assertEquals("Here are the tasks in your list:", this.oz.getResponse("list").getKey());
+    }
+
+    @Test
+    public void getResponse_recurringOccurrence_markAndUnmarkRequiresDate() {
+        this.oz.getResponse("recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 "
+                + "/every 1 week");
+
+        assertEquals("OOPS! Please specify which occurrence to mark. "
+                + "Use: mark <number> /on <date>.", this.oz.getResponse("mark 1").getKey());
+        assertEquals("OOPS! Please specify which occurrence to unmark. "
+                + "Use: unmark <number> /on <date>.", this.oz.getResponse("unmark 1").getKey());
+
+        Pair<String, CommandType> marked = this.oz.getResponse("mark 1 /on 2026-10-09");
+        assertEquals(CommandType.CHANGE_MARK, marked.getValue());
+        assertTrue(marked.getKey().contains(
+                "[R][X] meeting (from: Oct 09 2026, 2pm to: Oct 09 2026, 3pm)"));
+        assertTrue(this.oz.getResponse("mark 1 /on 2026-10-09").getKey()
+                .contains("already marked as done"));
+
+        Pair<String, CommandType> unmarked = this.oz.getResponse("unmark 1 /on 2026-10-09");
+        assertEquals(CommandType.CHANGE_MARK, unmarked.getValue());
+        assertTrue(unmarked.getKey().contains(
+                "[R][ ] meeting (from: Oct 09 2026, 2pm to: Oct 09 2026, 3pm)"));
+    }
+
+    @Test
+    public void getResponse_onCommand_recurringOccurrenceUsesCalculatedDateAndStatus() {
+        this.oz.getResponse("recurring meeting /from 2026-10-02 1400 /to 2026-10-02 1500 "
+                + "/every 2 weeks /until 2026-10-30");
+        this.oz.getResponse("mark 1 /on 2026-10-16");
+
+        assertEquals("Here are the tasks occurring on Oct 16 2026:\n"
+                + "1. [R][X] meeting (from: Oct 16 2026, 2pm to: Oct 16 2026, 3pm)",
+                this.oz.getResponse("on 2026-10-16").getKey());
+        assertEquals("There are no tasks occurring on Oct 23 2026.",
+                this.oz.getResponse("on 2026-10-23").getKey());
+    }
+
+    @Test
+    public void getResponse_onArgumentForOrdinaryTask_returnsError() {
+        this.oz.getResponse("todo read book");
+        assertEquals("OOPS! The /on argument can only be used with recurring tasks.",
+                this.oz.getResponse("mark 1 /on 2026-10-02").getKey());
+    }
+
+    @Test
     public void getResponse_markAndUnmarkCommands_updatesTaskStatus() {
         this.oz.getResponse("todo finish homework");
         Pair<String, CommandType> markResponse = this.oz.getResponse("mark 1");

@@ -143,6 +143,21 @@ public class TaskDateTimeTest {
     }
 
     @Test
+    public void parseDate_dateOnlyAcceptedAndDateTimeRejected() throws OzException {
+        assertEquals(LocalDate.of(2026, 10, 2), TaskDateTime.parseDate("2/10/2026"));
+        assertThrows(OzException.class, () -> TaskDateTime.parseDate("2026-10-02 1400"));
+    }
+
+    @Test
+    public void plusDays_dateAndDateTime_preservesTimePresence() throws OzException {
+        TaskDateTime date = TaskDateTime.parse("2026-10-02").plusDays(7);
+        TaskDateTime dateTime = TaskDateTime.parse("2026-10-02 1430").plusDays(7);
+
+        assertEquals("Oct 09 2026", date.toDisplayString());
+        assertEquals("Oct 09 2026, 2:30pm", dateTime.toDisplayString());
+    }
+
+    @Test
     public void isAfter_earlierAndLaterDateTimes_correctComparison() throws OzException {
         TaskDateTime earlier = TaskDateTime.parse("2026-09-01 0900");
         TaskDateTime later = TaskDateTime.parse("2026-09-01 1800");
