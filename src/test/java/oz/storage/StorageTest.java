@@ -186,4 +186,32 @@ public class StorageTest {
 
         storageFile.toFile().setWritable(true);
     }
+
+    @Test
+    public void load_insufficientAndEmptyFieldsRecurring_skipsInvalidRecords() throws IOException {
+        Path storageFile = this.temporaryFolder.resolve("corrupted_recurring.txt");
+        Files.write(storageFile, List.of(
+                "R | 0 | insufficient fields | 2026-10-02 1400 | 2026-10-02 1500 | 1 | -",
+                "R | 0 | | 2026-10-02 1400 | 2026-10-02 1500 | 1 | - | -",
+                "R | 0 | empty start | | 2026-10-02 1500 | 1 | - | -",
+                "R | 0 | empty end | 2026-10-02 1400 | | 1 | - | -",
+                "R | 0 | non numeric interval | 2026-10-02 1400 | 2026-10-02 1500 | abc | - | -",
+                "R | 0 | interval overflow | 2026-10-02 1400 | 2026-10-02 1500 | 999999999999999 | - | -",
+                "T | 0 | surviving task"));
+
+        ArrayList<Task> loaded = new Storage(storageFile.toString()).load();
+        assertEquals(1, loaded.size());
+        assertEquals("T | 0 | surviving task", loaded.get(0).toFileFormat());
+    }
+
+    @Test
+    public void save_taskListOverload_persistsTasksSuccessfully() throws OzException, IOException {
+        Path storageFile = this.temporaryFolder.resolve("tasklist_save.txt");
+        Storage storage = new Storage(storageFile.toString());
+        TaskList taskList = new TaskList();
+        taskList.add(new ToDo("test todo"));
+
+        storage.save(taskList);
+        assertEquals(List.of("T | 0 | test todo"), Files.readAllLines(storageFile));
+    }
 }

@@ -200,4 +200,28 @@ public class TaskDateTimeTest {
         assertEquals("That date does not exist on the calendar (e.g., February 30).",
                 dateFeb30.getMessage());
     }
+
+    @Test
+    public void parseDate_emptyOrInvalidInput_exceptionThrown() {
+        OzException nullEx = assertThrows(OzException.class, () -> TaskDateTime.parseDate(null));
+        assertEquals("Date argument cannot be empty.", nullEx.getMessage());
+
+        OzException blankEx = assertThrows(OzException.class, () -> TaskDateTime.parseDate("   "));
+        assertEquals("Date argument cannot be empty.", blankEx.getMessage());
+
+        OzException invalidEx = assertThrows(OzException.class, () -> TaskDateTime.parseDate("not-a-date"));
+        assertEquals("Please provide a valid date (e.g., 2019-10-15 or 2/12/2019).", invalidEx.getMessage());
+    }
+
+    @Test
+    public void parseTime_emptyOrInvalidInput_exceptionThrown() {
+        OzException nullEx = assertThrows(OzException.class, () -> TaskDateTime.parseTime(null));
+        assertEquals("Time argument cannot be empty.", nullEx.getMessage());
+
+        OzException blankEx = assertThrows(OzException.class, () -> TaskDateTime.parseTime("   "));
+        assertEquals("Time argument cannot be empty.", blankEx.getMessage());
+
+        OzException invalidEx = assertThrows(OzException.class, () -> TaskDateTime.parseTime("not-a-time"));
+        assertEquals("Please provide a valid time (e.g., 1400, 14:00, or 2pm).", invalidEx.getMessage());
+    }
 }
