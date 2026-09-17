@@ -9,7 +9,6 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javafx.util.Pair;
 import oz.exception.OzException;
 import oz.storage.Storage;
 import oz.task.Deadline;
@@ -224,8 +223,8 @@ public class Oz {
                     break;
                 }
 
-                Pair<String, CommandType> reply = getResponse(fullCommand);
-                System.out.print(DIVIDER + reply.getKey() + "\n" + DIVIDER);
+                CommandResult reply = getResponse(fullCommand);
+                System.out.print(DIVIDER + reply.message() + "\n" + DIVIDER);
             }
         }
 
@@ -238,9 +237,9 @@ public class Oz {
      * @param fullCommand Full command string entered by the user.
      * @return A pair containing the response message and the command type tag.
      */
-    public Pair<String, CommandType> getResponse(String fullCommand) {
+    public CommandResult getResponse(String fullCommand) {
         if (fullCommand == null || fullCommand.isBlank()) {
-            return new Pair<>("Please enter a command.", CommandType.BLANK);
+            return new CommandResult("Please enter a command.", CommandType.BLANK);
         }
 
         try {
@@ -254,7 +253,7 @@ public class Oz {
             String details = rawDetails == null ? "" : rawDetails.trim();
             return executeCommand(command, details);
         } catch (OzException exception) {
-            return new Pair<>("Confound it! " + exception.getMessage(), CommandType.ERROR);
+            return new CommandResult("Confound it! " + exception.getMessage(), CommandType.ERROR);
         }
     }
 
@@ -266,7 +265,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command is unknown or its arguments are invalid.
      */
-    private Pair<String, CommandType> executeCommand(String command, String details) throws OzException {
+    private CommandResult executeCommand(String command, String details) throws OzException {
         switch (command) {
             case "bye":
                 return exit(details);
@@ -302,12 +301,12 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If arguments are supplied to the bye command.
      */
-    private Pair<String, CommandType> exit(String details) throws OzException {
+    private CommandResult exit(String details) throws OzException {
         if (!details.isBlank()) {
             throw new OzException(BYE_ARGUMENTS_MESSAGE);
         }
         this.isExit = true;
-        return new Pair<>("Farewell! Back to my contraptions. *oink*", CommandType.BYE);
+        return new CommandResult("Farewell! Back to my contraptions. *oink*", CommandType.BYE);
     }
 
     /**
@@ -317,14 +316,14 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> listTasks(String details) throws OzException {
+    private CommandResult listTasks(String details) throws OzException {
         if (!details.isBlank()) {
             throw new OzException(LIST_ARGUMENTS_MESSAGE);
         }
 
         String response = formatTaskList("Here is the master task list:\n",
                 this.tasks.getTasks());
-        return new Pair<>(response, CommandType.LIST);
+        return new CommandResult(response, CommandType.LIST);
     }
 
     /**
@@ -334,7 +333,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> listTasksOn(String details) throws OzException {
+    private CommandResult listTasksOn(String details) throws OzException {
         if (details.isBlank()) {
             throw new OzException(ON_USAGE_MESSAGE);
         }
@@ -346,14 +345,14 @@ public class Oz {
         ArrayList<Task> matchingTasks = this.tasks.findTasksOn(targetDate);
 
         if (matchingTasks.isEmpty()) {
-            return new Pair<>("No tasks found for " + dateHeader + ".",
+            return new CommandResult("No tasks found for " + dateHeader + ".",
                     CommandType.LIST);
         }
 
         String response = formatTasksOnDate(
                 "Tasks occurring on " + dateHeader + ":\n",
                 matchingTasks, targetDate);
-        return new Pair<>(response, CommandType.LIST);
+        return new CommandResult(response, CommandType.LIST);
     }
 
     /**
@@ -363,7 +362,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> findTasks(String details) throws OzException {
+    private CommandResult findTasks(String details) throws OzException {
         if (details.isBlank()) {
             throw new OzException(EMPTY_FIND_KEYWORD_MESSAGE);
         }
@@ -371,12 +370,12 @@ public class Oz {
         ArrayList<Task> matchingTasks = this.tasks.findTasksByKeyword(details);
 
         if (matchingTasks.isEmpty()) {
-            return new Pair<>("No matching tasks found in the ledger.", CommandType.FIND);
+            return new CommandResult("No matching tasks found in the ledger.", CommandType.FIND);
         }
 
         String response = formatTaskList("Matching tasks located:\n",
                 matchingTasks);
-        return new Pair<>(response, CommandType.FIND);
+        return new CommandResult(response, CommandType.FIND);
     }
 
     /**
@@ -386,7 +385,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> markTask(String details) throws OzException {
+    private CommandResult markTask(String details) throws OzException {
         if (countFlagOccurrences(details, "/on") > 1) {
             throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
         }
@@ -414,7 +413,7 @@ public class Oz {
                 recurringEvent.unmarkOccurrence(occurrenceDate);
                 throw exception;
             }
-            return new Pair<>("*Oink* Marked occurrence as done:\n  "
+            return new CommandResult("*Oink* Marked occurrence as done:\n  "
                     + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
         }
 
@@ -434,7 +433,7 @@ public class Oz {
             this.tasks.markAsNotDone(index);
             throw exception;
         }
-        return new Pair<>("*Oink* Marked as done:\n  " + this.tasks.get(index),
+        return new CommandResult("*Oink* Marked as done:\n  " + this.tasks.get(index),
                 CommandType.CHANGE_MARK);
     }
 
@@ -445,7 +444,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> unmarkTask(String details) throws OzException {
+    private CommandResult unmarkTask(String details) throws OzException {
         if (countFlagOccurrences(details, "/on") > 1) {
             throw new OzException(String.format(DUPLICATE_FLAG_MESSAGE_FORMAT, "/on"));
         }
@@ -473,7 +472,7 @@ public class Oz {
                 recurringEvent.markOccurrence(occurrenceDate);
                 throw exception;
             }
-            return new Pair<>("*Snort* Marked occurrence as not done yet:\n  "
+            return new CommandResult("*Snort* Marked occurrence as not done yet:\n  "
                     + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
         }
 
@@ -493,7 +492,7 @@ public class Oz {
             this.tasks.markAsDone(index);
             throw exception;
         }
-        return new Pair<>("*Snort* Marked as not done yet:\n  " + this.tasks.get(index),
+        return new CommandResult("*Snort* Marked as not done yet:\n  " + this.tasks.get(index),
                 CommandType.CHANGE_MARK);
     }
 
@@ -504,7 +503,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> addTodo(String details) throws OzException {
+    private CommandResult addTodo(String details) throws OzException {
         if (details.isBlank()) {
             throw new OzException(EMPTY_TODO_DESCRIPTION_MESSAGE);
         }
@@ -527,7 +526,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> addDeadline(String details) throws OzException {
+    private CommandResult addDeadline(String details) throws OzException {
         validateNoStorageDelimiter(details);
         int byCount = countFlagOccurrences(details, "/by");
         if (byCount > 1) {
@@ -571,7 +570,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> addEvent(String details) throws OzException {
+    private CommandResult addEvent(String details) throws OzException {
         validateNoStorageDelimiter(details);
         int fromCount = countFlagOccurrences(details, "/from");
         int toCount = countFlagOccurrences(details, "/to");
@@ -629,7 +628,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the recurring event arguments are invalid.
      */
-    private Pair<String, CommandType> addRecurringEvent(String details) throws OzException {
+    private CommandResult addRecurringEvent(String details) throws OzException {
         validateNoStorageDelimiter(details);
         int onCount = countFlagOccurrences(details, "/on");
         int startCount = countFlagOccurrences(details, "/start");
@@ -709,7 +708,7 @@ public class Oz {
      * @return Response message and command type.
      * @throws OzException If the command arguments are invalid.
      */
-    private Pair<String, CommandType> deleteTask(String details) throws OzException {
+    private CommandResult deleteTask(String details) throws OzException {
         int index = parseTaskIndex(details, this.tasks.size());
         Task removedTask = this.tasks.delete(index);
         try {
@@ -718,7 +717,7 @@ public class Oz {
             this.tasks.add(index, removedTask);
             throw exception;
         }
-        return new Pair<>(String.format(
+        return new CommandResult(String.format(
                 """
                         Scrapped! Removed task:
                         %s
@@ -734,7 +733,7 @@ public class Oz {
      * @return Confirmation message and the add command type.
      * @throws OzException If saving the updated task list to storage fails.
      */
-    private Pair<String, CommandType> addTask(Task task) throws OzException {
+    private CommandResult addTask(Task task) throws OzException {
         this.tasks.add(task);
         try {
             this.storage.save(this.tasks);
@@ -742,7 +741,7 @@ public class Oz {
             this.tasks.delete(this.tasks.size() - 1);
             throw exception;
         }
-        return new Pair<>(String.format(
+        return new CommandResult(String.format(
                 """
                         *Snort* Added to the list:
                         %s

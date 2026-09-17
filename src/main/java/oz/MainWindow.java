@@ -11,7 +11,6 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
-import javafx.util.Pair;
 
 /**
  * Controller for the main GUI.
@@ -83,10 +82,10 @@ public class MainWindow extends AnchorPane {
             return;
         }
 
-        Pair<String, CommandType> response = oz.getResponse(input);
+        CommandResult response = oz.getResponse(input);
         dialogContainer.getChildren().addAll(
                 DialogBox.getUserDialog(input),
-                DialogBox.getOzDialog(response.getKey(), ozImage, response.getValue()));
+                DialogBox.getOzDialog(response.message(), ozImage, response.type()));
         userInput.clear();
 
         if (oz.isExit()) {
