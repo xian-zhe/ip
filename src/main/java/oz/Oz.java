@@ -34,133 +34,101 @@ public class Oz {
     private static final String UNRECOGNIZED_INPUT_MESSAGE = "I could not understand that input.";
 
     /** Error shown when a command word is unknown. */
-    private static final String UNKNOWN_COMMAND_MESSAGE =
-            "Unknown command. Check your blueprint syntax.";
+    private static final String UNKNOWN_COMMAND_MESSAGE = "Unknown command. Check your blueprint syntax.";
 
     /** Error shown when list receives arguments. */
-    private static final String LIST_ARGUMENTS_MESSAGE =
-            "The list command does not take arguments.";
+    private static final String LIST_ARGUMENTS_MESSAGE = "The list command does not take arguments.";
 
     /** Error shown when the bye command receives arguments. */
-    private static final String BYE_ARGUMENTS_MESSAGE =
-            "The bye command does not take arguments.";
+    private static final String BYE_ARGUMENTS_MESSAGE = "The bye command does not take arguments.";
 
     /** Error template shown when duplicate parameter flags are detected. */
-    private static final String DUPLICATE_FLAG_MESSAGE_FORMAT =
-            "Duplicate '%s' parameter detected.";
+    private static final String DUPLICATE_FLAG_MESSAGE_FORMAT = "Duplicate '%s' parameter detected.";
 
     /** Error shown when an unexpected parameter flag is supplied to todo. */
-    private static final String TODO_UNEXPECTED_FLAG_MESSAGE =
-            "The todo command does not accept parameter flags like /by, /from, or /to.";
+    private static final String TODO_UNEXPECTED_FLAG_MESSAGE = "The todo command does not accept parameter flags like /by, /from, or /to.";
 
     /** Error template shown when a required parameter flag is missing. */
-    private static final String MISSING_FLAG_MESSAGE_FORMAT =
-            "Missing required '%s' parameter. %s";
+    private static final String MISSING_FLAG_MESSAGE_FORMAT = "Missing required '%s' parameter. %s";
 
     /** Error template shown when parameters are supplied out of order. */
-    private static final String MISPLACED_FLAG_MESSAGE_FORMAT =
-            "The '%s' parameter must precede '%s'. %s";
+    private static final String MISPLACED_FLAG_MESSAGE_FORMAT = "The '%s' parameter must precede '%s'. %s";
 
     /** Error template shown when an unexpected parameter flag is supplied. */
-    private static final String UNEXPECTED_FLAG_MESSAGE_FORMAT =
-            "Unexpected '%s' parameter in %s command. %s";
+    private static final String UNEXPECTED_FLAG_MESSAGE_FORMAT = "Unexpected '%s' parameter in %s command. %s";
 
     /** Usage message for date-filtered task listing. */
-    private static final String ON_USAGE_MESSAGE =
-            "Use: on <date> (e.g., on 2019-10-15 or on 2/12/2019).";
+    private static final String ON_USAGE_MESSAGE = "Use: on <date> (e.g., on 2019-10-15 or on 2/12/2019).";
 
     /** Error shown when find receives no keyword. */
-    private static final String EMPTY_FIND_KEYWORD_MESSAGE =
-            "The keyword for find cannot be empty.";
+    private static final String EMPTY_FIND_KEYWORD_MESSAGE = "The keyword for find cannot be empty.";
 
     /** Error shown when an occurrence date is supplied for an ordinary task. */
-    private static final String ON_RECURRING_ONLY_MESSAGE =
-            "The /on argument can only be used with recurring tasks.";
+    private static final String ON_RECURRING_ONLY_MESSAGE = "The /on argument can only be used with recurring tasks.";
 
     /** Usage message for marking a recurring occurrence. */
-    private static final String MARK_RECURRING_USAGE_MESSAGE =
-            "Please specify which occurrence to mark. Use: mark <number> /on <date>.";
+    private static final String MARK_RECURRING_USAGE_MESSAGE = "Please specify which occurrence to mark. Use: mark <number> /on <date>.";
 
     /** Error template shown when marking an already completed task. */
-    private static final String TASK_ALREADY_DONE_MESSAGE_FORMAT =
-            "Task %d is already marked as done.";
+    private static final String TASK_ALREADY_DONE_MESSAGE_FORMAT = "Task %d is already marked as done.";
 
     /** Error template shown when unmarking an incomplete task. */
-    private static final String TASK_ALREADY_NOT_DONE_MESSAGE_FORMAT =
-            "Task %d is not marked as done yet.";
+    private static final String TASK_ALREADY_NOT_DONE_MESSAGE_FORMAT = "Task %d is not marked as done yet.";
 
     /** Error shown when task input contains the storage delimiter '|'. */
-    private static final String RESERVED_DELIMITER_MESSAGE =
-            "Task input cannot contain the '|' character because it is reserved for storage.";
+    private static final String RESERVED_DELIMITER_MESSAGE = "Task input cannot contain the '|' character because it is reserved for storage.";
 
     /** Usage message for unmarking a recurring occurrence. */
-    private static final String UNMARK_RECURRING_USAGE_MESSAGE =
-            "Please specify which occurrence to unmark. Use: unmark <number> /on <date>.";
+    private static final String UNMARK_RECURRING_USAGE_MESSAGE = "Please specify which occurrence to unmark. Use: unmark <number> /on <date>.";
 
     /** Error shown when a todo description is missing. */
-    private static final String EMPTY_TODO_DESCRIPTION_MESSAGE =
-            "The description of a todo cannot be empty.";
+    private static final String EMPTY_TODO_DESCRIPTION_MESSAGE = "The description of a todo cannot be empty.";
 
     /** Usage message for adding a deadline. */
-    private static final String DEADLINE_USAGE_MESSAGE =
-            "Use: deadline <description> /by <date>.";
+    private static final String DEADLINE_USAGE_MESSAGE = "Use: deadline <description> /by <date>.";
 
     /** Error shown when a deadline description is missing. */
-    private static final String EMPTY_DEADLINE_DESCRIPTION_MESSAGE =
-            "The description of a deadline cannot be empty.";
+    private static final String EMPTY_DEADLINE_DESCRIPTION_MESSAGE = "The description of a deadline cannot be empty.";
 
     /** Error shown when a deadline date-time is missing. */
-    private static final String EMPTY_DEADLINE_DATE_TIME_MESSAGE =
-            "The deadline date/time (/by) cannot be empty.";
+    private static final String EMPTY_DEADLINE_DATE_TIME_MESSAGE = "The deadline date/time (/by) cannot be empty.";
 
     /** Usage message for adding an event. */
-    private static final String EVENT_USAGE_MESSAGE =
-            "Use: event <description> /from <start> /to <end>.";
+    private static final String EVENT_USAGE_MESSAGE = "Use: event <description> /from <start> /to <end>.";
 
     /** Error shown when an event description is missing. */
-    private static final String EMPTY_EVENT_DESCRIPTION_MESSAGE =
-            "The description of an event cannot be empty.";
+    private static final String EMPTY_EVENT_DESCRIPTION_MESSAGE = "The description of an event cannot be empty.";
 
     /** Error shown when an event start or end is missing. */
-    private static final String EMPTY_EVENT_DATE_TIME_MESSAGE =
-            "The event start (/from) and end (/to) dates cannot be empty.";
+    private static final String EMPTY_EVENT_DATE_TIME_MESSAGE = "The event start (/from) and end (/to) dates cannot be empty.";
 
     /** Usage message for adding a recurring event. */
-    private static final String RECURRING_EVENT_USAGE_MESSAGE =
-            "Use: recurring <description> /on <date> /start <time> /end <time> "
-                    + "/every <interval> week|weeks [/until <date>].";
+    private static final String RECURRING_EVENT_USAGE_MESSAGE = "Use: recurring <description> /on <date> /start <time> /end <time> "
+            + "/every <interval> week|weeks [/until <date>].";
 
     /** Error shown when a recurring event description is missing. */
-    private static final String EMPTY_RECURRING_DESCRIPTION_MESSAGE =
-            "The description of a recurring event cannot be empty.";
+    private static final String EMPTY_RECURRING_DESCRIPTION_MESSAGE = "The description of a recurring event cannot be empty.";
 
     /** Error shown when a recurrence unit is not weekly. */
-    private static final String INVALID_RECURRENCE_UNIT_MESSAGE =
-            "The recurrence unit must be week or weeks.";
+    private static final String INVALID_RECURRENCE_UNIT_MESSAGE = "The recurrence unit must be week or weeks.";
 
     /** Error shown when a recurrence interval is not positive. */
-    private static final String INVALID_RECURRENCE_INTERVAL_MESSAGE =
-            "The recurrence interval must be a positive whole number.";
+    private static final String INVALID_RECURRENCE_INTERVAL_MESSAGE = "The recurrence interval must be a positive whole number.";
 
     /** Error shown when no task number is provided. */
-    private static final String EMPTY_TASK_NUMBER_MESSAGE =
-            "Please specify a task number.";
+    private static final String EMPTY_TASK_NUMBER_MESSAGE = "Please specify a task number.";
 
     /** Error shown when the task list is empty. */
-    private static final String EMPTY_TASK_LIST_MESSAGE =
-            "Your task list is empty. Add tasks before referencing them.";
+    private static final String EMPTY_TASK_LIST_MESSAGE = "Your task list is empty. Add tasks before referencing them.";
 
     /** Error shown when a task number is not positive. */
-    private static final String NON_POSITIVE_TASK_NUMBER_MESSAGE =
-            "Task number must be a positive whole number starting from 1.";
+    private static final String NON_POSITIVE_TASK_NUMBER_MESSAGE = "Task number must be a positive whole number starting from 1.";
 
     /** Error template shown when a task number is out of bounds. */
-    private static final String TASK_INDEX_OUT_OF_BOUNDS_MESSAGE_FORMAT =
-            "Task number %d does not exist. Please provide a number between 1 and %d.";
+    private static final String TASK_INDEX_OUT_OF_BOUNDS_MESSAGE_FORMAT = "Task number %d does not exist. Please provide a number between 1 and %d.";
 
     /** Error shown when a task number is not numeric. */
-    private static final String INVALID_TASK_NUMBER_MESSAGE =
-            "Please provide a valid whole number for the task index.";
+    private static final String INVALID_TASK_NUMBER_MESSAGE = "Please provide a valid whole number for the task index.";
 
     /** Error shown when a numeric task number cannot fit in an integer. */
     private static final String TASK_NUMBER_TOO_LARGE_MESSAGE = "That task number is too large.";
@@ -430,7 +398,12 @@ public class Oz {
             LocalDate occurrenceDate = TaskDateTime.parseDate(
                     occurrenceMatcher.group("occurrenceDate").trim());
             recurringEvent.markOccurrence(occurrenceDate);
-            this.storage.save(this.tasks);
+            try {
+                this.storage.save(this.tasks);
+            } catch (OzException exception) {
+                recurringEvent.unmarkOccurrence(occurrenceDate);
+                throw exception;
+            }
             return new Pair<>("*Oink* Marked occurrence as done:\n  "
                     + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
         }
@@ -445,7 +418,12 @@ public class Oz {
         }
 
         this.tasks.markAsDone(index);
-        this.storage.save(this.tasks);
+        try {
+            this.storage.save(this.tasks);
+        } catch (OzException exception) {
+            this.tasks.markAsNotDone(index);
+            throw exception;
+        }
         return new Pair<>("*Oink* Marked as done:\n  " + this.tasks.get(index),
                 CommandType.CHANGE_MARK);
     }
@@ -479,7 +457,12 @@ public class Oz {
             LocalDate occurrenceDate = TaskDateTime.parseDate(
                     occurrenceMatcher.group("occurrenceDate").trim());
             recurringEvent.unmarkOccurrence(occurrenceDate);
-            this.storage.save(this.tasks);
+            try {
+                this.storage.save(this.tasks);
+            } catch (OzException exception) {
+                recurringEvent.markOccurrence(occurrenceDate);
+                throw exception;
+            }
             return new Pair<>("*Snort* Marked occurrence as not done yet:\n  "
                     + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
         }
@@ -494,7 +477,12 @@ public class Oz {
         }
 
         this.tasks.markAsNotDone(index);
-        this.storage.save(this.tasks);
+        try {
+            this.storage.save(this.tasks);
+        } catch (OzException exception) {
+            this.tasks.markAsDone(index);
+            throw exception;
+        }
         return new Pair<>("*Snort* Marked as not done yet:\n  " + this.tasks.get(index),
                 CommandType.CHANGE_MARK);
     }
@@ -714,7 +702,12 @@ public class Oz {
     private Pair<String, CommandType> deleteTask(String details) throws OzException {
         int index = parseTaskIndex(details, this.tasks.size());
         Task removedTask = this.tasks.delete(index);
-        this.storage.save(this.tasks);
+        try {
+            this.storage.save(this.tasks);
+        } catch (OzException exception) {
+            this.tasks.add(index, removedTask);
+            throw exception;
+        }
         return new Pair<>(String.format(
                 """
                         Scrapped! Removed task:
@@ -729,10 +722,16 @@ public class Oz {
      *
      * @param task Task to add.
      * @return Confirmation message and the add command type.
+     * @throws OzException If saving the updated task list to storage fails.
      */
-    private Pair<String, CommandType> addTask(Task task) {
+    private Pair<String, CommandType> addTask(Task task) throws OzException {
         this.tasks.add(task);
-        this.storage.save(this.tasks);
+        try {
+            this.storage.save(this.tasks);
+        } catch (OzException exception) {
+            this.tasks.delete(this.tasks.size() - 1);
+            throw exception;
+        }
         return new Pair<>(String.format(
                 """
                         *Snort* Added to the list:
@@ -745,7 +744,8 @@ public class Oz {
     /**
      * Formats tasks in their existing order with consecutive display numbers.
      *
-     * @param header Heading to place before the numbered tasks, including its newline.
+     * @param header         Heading to place before the numbered tasks, including
+     *                       its newline.
      * @param tasksToDisplay Tasks to include in the response.
      * @return Heading and numbered task descriptions without trailing whitespace.
      */
@@ -761,13 +761,15 @@ public class Oz {
     }
 
     /**
-     * Formats tasks for a date query, expanding recurring series to their occurrence view.
+     * Formats tasks for a date query, expanding recurring series to their
+     * occurrence view.
      *
-     * @param header Heading to place before the numbered tasks.
+     * @param header         Heading to place before the numbered tasks.
      * @param tasksToDisplay Tasks occurring on the target date.
-     * @param targetDate Date whose occurrences should be displayed.
+     * @param targetDate     Date whose occurrences should be displayed.
      * @return Heading and numbered task descriptions without trailing whitespace.
-     * @throws OzException If a recurring task cannot produce its expected occurrence.
+     * @throws OzException If a recurring task cannot produce its expected
+     *                     occurrence.
      */
     private static String formatTasksOnDate(String header, List<Task> tasksToDisplay,
             LocalDate targetDate) throws OzException {
@@ -860,7 +862,7 @@ public class Oz {
      * Counts occurrences of a parameter flag in the argument string.
      *
      * @param input Raw arguments string.
-     * @param flag Parameter flag including the leading slash (e.g., "/by").
+     * @param flag  Parameter flag including the leading slash (e.g., "/by").
      * @return Number of times the flag appears as a distinct argument word.
      */
     private static int countFlagOccurrences(String input, String flag) {
@@ -875,12 +877,15 @@ public class Oz {
     /**
      * Validates that the input does not contain the storage delimiter '|'.
      * Credit to user Gnanes99 (https://github.com/Gnanes99) for this check.
-     *
+     * see https://github.com/NUS-CS2103-AY2627-S1/forum/issues/238 for the whole
+     * thread
+     * 
      * @param input Raw input text to validate.
      * @throws OzException If the input contains the '|' character.
      */
     private static void validateNoStorageDelimiter(String input) throws OzException {
-        // Credit to Gnanes99 (https://github.com/Gnanes99): forbid '|' to prevent storage corruption.
+        // Credit to Gnanes99 (https://github.com/Gnanes99): forbid '|' to prevent
+        // storage corruption.
         if (input.contains("|")) {
             throw new OzException(RESERVED_DELIMITER_MESSAGE);
         }

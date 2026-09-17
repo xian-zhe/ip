@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -416,5 +418,22 @@ public class OzResponseTest {
         Pair<String, CommandType> redundantMark = this.oz.getResponse("mark 1");
         assertEquals("Confound it! Task 1 is already marked as done.", redundantMark.getKey());
         assertEquals(CommandType.ERROR, redundantMark.getValue());
+    }
+
+    @Test
+    public void getResponse_storageSaveFails_returnsErrorAndRollsBack() throws IOException {
+        Path storageFile = this.temporaryFolder.resolve("readonly_tasks.txt");
+        Files.createFile(storageFile);
+        storageFile.toFile().setReadOnly();
+
+        Oz readOnlyOz = new Oz(storageFile.toString());
+        Pair<String, CommandType> response = readOnlyOz.getResponse("todo attempt task");
+        assertEquals(CommandType.ERROR, response.getValue());
+        assertTrue(response.getKey().contains("Confound it!"));
+
+        // Verify in-memory list rolled back to empty
+        assertEquals("Here is the master task list:", readOnlyOz.getResponse("list").getKey());
+
+        storageFile.toFile().setWritable(true);
     }
 }

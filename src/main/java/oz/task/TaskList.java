@@ -45,6 +45,18 @@ public class TaskList {
     }
 
     /**
+     * Inserts a task at the specified zero-based index.
+     *
+     * @param index Zero-based index at which the task is inserted.
+     * @param task The task to insert.
+     */
+    public void add(int index, Task task) {
+        assert task != null : "Cannot add a null task";
+        assert index >= 0 && index <= this.tasks.size() : "Insert index out of bounds";
+        this.tasks.add(index, task);
+    }
+
+    /**
      * Removes and returns the task at the specified zero-based index.
      *
      * @param index Zero-based index of the task to remove.
