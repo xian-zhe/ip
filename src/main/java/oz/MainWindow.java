@@ -19,7 +19,8 @@ import javafx.util.Pair;
 public class MainWindow extends AnchorPane {
     /** Introductory guidance displayed when the GUI opens. */
     private static final String WELCOME_MESSAGE =
-            "Welcome to Oz! Try 'list', 'todo Read a book', or 'find book'.";
+            "Welcome! *adjusts spectacles* Ready to log some tasks? "
+                    + "Try 'list', 'todo <task>', or 'find <keyword>'.";
 
     /** Time allowed for reading the farewell message before the application closes. */
     private static final Duration FAREWELL_DISPLAY_DURATION = Duration.seconds(1.5);

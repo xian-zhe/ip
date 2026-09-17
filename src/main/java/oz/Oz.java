@@ -35,7 +35,7 @@ public class Oz {
 
     /** Error shown when a command word is unknown. */
     private static final String UNKNOWN_COMMAND_MESSAGE =
-            "Sorry, I do not understand that command.";
+            "Unknown command. Check your blueprint syntax.";
 
     /** Error shown when list receives arguments. */
     private static final String LIST_ARGUMENTS_MESSAGE =
@@ -181,11 +181,10 @@ public class Oz {
                 """;
         String greeting = DIVIDER
                 + banner
-                + "Hello! I'm Oz.\n"
-                + "What can I do for you? ᕙ(  •̀ ᗜ •́  )ᕗ\n";
+                + "Greetings! *oink* What tasks are on today's agenda?\n";
 
         String bye = DIVIDER
-                + "  Bye. Hope to see you again soon! („• ֊ •„)੭\n"
+                + "  Farewell! Back to my contraptions. *oink*\n"
                 + DIVIDER;
 
         System.out.print(greeting);
@@ -228,7 +227,7 @@ public class Oz {
             String details = rawDetails == null ? "" : rawDetails.trim();
             return executeCommand(command, details);
         } catch (OzException exception) {
-            return new Pair<>("OOPS! " + exception.getMessage(), CommandType.ERROR);
+            return new Pair<>("Confound it! " + exception.getMessage(), CommandType.ERROR);
         }
     }
 
@@ -276,7 +275,7 @@ public class Oz {
      */
     private Pair<String, CommandType> exit() {
         this.isExit = true;
-        return new Pair<>("Bye. Hope to see you again soon! („• ֊ •„)੭", CommandType.BYE);
+        return new Pair<>("Farewell! Back to my contraptions. *oink*", CommandType.BYE);
     }
 
     /**
@@ -291,7 +290,7 @@ public class Oz {
             throw new OzException(LIST_ARGUMENTS_MESSAGE);
         }
 
-        String response = formatTaskList("Here are the tasks in your list:\n",
+        String response = formatTaskList("Here is the master task list:\n",
                 this.tasks.getTasks());
         return new Pair<>(response, CommandType.LIST);
     }
@@ -315,12 +314,12 @@ public class Oz {
         ArrayList<Task> matchingTasks = this.tasks.findTasksOn(targetDate);
 
         if (matchingTasks.isEmpty()) {
-            return new Pair<>("There are no tasks occurring on " + dateHeader + ".",
+            return new Pair<>("No tasks found for " + dateHeader + ".",
                     CommandType.LIST);
         }
 
         String response = formatTasksOnDate(
-                "Here are the tasks occurring on " + dateHeader + ":\n",
+                "Tasks occurring on " + dateHeader + ":\n",
                 matchingTasks, targetDate);
         return new Pair<>(response, CommandType.LIST);
     }
@@ -340,10 +339,10 @@ public class Oz {
         ArrayList<Task> matchingTasks = this.tasks.findTasksByKeyword(details);
 
         if (matchingTasks.isEmpty()) {
-            return new Pair<>("There are no matching tasks in your list.", CommandType.FIND);
+            return new Pair<>("No matching tasks found in the ledger.", CommandType.FIND);
         }
 
-        String response = formatTaskList("Here are the matching tasks in your list:\n",
+        String response = formatTaskList("Matching tasks located:\n",
                 matchingTasks);
         return new Pair<>(response, CommandType.FIND);
     }
@@ -368,7 +367,7 @@ public class Oz {
                     occurrenceMatcher.group("occurrenceDate").trim());
             recurringEvent.markOccurrence(occurrenceDate);
             this.storage.save(this.tasks);
-            return new Pair<>("Nice! I've marked this occurrence as done:\n  "
+            return new Pair<>("*Oink* Marked occurrence as done:\n  "
                     + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
         }
 
@@ -380,7 +379,7 @@ public class Oz {
 
         this.tasks.markAsDone(index);
         this.storage.save(this.tasks);
-        return new Pair<>("Nice! I've marked this task as done:\n  " + this.tasks.get(index),
+        return new Pair<>("*Oink* Marked as done:\n  " + this.tasks.get(index),
                 CommandType.CHANGE_MARK);
     }
 
@@ -404,7 +403,7 @@ public class Oz {
                     occurrenceMatcher.group("occurrenceDate").trim());
             recurringEvent.unmarkOccurrence(occurrenceDate);
             this.storage.save(this.tasks);
-            return new Pair<>("OK! I've marked this occurrence as not done yet:\n  "
+            return new Pair<>("*Snort* Marked occurrence as not done yet:\n  "
                     + recurringEvent.toOccurrenceString(occurrenceDate), CommandType.CHANGE_MARK);
         }
 
@@ -416,7 +415,7 @@ public class Oz {
 
         this.tasks.markAsNotDone(index);
         this.storage.save(this.tasks);
-        return new Pair<>("OK! I've marked this task as not done yet:\n  " + this.tasks.get(index),
+        return new Pair<>("*Snort* Marked as not done yet:\n  " + this.tasks.get(index),
                 CommandType.CHANGE_MARK);
     }
 
@@ -550,7 +549,7 @@ public class Oz {
         this.storage.save(this.tasks);
         return new Pair<>(String.format(
                 """
-                        Ok the following task has been removed!:
+                        Scrapped! Removed task:
                         %s
                         Now you have %d tasks in the list.
                         """,
@@ -568,7 +567,7 @@ public class Oz {
         this.storage.save(this.tasks);
         return new Pair<>(String.format(
                 """
-                        Got it. I've added this task:
+                        *Snort* Added to the list:
                         %s
                         Now you have %d tasks in the list.
                         """,
