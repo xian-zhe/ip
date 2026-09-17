@@ -11,6 +11,10 @@ public class Event extends Task {
     /** Task type code used in storage and display output. */
     public static final String TYPE_CODE = "E";
 
+    /** Error shown when an event ends before it starts. */
+    private static final String START_AFTER_END_MESSAGE =
+            "The start date/time (/from) cannot be after the end date/time (/to).";
+
     /** Start date and time of the event. */
     protected TaskDateTime startDateTime;
     /** End date and time of the event. */
@@ -30,7 +34,7 @@ public class Event extends Task {
         assert startDateTime != null : "An event must have a start date-time";
         assert endDateTime != null : "An event must have an end date-time";
         if (startDateTime.isAfter(endDateTime)) {
-            throw new OzException("The start date/time (/from) cannot be after the end date/time (/to).");
+            throw new OzException(START_AFTER_END_MESSAGE);
         }
         assert !startDateTime.isAfter(endDateTime)
                 : "An event must not start after it ends";

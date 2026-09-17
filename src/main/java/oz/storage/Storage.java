@@ -30,6 +30,53 @@ public class Storage {
     /** Optional Unicode marker ignored when reading stored lines. */
     private static final String BYTE_ORDER_MARK = "\uFEFF";
 
+    /** Error shown when a stored record has too few fields. */
+    private static final String INSUFFICIENT_FIELDS_MESSAGE =
+            "Malformed task entry: insufficient fields.";
+
+    /** Template used when a stored completion status is invalid. */
+    private static final String INVALID_STATUS_MESSAGE_FORMAT =
+            "Invalid completion status (must be 0 or 1): %s";
+
+    /** Error shown when a recurring record has a global completed status. */
+    private static final String INVALID_RECURRING_STATUS_MESSAGE =
+            "A recurring series status must be 0.";
+
+    /** Template used when a stored task type is unknown. */
+    private static final String UNKNOWN_TASK_TYPE_MESSAGE_FORMAT = "Unknown task type: %s";
+
+    /** Error shown when a stored todo description is missing. */
+    private static final String EMPTY_TODO_DESCRIPTION_MESSAGE =
+            "Todo description cannot be empty.";
+
+    /** Error shown when a deadline record has too few fields. */
+    private static final String DEADLINE_FIELDS_MESSAGE =
+            "Deadline task requires description and deadline date.";
+
+    /** Error shown when a deadline record contains an empty required field. */
+    private static final String EMPTY_DEADLINE_FIELD_MESSAGE =
+            "Deadline description and date cannot be empty.";
+
+    /** Error shown when an event record has too few fields. */
+    private static final String EVENT_FIELDS_MESSAGE =
+            "Event task requires description, start time, and end time.";
+
+    /** Error shown when an event record contains an empty required field. */
+    private static final String EMPTY_EVENT_FIELD_MESSAGE =
+            "Event description, start time, and end time cannot be empty.";
+
+    /** Error shown when a recurring record has too few fields. */
+    private static final String RECURRING_FIELDS_MESSAGE =
+            "Recurring event requires all recurrence fields.";
+
+    /** Error shown when a recurring record contains an empty required field. */
+    private static final String EMPTY_RECURRING_FIELD_MESSAGE =
+            "Recurring event fields cannot be empty.";
+
+    /** Error shown when a stored recurrence interval is not positive. */
+    private static final String INVALID_RECURRING_INTERVAL_MESSAGE =
+            "Recurring interval must be a positive whole number.";
+
     /** Position of the task type code. */
     private static final int TYPE_FIELD_INDEX = 0;
 
@@ -169,17 +216,17 @@ public class Storage {
     private Task parseTaskLine(String line) throws OzException {
         String[] initialParts = line.split(FIELD_SEPARATOR_PATTERN, TODO_FIELD_COUNT);
         if (initialParts.length < TODO_FIELD_COUNT) {
-            throw new OzException("Malformed task entry: insufficient fields.");
+            throw new OzException(INSUFFICIENT_FIELDS_MESSAGE);
         }
 
         String type = initialParts[TYPE_FIELD_INDEX].trim();
         String status = initialParts[STATUS_FIELD_INDEX].trim();
         if (!status.equals(Task.STORAGE_NOT_DONE) && !status.equals(Task.STORAGE_DONE)) {
-            throw new OzException("Invalid completion status (must be 0 or 1): " + status);
+            throw new OzException(String.format(INVALID_STATUS_MESSAGE_FORMAT, status));
         }
         if (type.equals(RecurringEvent.TYPE_CODE)
                 && !status.equals(RecurringEvent.STORAGE_SERIES_STATUS)) {
-            throw new OzException("A recurring series status must be 0.");
+            throw new OzException(INVALID_RECURRING_STATUS_MESSAGE);
         }
         boolean isDone = status.equals(Task.STORAGE_DONE);
 
@@ -210,7 +257,7 @@ public class Storage {
             case RecurringEvent.TYPE_CODE:
                 return parseRecurringEvent(line);
             default:
-                throw new OzException("Unknown task type: " + type);
+                throw new OzException(String.format(UNKNOWN_TASK_TYPE_MESSAGE_FORMAT, type));
         }
     }
 
@@ -226,7 +273,7 @@ public class Storage {
         String[] todoParts = line.split(FIELD_SEPARATOR_PATTERN, TODO_FIELD_COUNT);
         String todoDescription = todoParts[DESCRIPTION_FIELD_INDEX].trim();
         if (todoDescription.isEmpty()) {
-            throw new OzException("Todo description cannot be empty.");
+            throw new OzException(EMPTY_TODO_DESCRIPTION_MESSAGE);
         }
         return new ToDo(todoDescription);
     }
@@ -241,12 +288,12 @@ public class Storage {
     private Task parseDeadline(String line) throws OzException {
         String[] deadlineParts = line.split(FIELD_SEPARATOR_PATTERN, DEADLINE_FIELD_COUNT);
         if (deadlineParts.length < DEADLINE_FIELD_COUNT) {
-            throw new OzException("Deadline task requires description and deadline date.");
+            throw new OzException(DEADLINE_FIELDS_MESSAGE);
         }
         String deadlineDescription = deadlineParts[DESCRIPTION_FIELD_INDEX].trim();
         String deadlineTimeArgument = deadlineParts[DEADLINE_FIELD_INDEX].trim();
         if (deadlineDescription.isEmpty() || deadlineTimeArgument.isEmpty()) {
-            throw new OzException("Deadline description and date cannot be empty.");
+            throw new OzException(EMPTY_DEADLINE_FIELD_MESSAGE);
         }
         TaskDateTime deadlineTime = TaskDateTime.parse(deadlineTimeArgument);
         return new Deadline(deadlineDescription, deadlineTime);
@@ -262,13 +309,13 @@ public class Storage {
     private Task parseEvent(String line) throws OzException {
         String[] eventParts = line.split(FIELD_SEPARATOR_PATTERN, EVENT_FIELD_COUNT);
         if (eventParts.length < EVENT_FIELD_COUNT) {
-            throw new OzException("Event task requires description, start time, and end time.");
+            throw new OzException(EVENT_FIELDS_MESSAGE);
         }
         String eventDescription = eventParts[DESCRIPTION_FIELD_INDEX].trim();
         String fromTimeArgument = eventParts[EVENT_START_FIELD_INDEX].trim();
         String toTimeArgument = eventParts[EVENT_END_FIELD_INDEX].trim();
         if (eventDescription.isEmpty() || fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
-            throw new OzException("Event description, start time, and end time cannot be empty.");
+            throw new OzException(EMPTY_EVENT_FIELD_MESSAGE);
         }
         TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
         TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
@@ -285,7 +332,7 @@ public class Storage {
     private Task parseRecurringEvent(String line) throws OzException {
         String[] recurringParts = line.split(FIELD_SEPARATOR_PATTERN, RECURRING_EVENT_FIELD_COUNT);
         if (recurringParts.length < RECURRING_EVENT_FIELD_COUNT) {
-            throw new OzException("Recurring event requires all recurrence fields.");
+            throw new OzException(RECURRING_FIELDS_MESSAGE);
         }
 
         String description = recurringParts[DESCRIPTION_FIELD_INDEX].trim();
@@ -297,7 +344,7 @@ public class Storage {
         if (description.isEmpty() || firstStartArgument.isEmpty() || firstEndArgument.isEmpty()
                 || intervalArgument.isEmpty() || untilArgument.isEmpty()
                 || completedDatesArgument.isEmpty()) {
-            throw new OzException("Recurring event fields cannot be empty.");
+            throw new OzException(EMPTY_RECURRING_FIELD_MESSAGE);
         }
 
         int weekInterval = parsePositiveInterval(intervalArgument);
@@ -320,17 +367,17 @@ public class Storage {
      */
     private int parsePositiveInterval(String argument) throws OzException {
         if (!argument.matches("\\d+")) {
-            throw new OzException("Recurring interval must be a positive whole number.");
+            throw new OzException(INVALID_RECURRING_INTERVAL_MESSAGE);
         }
 
         try {
             int interval = Integer.parseInt(argument);
             if (interval <= 0) {
-                throw new OzException("Recurring interval must be a positive whole number.");
+                throw new OzException(INVALID_RECURRING_INTERVAL_MESSAGE);
             }
             return interval;
         } catch (NumberFormatException exception) {
-            throw new OzException("Recurring interval must be a positive whole number.");
+            throw new OzException(INVALID_RECURRING_INTERVAL_MESSAGE);
         }
     }
 

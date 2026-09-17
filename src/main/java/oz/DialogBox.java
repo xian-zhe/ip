@@ -19,6 +19,24 @@ import javafx.scene.layout.HBox;
  */
 public class DialogBox extends HBox {
 
+    /** Classpath location of the dialog box layout. */
+    private static final String DIALOG_BOX_FXML_PATH = "/view/DialogBox.fxml";
+
+    /** CSS class applied to every Oz reply. */
+    private static final String REPLY_LABEL_STYLE_CLASS = "reply-label";
+
+    /** CSS class applied to successful task additions. */
+    private static final String ADD_LABEL_STYLE_CLASS = "add-label";
+
+    /** CSS class applied to task completion changes. */
+    private static final String MARKED_LABEL_STYLE_CLASS = "marked-label";
+
+    /** CSS class applied to task deletions. */
+    private static final String DELETE_LABEL_STYLE_CLASS = "delete-label";
+
+    /** CSS class applied to errors. */
+    private static final String ERROR_LABEL_STYLE_CLASS = "error-label";
+
     /** Text label for the dialog message. */
     @FXML
     private Label dialog;
@@ -35,7 +53,7 @@ public class DialogBox extends HBox {
      */
     private DialogBox(String text, Image image) {
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(DialogBox.class.getResource("/view/DialogBox.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(DialogBox.class.getResource(DIALOG_BOX_FXML_PATH));
             fxmlLoader.setController(this);
             fxmlLoader.setRoot(this);
             fxmlLoader.load();
@@ -56,7 +74,7 @@ public class DialogBox extends HBox {
         ObservableList<Node> temporaryChildren = FXCollections.observableArrayList(this.getChildren());
         FXCollections.reverse(temporaryChildren);
         this.getChildren().setAll(temporaryChildren);
-        this.dialog.getStyleClass().add("reply-label");
+        this.dialog.getStyleClass().add(REPLY_LABEL_STYLE_CLASS);
     }
 
     /**
@@ -111,16 +129,16 @@ public class DialogBox extends HBox {
 
         switch (commandType) {
             case ADD:
-                this.dialog.getStyleClass().add("add-label");
+                this.dialog.getStyleClass().add(ADD_LABEL_STYLE_CLASS);
                 break;
             case CHANGE_MARK:
-                this.dialog.getStyleClass().add("marked-label");
+                this.dialog.getStyleClass().add(MARKED_LABEL_STYLE_CLASS);
                 break;
             case DELETE:
-                this.dialog.getStyleClass().add("delete-label");
+                this.dialog.getStyleClass().add(DELETE_LABEL_STYLE_CLASS);
                 break;
             case ERROR:
-                this.dialog.getStyleClass().add("error-label");
+                this.dialog.getStyleClass().add(ERROR_LABEL_STYLE_CLASS);
                 break;
             default:
                 // Do nothing for default or unspecified command types

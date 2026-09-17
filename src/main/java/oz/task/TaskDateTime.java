@@ -19,6 +19,20 @@ public class TaskDateTime {
     public static final DateTimeFormatter DISPLAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("MMM dd yyyy", Locale.ENGLISH);
 
+    /** Error shown when a required date-time value is missing. */
+    private static final String EMPTY_DATE_TIME_MESSAGE = "Date/time argument cannot be empty.";
+
+    /** Error shown when a date-time value has no supported format. */
+    private static final String INVALID_DATE_TIME_MESSAGE =
+            "Please provide a valid date/time (e.g., 2019-10-15 or 2/12/2019 1800).";
+
+    /** Error shown when a required date value is missing. */
+    private static final String EMPTY_DATE_MESSAGE = "Date argument cannot be empty.";
+
+    /** Error shown when a date value has no supported format. */
+    private static final String INVALID_DATE_MESSAGE =
+            "Please provide a valid date (e.g., 2019-10-15 or 2/12/2019).";
+
     /** Time format omitting minutes for times on the hour. */
     private static final DateTimeFormatter DISPLAY_HOUR_FORMAT =
             DateTimeFormatter.ofPattern("ha", Locale.ENGLISH);
@@ -125,7 +139,7 @@ public class TaskDateTime {
      */
     public static TaskDateTime parse(String input) throws OzException {
         if (input == null || input.isBlank()) {
-            throw new OzException("Date/time argument cannot be empty.");
+            throw new OzException(EMPTY_DATE_TIME_MESSAGE);
         }
 
         String trimmed = input.trim();
@@ -148,7 +162,7 @@ public class TaskDateTime {
             }
         }
 
-        throw new OzException("Please provide a valid date/time (e.g., 2019-10-15 or 2/12/2019 1800).");
+        throw new OzException(INVALID_DATE_TIME_MESSAGE);
     }
 
     /**
@@ -160,7 +174,7 @@ public class TaskDateTime {
      */
     public static LocalDate parseDate(String input) throws OzException {
         if (input == null || input.isBlank()) {
-            throw new OzException("Date argument cannot be empty.");
+            throw new OzException(EMPTY_DATE_MESSAGE);
         }
 
         String trimmed = input.trim();
@@ -172,7 +186,7 @@ public class TaskDateTime {
             }
         }
 
-        throw new OzException("Please provide a valid date (e.g., 2019-10-15 or 2/12/2019).");
+        throw new OzException(INVALID_DATE_MESSAGE);
     }
 
     /**

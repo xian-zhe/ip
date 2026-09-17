@@ -23,6 +23,34 @@ public class RecurringEvent extends Task {
     /** Number of days in one week. */
     private static final int DAYS_PER_WEEK = 7;
 
+    /** Error shown when an occurrence ends before it starts. */
+    private static final String START_AFTER_END_MESSAGE =
+            "The start date/time (/from) cannot be after the end date/time (/to).";
+
+    /** Error shown when a recurring event spans more than one date. */
+    private static final String DIFFERENT_DATE_MESSAGE =
+            "A recurring event must start and end on the same date.";
+
+    /** Error shown when a recurrence interval is not positive. */
+    private static final String INVALID_INTERVAL_MESSAGE =
+            "The recurrence interval must be a positive whole number.";
+
+    /** Error shown when the recurrence ends before its first occurrence. */
+    private static final String UNTIL_BEFORE_FIRST_MESSAGE =
+            "The recurrence end date (/until) cannot be before the first occurrence.";
+
+    /** Template used when an occurrence is already completed. */
+    private static final String ALREADY_MARKED_MESSAGE_FORMAT =
+            "The occurrence on %s is already marked as done.";
+
+    /** Template used when an occurrence is already incomplete. */
+    private static final String NOT_MARKED_MESSAGE_FORMAT =
+            "The occurrence on %s is not marked as done.";
+
+    /** Template used when a date does not identify an occurrence. */
+    private static final String NO_OCCURRENCE_MESSAGE_FORMAT =
+            "The recurring task does not have an occurrence on %s.";
+
     /** Start of the first occurrence. */
     private final TaskDateTime firstStartDateTime;
 
@@ -55,16 +83,16 @@ public class RecurringEvent extends Task {
         assert firstEndDateTime != null : "A recurring event must have an end date-time";
 
         if (firstStartDateTime.isAfter(firstEndDateTime)) {
-            throw new OzException("The start date/time (/from) cannot be after the end date/time (/to).");
+            throw new OzException(START_AFTER_END_MESSAGE);
         }
         if (!firstStartDateTime.toLocalDate().equals(firstEndDateTime.toLocalDate())) {
-            throw new OzException("A recurring event must start and end on the same date.");
+            throw new OzException(DIFFERENT_DATE_MESSAGE);
         }
         if (weekInterval <= 0) {
-            throw new OzException("The recurrence interval must be a positive whole number.");
+            throw new OzException(INVALID_INTERVAL_MESSAGE);
         }
         if (untilDate != null && untilDate.isBefore(firstStartDateTime.toLocalDate())) {
-            throw new OzException("The recurrence end date (/until) cannot be before the first occurrence.");
+            throw new OzException(UNTIL_BEFORE_FIRST_MESSAGE);
         }
 
         this.firstStartDateTime = firstStartDateTime;
@@ -103,7 +131,7 @@ public class RecurringEvent extends Task {
     public void markOccurrence(LocalDate date) throws OzException {
         validateOccurrenceDate(date);
         if (!this.completedOccurrenceDates.add(date)) {
-            throw new OzException("The occurrence on " + formatDate(date) + " is already marked as done.");
+            throw new OzException(String.format(ALREADY_MARKED_MESSAGE_FORMAT, formatDate(date)));
         }
     }
 
@@ -116,7 +144,7 @@ public class RecurringEvent extends Task {
     public void unmarkOccurrence(LocalDate date) throws OzException {
         validateOccurrenceDate(date);
         if (!this.completedOccurrenceDates.remove(date)) {
-            throw new OzException("The occurrence on " + formatDate(date) + " is not marked as done.");
+            throw new OzException(String.format(NOT_MARKED_MESSAGE_FORMAT, formatDate(date)));
         }
     }
 
@@ -180,8 +208,7 @@ public class RecurringEvent extends Task {
     private void validateOccurrenceDate(LocalDate date) throws OzException {
         if (!occursOn(date)) {
             String displayedDate = date == null ? "the supplied date" : formatDate(date);
-            throw new OzException("The recurring task does not have an occurrence on "
-                    + displayedDate + ".");
+            throw new OzException(String.format(NO_OCCURRENCE_MESSAGE_FORMAT, displayedDate));
         }
     }
 
