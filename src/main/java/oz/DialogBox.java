@@ -8,9 +8,13 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
 
 /**
@@ -21,6 +25,9 @@ public class DialogBox extends HBox {
 
     /** Maximum share of a dialog row occupied by its text bubble. */
     private static final double DIALOG_WIDTH_RATIO = 0.75;
+
+    /** Label for the action that copies a message to the system clipboard. */
+    private static final String COPY_MESSAGE_MENU_TEXT = "Copy message";
 
     /** Classpath location of the dialog box layout. */
     private static final String DIALOG_BOX_FXML_PATH = "/view/DialogBox.fxml";
@@ -67,6 +74,18 @@ public class DialogBox extends HBox {
         this.dialog.setText(text);
         this.displayPicture.setImage(image);
         this.dialog.maxWidthProperty().bind(this.widthProperty().multiply(DIALOG_WIDTH_RATIO));
+        configureCopyMenu();
+    }
+
+    /** Adds a context-menu action that copies this dialog's complete text. */
+    private void configureCopyMenu() {
+        MenuItem copyMessageItem = new MenuItem(COPY_MESSAGE_MENU_TEXT);
+        copyMessageItem.setOnAction((event) -> {
+            ClipboardContent clipboardContent = new ClipboardContent();
+            clipboardContent.putString(dialog.getText());
+            Clipboard.getSystemClipboard().setContent(clipboardContent);
+        });
+        dialog.setContextMenu(new ContextMenu(copyMessageItem));
     }
 
     /**

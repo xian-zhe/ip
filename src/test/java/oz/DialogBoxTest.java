@@ -51,6 +51,7 @@ public class DialogBoxTest {
         assertEquals(message, label.getText());
         assertTrue(label.isWrapText());
         assertEquals(0.0, label.getMinWidth());
+        assertEquals("Copy message", label.getContextMenu().getItems().get(0).getText());
         assertFalse(label.getStyleClass().contains("reply-label"));
     }
 

@@ -17,9 +17,11 @@ import org.junit.jupiter.api.io.TempDir;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
 
 /**
  * Tests that the {@link MainWindow} layout and controller are correctly loaded via FXML.
@@ -85,6 +87,9 @@ public class MainWindowTest {
 
         Button sendButton = (Button) this.rootLayout.getChildren().get(1);
         assertEquals("Send", sendButton.getText());
+
+        TextField userInput = (TextField) this.rootLayout.getChildren().get(0);
+        assertEquals("Enter a command, e.g. list", userInput.getPromptText());
     }
 
     @Test
@@ -105,5 +110,16 @@ public class MainWindowTest {
 
         userInput.setText("list");
         assertFalse(sendButton.isDisabled());
+    }
+
+    @Test
+    public void setOz_validOz_displaysWelcomeMessage() {
+        ScrollPane scrollPane = (ScrollPane) this.rootLayout.getChildren().get(2);
+        VBox dialogContainer = (VBox) scrollPane.getContent();
+
+        assertEquals(1, dialogContainer.getChildren().size());
+        DialogBox welcomeDialog = (DialogBox) dialogContainer.getChildren().get(0);
+        Label welcomeLabel = (Label) welcomeDialog.getChildren().get(1);
+        assertTrue(welcomeLabel.getText().contains("Try 'list'"));
     }
 }

@@ -17,6 +17,10 @@ import javafx.util.Pair;
  * Controller for the main GUI.
  */
 public class MainWindow extends AnchorPane {
+    /** Introductory guidance displayed when the GUI opens. */
+    private static final String WELCOME_MESSAGE =
+            "Welcome to Oz! Try 'list', 'todo Read a book', or 'find book'.";
+
     /** Time allowed for reading the farewell message before the application closes. */
     private static final Duration FAREWELL_DISPLAY_DURATION = Duration.seconds(1.5);
 
@@ -51,8 +55,9 @@ public class MainWindow extends AnchorPane {
     @FXML
     public void initialize() {
         scrollPane.vvalueProperty().bind(dialogContainer.heightProperty());
-        sendButton.disableProperty().bind(Bindings.createBooleanBinding(
-                () -> userInput.getText().isBlank(), userInput.textProperty()));
+        sendButton.disableProperty().bind(Bindings.createBooleanBinding(() -> userInput.getText().isBlank(),
+                userInput.textProperty()));
+        Platform.runLater(userInput::requestFocus);
     }
 
     /**
@@ -62,6 +67,7 @@ public class MainWindow extends AnchorPane {
      */
     public void setOz(Oz oz) {
         this.oz = oz;
+        dialogContainer.getChildren().add(DialogBox.getOzDialog(WELCOME_MESSAGE, ozImage));
     }
 
     /**
@@ -89,6 +95,8 @@ public class MainWindow extends AnchorPane {
             PauseTransition delay = new PauseTransition(FAREWELL_DISPLAY_DURATION);
             delay.setOnFinished((event) -> Platform.exit());
             delay.play();
+        } else {
+            userInput.requestFocus();
         }
     }
 }
