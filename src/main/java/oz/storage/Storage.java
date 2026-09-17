@@ -10,21 +10,32 @@ import oz.exception.OzException;
 import oz.task.Task;
 
 /**
- * Handles loading tasks from a storage file and saving tasks to the storage
- * file.
+ * Handles loading tasks from and saving tasks to a storage file.
  */
 public class Storage {
     /** Visual divider line for console output. */
-    private static final String DIVIDER = "____________________________________________________________\n";
+    private static final String DIVIDER =
+            "____________________________________________________________\n";
 
     /** Optional Unicode marker ignored when reading stored lines. */
     private static final String BYTE_ORDER_MARK = "\uFEFF";
+
+    /** Error shown when an existing storage file cannot be overwritten. */
+    private static final String READ_ONLY_FILE_MESSAGE =
+            "Access denied: storage file is read-only or write-protected.";
+
+    /** Prefix used when writing the task file fails. */
+    private static final String SAVE_FAILURE_MESSAGE_PREFIX =
+            "Could not save tasks to storage file: ";
+
+    /** Fallback detail for I/O failures without a platform message. */
+    private static final String UNKNOWN_IO_FAILURE_MESSAGE = "permission denied.";
 
     /** Path to the task storage file on disk. */
     private final Path filePath;
 
     /**
-     * Constructs a Storage object with the specified file path.
+     * Constructs a storage manager for the specified file path.
      *
      * @param filePath Path to the storage file.
      */
@@ -33,70 +44,129 @@ public class Storage {
     }
 
     /**
-     * Loads tasks from the storage file on the hard disk.
-     * If the file does not exist, an empty list is returned.
-     * Corrupted lines are reported and skipped.
+     * Loads valid tasks, skipping and reporting corrupted records.
      *
-     * @return List of tasks loaded from the storage file.
+     * @return Tasks loaded from storage, or an empty list if reading fails.
      */
     public ArrayList<Task> load() {
-        ArrayList<Task> tasks = new ArrayList<>();
         if (!Files.exists(this.filePath)) {
-            return tasks;
+            return new ArrayList<>();
         }
 
         try {
-            List<String> lines = Files.readAllLines(this.filePath);
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i).trim();
-                if (line.startsWith(BYTE_ORDER_MARK)) {
-                    line = line.substring(BYTE_ORDER_MARK.length()).trim();
-                }
-                if (line.isEmpty()) {
-                    continue;
-                }
-                try {
-                    Task task = TaskRecordParser.parse(line);
-                    tasks.add(task);
-                } catch (OzException exception) {
-                    System.out.println(DIVIDER + "WARNING: Skipping corrupted task entry at line "
-                            + (i + 1) + ": " + exception.getMessage() + "\n" + DIVIDER);
-                }
-            }
+            return parseTaskRecords(Files.readAllLines(this.filePath));
         } catch (IOException exception) {
-            System.out.println(DIVIDER + "OOPS! Could not read tasks from file: "
-                    + exception.getMessage() + "\n" + DIVIDER);
+            reportReadFailure(exception);
+            return new ArrayList<>();
         }
-        return tasks;
     }
 
     /**
-     * Saves the list of tasks to the storage file on the hard disk.
+     * Saves tasks to the configured storage file.
      *
      * @param tasks Tasks to save.
-     * @throws OzException If the file cannot be written due to permissions or I/O error.
+     * @throws OzException If the file cannot be written.
      */
     public void save(List<Task> tasks) throws OzException {
         assert tasks != null : "The task collection to save must be non-null";
         assert tasks.stream().noneMatch(task -> task == null)
                 : "The task collection to save must not contain null tasks";
         if (Files.exists(this.filePath) && !Files.isWritable(this.filePath)) {
-            throw new OzException("Access denied: storage file is read-only or write-protected.");
+            throw new OzException(READ_ONLY_FILE_MESSAGE);
         }
 
         try {
-            if (this.filePath.getParent() != null) {
-                Files.createDirectories(this.filePath.getParent());
-            }
-            List<String> lines = new ArrayList<>();
-            for (Task task : tasks) {
-                lines.add(task.toFileFormat());
-            }
-            Files.write(this.filePath, lines);
+            createParentDirectory();
+            Files.write(this.filePath, serializeTasks(tasks));
         } catch (IOException exception) {
-            throw new OzException("Could not save tasks to storage file: "
-                    + (exception.getMessage() != null ? exception.getMessage() : "permission denied."));
+            String failureDetail = exception.getMessage() == null
+                    ? UNKNOWN_IO_FAILURE_MESSAGE
+                    : exception.getMessage();
+            throw new OzException(SAVE_FAILURE_MESSAGE_PREFIX + failureDetail);
         }
     }
 
+    /**
+     * Parses all non-blank records while skipping and reporting corrupted ones.
+     *
+     * @param storedLines Raw lines read from the storage file.
+     * @return Successfully restored tasks.
+     */
+    private ArrayList<Task> parseTaskRecords(List<String> storedLines) {
+        ArrayList<Task> tasks = new ArrayList<>();
+        for (int lineIndex = 0; lineIndex < storedLines.size(); lineIndex++) {
+            String normalizedLine = normalizeStoredLine(storedLines.get(lineIndex));
+            if (normalizedLine.isEmpty()) {
+                continue;
+            }
+
+            try {
+                tasks.add(TaskRecordParser.parse(normalizedLine));
+            } catch (OzException exception) {
+                reportCorruptedRecord(lineIndex + 1, exception);
+            }
+        }
+        return tasks;
+    }
+
+    /**
+     * Removes surrounding whitespace and an optional byte-order mark.
+     *
+     * @param storedLine Raw line read from storage.
+     * @return Normalized record, or an empty string for a blank line.
+     */
+    private String normalizeStoredLine(String storedLine) {
+        String normalizedLine = storedLine.trim();
+        if (normalizedLine.startsWith(BYTE_ORDER_MARK)) {
+            return normalizedLine.substring(BYTE_ORDER_MARK.length()).trim();
+        }
+        return normalizedLine;
+    }
+
+    /**
+     * Reports one corrupted record without preventing later records from loading.
+     *
+     * @param lineNumber One-based storage line number.
+     * @param exception Parsing failure for the record.
+     */
+    private void reportCorruptedRecord(int lineNumber, OzException exception) {
+        System.out.println(DIVIDER + "WARNING: Skipping corrupted task entry at line "
+                + lineNumber + ": " + exception.getMessage() + "\n" + DIVIDER);
+    }
+
+    /**
+     * Reports a failure to read the storage file.
+     *
+     * @param exception File-reading failure.
+     */
+    private void reportReadFailure(IOException exception) {
+        System.out.println(DIVIDER + "OOPS! Could not read tasks from file: "
+                + exception.getMessage() + "\n" + DIVIDER);
+    }
+
+    /**
+     * Creates the storage directory when the configured path has a parent.
+     *
+     * @throws IOException If the directory cannot be created.
+     */
+    private void createParentDirectory() throws IOException {
+        Path parentDirectory = this.filePath.getParent();
+        if (parentDirectory != null) {
+            Files.createDirectories(parentDirectory);
+        }
+    }
+
+    /**
+     * Converts tasks to records in their existing order.
+     *
+     * @param tasks Tasks to serialize.
+     * @return Persisted task records.
+     */
+    private List<String> serializeTasks(List<Task> tasks) {
+        List<String> storedLines = new ArrayList<>();
+        for (Task task : tasks) {
+            storedLines.add(task.toFileFormat());
+        }
+        return storedLines;
+    }
 }
