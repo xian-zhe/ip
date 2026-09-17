@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import javafx.application.Platform;
 import javafx.geometry.Pos;
-import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -45,14 +45,18 @@ public class DialogBoxTest {
         assertEquals(Pos.TOP_RIGHT, dialogBox.getAlignment());
         assertEquals(1, dialogBox.getChildren().size());
 
-        assertInstanceOf(Label.class, dialogBox.getChildren().get(0));
+        assertInstanceOf(TextArea.class, dialogBox.getChildren().get(0));
 
-        Label label = (Label) dialogBox.getChildren().get(0);
-        assertEquals(message, label.getText());
-        assertTrue(label.isWrapText());
-        assertEquals(0.0, label.getMinWidth());
-        assertEquals("Copy message", label.getContextMenu().getItems().get(0).getText());
-        assertFalse(label.getStyleClass().contains("reply-label"));
+        TextArea messageArea = (TextArea) dialogBox.getChildren().get(0);
+        assertEquals(message, messageArea.getText());
+        assertTrue(messageArea.isWrapText());
+        assertFalse(messageArea.isEditable());
+        assertEquals(0.0, messageArea.getMinWidth());
+        assertEquals("Copy message", messageArea.getContextMenu().getItems().get(0).getText());
+        assertFalse(messageArea.getStyleClass().contains("reply-label"));
+
+        messageArea.selectRange(0, 4);
+        assertEquals("User", messageArea.getSelectedText());
     }
 
     @Test
@@ -63,19 +67,19 @@ public class DialogBoxTest {
         assertEquals(Pos.TOP_LEFT, dialogBox.getAlignment());
         assertEquals(2, dialogBox.getChildren().size());
 
-        // Due to flipping, ImageView is at index 0 and Label is at index 1
+        // Due to flipping, ImageView is at index 0 and TextArea is at index 1
         assertInstanceOf(ImageView.class, dialogBox.getChildren().get(0));
-        assertInstanceOf(Label.class, dialogBox.getChildren().get(1));
+        assertInstanceOf(TextArea.class, dialogBox.getChildren().get(1));
 
         ImageView imageView = (ImageView) dialogBox.getChildren().get(0);
         assertEquals(dummyImage, imageView.getImage());
         assertEquals(40.0, imageView.getFitWidth());
         assertEquals(40.0, imageView.getFitHeight());
 
-        Label label = (Label) dialogBox.getChildren().get(1);
-        assertEquals(message, label.getText());
-        assertTrue(label.isWrapText());
-        assertTrue(label.getStyleClass().contains("reply-label"));
+        TextArea messageArea = (TextArea) dialogBox.getChildren().get(1);
+        assertEquals(message, messageArea.getText());
+        assertTrue(messageArea.isWrapText());
+        assertTrue(messageArea.getStyleClass().contains("reply-label"));
     }
 
     @Test
@@ -83,33 +87,33 @@ public class DialogBoxTest {
         String multilineMessage = "Here are the tasks:\n1. [T][ ] task 1\n2. [T][X] task 2";
         DialogBox dialogBox = DialogBox.getUserDialog(multilineMessage);
 
-        Label label = (Label) dialogBox.getChildren().get(0);
-        assertEquals(multilineMessage, label.getText());
+        TextArea messageArea = (TextArea) dialogBox.getChildren().get(0);
+        assertEquals(multilineMessage, messageArea.getText());
     }
 
     @Test
     public void getOzDialog_commandTypes_appliesCorrectStyles() {
         DialogBox addDialog = DialogBox.getOzDialog("Added", dummyImage, CommandType.ADD);
-        Label addLabel = (Label) addDialog.getChildren().get(1);
-        assertTrue(addLabel.getStyleClass().contains("add-label"));
+        TextArea addMessage = (TextArea) addDialog.getChildren().get(1);
+        assertTrue(addMessage.getStyleClass().contains("add-label"));
 
         DialogBox markedDialog = DialogBox.getOzDialog("Marked", dummyImage, CommandType.CHANGE_MARK);
-        Label markedLabel = (Label) markedDialog.getChildren().get(1);
-        assertTrue(markedLabel.getStyleClass().contains("marked-label"));
+        TextArea markedMessage = (TextArea) markedDialog.getChildren().get(1);
+        assertTrue(markedMessage.getStyleClass().contains("marked-label"));
 
         DialogBox deleteDialog = DialogBox.getOzDialog("Deleted", dummyImage, CommandType.DELETE);
-        Label deleteLabel = (Label) deleteDialog.getChildren().get(1);
-        assertTrue(deleteLabel.getStyleClass().contains("delete-label"));
+        TextArea deleteMessage = (TextArea) deleteDialog.getChildren().get(1);
+        assertTrue(deleteMessage.getStyleClass().contains("delete-label"));
 
         DialogBox errorDialog = DialogBox.getOzDialog("Error", dummyImage, CommandType.ERROR);
-        Label errorLabel = (Label) errorDialog.getChildren().get(1);
-        assertTrue(errorLabel.getStyleClass().contains("error-label"));
+        TextArea errorMessage = (TextArea) errorDialog.getChildren().get(1);
+        assertTrue(errorMessage.getStyleClass().contains("error-label"));
 
         DialogBox defaultDialog = DialogBox.getOzDialog("Default", dummyImage, CommandType.DEFAULT);
-        Label defaultLabel = (Label) defaultDialog.getChildren().get(1);
-        assertFalse(defaultLabel.getStyleClass().contains("add-label"));
-        assertFalse(defaultLabel.getStyleClass().contains("marked-label"));
-        assertFalse(defaultLabel.getStyleClass().contains("delete-label"));
-        assertFalse(defaultLabel.getStyleClass().contains("error-label"));
+        TextArea defaultMessage = (TextArea) defaultDialog.getChildren().get(1);
+        assertFalse(defaultMessage.getStyleClass().contains("add-label"));
+        assertFalse(defaultMessage.getStyleClass().contains("marked-label"));
+        assertFalse(defaultMessage.getStyleClass().contains("delete-label"));
+        assertFalse(defaultMessage.getStyleClass().contains("error-label"));
     }
 }

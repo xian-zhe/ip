@@ -9,22 +9,29 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.HBox;
+import javafx.scene.text.Text;
 
 /**
- * A custom control representing a dialog box consisting of an ImageView to
- * represent the speaker's avatar and a Label containing text from the speaker.
+ * A custom control representing a dialog box consisting of an avatar and a
+ * selectable message area.
  */
 public class DialogBox extends HBox {
 
     /** Maximum share of a dialog row occupied by its text bubble. */
     private static final double DIALOG_WIDTH_RATIO = 0.75;
+
+    /** Space reserved around the measured message text. */
+    private static final double DIALOG_CONTENT_PADDING = 20;
+
+    /** Minimum height of a single-line message bubble. */
+    private static final double MINIMUM_DIALOG_HEIGHT = 34;
 
     /** Label for the action that copies a message to the system clipboard. */
     private static final String COPY_MESSAGE_MENU_TEXT = "Copy message";
@@ -47,9 +54,9 @@ public class DialogBox extends HBox {
     /** CSS class applied to errors. */
     private static final String ERROR_LABEL_STYLE_CLASS = "error-label";
 
-    /** Text label for the dialog message. */
+    /** Read-only selectable area containing the dialog message. */
     @FXML
-    private Label dialog;
+    private TextArea dialog;
 
     /** Avatar picture representing the speaker. */
     @FXML
@@ -74,7 +81,23 @@ public class DialogBox extends HBox {
         this.dialog.setText(text);
         this.displayPicture.setImage(image);
         this.dialog.maxWidthProperty().bind(this.widthProperty().multiply(DIALOG_WIDTH_RATIO));
+        this.dialog.widthProperty().addListener((observable, oldWidth, newWidth) -> updateDialogHeight());
+        this.dialog.fontProperty().addListener((observable, oldFont, newFont) -> updateDialogHeight());
         configureCopyMenu();
+    }
+
+    /** Updates the message area height to display all wrapped text without an inner scrollbar. */
+    private void updateDialogHeight() {
+        double availableTextWidth = dialog.getWidth() - DIALOG_CONTENT_PADDING;
+        if (availableTextWidth <= 0) {
+            return;
+        }
+
+        Text textMeasurement = new Text(dialog.getText());
+        textMeasurement.setFont(dialog.getFont());
+        textMeasurement.setWrappingWidth(availableTextWidth);
+        double requiredHeight = textMeasurement.getLayoutBounds().getHeight() + DIALOG_CONTENT_PADDING;
+        dialog.setPrefHeight(Math.max(MINIMUM_DIALOG_HEIGHT, Math.ceil(requiredHeight)));
     }
 
     /** Adds a context-menu action that copies this dialog's complete text. */

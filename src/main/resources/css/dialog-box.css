@@ -2,13 +2,28 @@
    Base Dialog Box Styles
    ========================================================================== */
 
-.label {
+.dialog-text {
     -fx-background-color: #d9ffe2;
-    -fx-border-color: #90c99e;
-    -fx-border-width: 1px;
+    -fx-background-insets: 0;
     -fx-background-radius: 1em 1em 0 1em;
+    -fx-border-color: #90c99e;
     -fx-border-radius: 1em 1em 0 1em;
+    -fx-border-width: 1px;
+    -fx-padding: 6px;
     -fx-text-fill: #17211a;
+}
+
+.dialog-text .content,
+.dialog-text .scroll-pane,
+.dialog-text .viewport {
+    -fx-background-color: transparent;
+}
+
+.dialog-text .scroll-bar:horizontal,
+.dialog-text .scroll-bar:vertical {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+    -fx-pref-width: 0;
 }
 
 .reply-label {

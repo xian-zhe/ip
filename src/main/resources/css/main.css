@@ -6,12 +6,11 @@
     /* Create a looked-up color called "main-color" within root. */
     main-color: rgb(237, 255, 242);
     -fx-background-color: radial-gradient(radius 100%, red, yellow, blue);
-    -fx-background-image: url("../images/background.jpg");
-    -fx-background-size: 400px 600px;
-    -fx-background-repeat: repeat;
+    -fx-background-image: url("../images/background.png");
+    -fx-background-size: stretch;
 }
 
-/* ==========================================================================
+/* ================================s==========================================
    Input Controls
    ========================================================================== */
 
@@ -33,6 +32,13 @@
 .button:pressed {
     -fx-background-color: #00b874;
 }
+
+.button:disabled {
+    -fx-opacity: 1.0;
+    -fx-background-color: #a0a0a0;
+    -fx-text-fill: #ffffff;
+}
+
 
 /* ==========================================================================
    Scroll Pane & Scroll Bar

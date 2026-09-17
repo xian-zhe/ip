@@ -17,9 +17,9 @@ import org.junit.jupiter.api.io.TempDir;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
 
@@ -119,7 +119,7 @@ public class MainWindowTest {
 
         assertEquals(1, dialogContainer.getChildren().size());
         DialogBox welcomeDialog = (DialogBox) dialogContainer.getChildren().get(0);
-        Label welcomeLabel = (Label) welcomeDialog.getChildren().get(1);
-        assertTrue(welcomeLabel.getText().contains("Try 'list'"));
+        TextArea welcomeMessage = (TextArea) welcomeDialog.getChildren().get(1);
+        assertTrue(welcomeMessage.getText().contains("Try 'list'"));
     }
 }
