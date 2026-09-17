@@ -122,4 +122,21 @@ public class MainWindowTest {
         TextArea welcomeMessage = (TextArea) welcomeDialog.getChildren().get(1);
         assertTrue(welcomeMessage.getText().contains("Try 'list'"));
     }
+
+    @Test
+    public void sendButton_validCommand_displaysTurnAndClearsInput() {
+        TextField userInput = (TextField) this.rootLayout.getChildren().get(0);
+        Button sendButton = (Button) this.rootLayout.getChildren().get(1);
+        ScrollPane scrollPane = (ScrollPane) this.rootLayout.getChildren().get(2);
+        VBox dialogContainer = (VBox) scrollPane.getContent();
+        userInput.setText("todo read book");
+
+        sendButton.fire();
+
+        assertEquals("", userInput.getText());
+        assertEquals(3, dialogContainer.getChildren().size());
+        DialogBox responseDialog = (DialogBox) dialogContainer.getChildren().get(2);
+        TextArea responseMessage = (TextArea) responseDialog.getChildren().get(1);
+        assertTrue(responseMessage.getText().contains("[T][ ] read book"));
+    }
 }

@@ -47,7 +47,7 @@ public class MainWindow extends AnchorPane {
     private Oz oz;
 
     /** Oz avatar image. */
-    private Image ozImage = new Image(this.getClass().getResourceAsStream(OZ_IMAGE_PATH));
+    private final Image ozImage = new Image(this.getClass().getResourceAsStream(OZ_IMAGE_PATH));
 
     /**
      * Initializes the controller, binding the scroll pane to the dialog container's height.
@@ -66,8 +66,9 @@ public class MainWindow extends AnchorPane {
      * @param oz The Oz instance to inject.
      */
     public void setOz(Oz oz) {
+        assert oz != null : "The Oz controller must be non-null";
         this.oz = oz;
-        dialogContainer.getChildren().add(DialogBox.getOzDialog(WELCOME_MESSAGE, ozImage));
+        this.dialogContainer.getChildren().add(DialogBox.getOzDialog(WELCOME_MESSAGE, this.ozImage));
     }
 
     /**
@@ -77,26 +78,42 @@ public class MainWindow extends AnchorPane {
      */
     @FXML
     private void handleUserInput() {
-        String input = userInput.getText();
+        String input = this.userInput.getText();
         if (input.isBlank()) {
             return;
         }
 
-        CommandResult response = oz.getResponse(input);
-        dialogContainer.getChildren().addAll(
-                DialogBox.getUserDialog(input),
-                DialogBox.getOzDialog(response.message(), ozImage, response.type()));
-        userInput.clear();
+        CommandResult response = this.oz.getResponse(input);
+        displayConversationTurn(input, response);
+        this.userInput.clear();
 
-        if (oz.isExit()) {
-            userInput.setDisable(true);
-            sendButton.disableProperty().unbind();
-            sendButton.setDisable(true);
-            PauseTransition delay = new PauseTransition(FAREWELL_DISPLAY_DURATION);
-            delay.setOnFinished((event) -> Platform.exit());
-            delay.play();
-        } else {
-            userInput.requestFocus();
+        if (this.oz.isExit()) {
+            scheduleApplicationExit();
+            return;
         }
+        this.userInput.requestFocus();
+    }
+
+    /**
+     * Adds the user's message and Oz's response to the conversation.
+     *
+     * @param input User command to display.
+     * @param response Oz response to display.
+     */
+    private void displayConversationTurn(String input, CommandResult response) {
+        this.dialogContainer.getChildren().addAll(
+                DialogBox.getUserDialog(input),
+                DialogBox.getOzDialog(response.message(), this.ozImage, response.type()));
+    }
+
+    /** Disables command input and exits after the farewell message is visible. */
+    private void scheduleApplicationExit() {
+        this.userInput.setDisable(true);
+        this.sendButton.disableProperty().unbind();
+        this.sendButton.setDisable(true);
+
+        PauseTransition delay = new PauseTransition(FAREWELL_DISPLAY_DURATION);
+        delay.setOnFinished((event) -> Platform.exit());
+        delay.play();
     }
 }
