@@ -96,18 +96,7 @@ public final class TaskParser {
      */
     public static Task parseDeadline(String arguments) throws OzException {
         CommandArgumentValidator.validateNoStorageDelimiter(arguments);
-        CommandArgumentValidator.validateNoDuplicateFlags(arguments, "/by");
-        if (!CommandArgumentValidator.containsFlag(arguments, "/by")) {
-            throw new OzException(DEADLINE_USAGE_MESSAGE);
-        }
-        if (CommandArgumentValidator.containsFlag(arguments, "/from")) {
-            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
-                    "/from", "deadline", DEADLINE_USAGE_MESSAGE));
-        }
-        if (CommandArgumentValidator.containsFlag(arguments, "/to")) {
-            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
-                    "/to", "deadline", DEADLINE_USAGE_MESSAGE));
-        }
+        validateDeadlineFlags(arguments);
 
         Matcher deadlineMatcher = DEADLINE_ARGUMENTS_PATTERN.matcher(arguments);
         if (!deadlineMatcher.matches()) {
@@ -136,6 +125,56 @@ public final class TaskParser {
      */
     public static Task parseEvent(String arguments) throws OzException {
         CommandArgumentValidator.validateNoStorageDelimiter(arguments);
+        validateEventFlags(arguments);
+
+        Matcher eventMatcher = EVENT_ARGUMENTS_PATTERN.matcher(arguments);
+        if (!eventMatcher.matches()) {
+            throw new OzException(EVENT_USAGE_MESSAGE);
+        }
+
+        String description = eventMatcher.group("description").trim();
+        String fromTimeArgument = eventMatcher.group("fromTime").trim();
+        String toTimeArgument = eventMatcher.group("toTime").trim();
+        if (description.isEmpty()) {
+            throw new OzException(EMPTY_EVENT_DESCRIPTION_MESSAGE);
+        }
+        if (fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
+            throw new OzException(EMPTY_EVENT_DATE_TIME_MESSAGE);
+        }
+
+        TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
+        TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
+        return new Event(description, fromTime, toTime);
+    }
+
+    /**
+     * Validates flags accepted by a deadline command.
+     *
+     * @param arguments Deadline command arguments.
+     * @throws OzException If a required flag is missing or an unsupported flag is present.
+     */
+    private static void validateDeadlineFlags(String arguments) throws OzException {
+        CommandArgumentValidator.validateNoDuplicateFlags(arguments, "/by");
+        if (!CommandArgumentValidator.containsFlag(arguments, "/by")) {
+            throw new OzException(DEADLINE_USAGE_MESSAGE);
+        }
+        if (CommandArgumentValidator.containsFlag(arguments, "/from")) {
+            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
+                    "/from", "deadline", DEADLINE_USAGE_MESSAGE));
+        }
+        if (CommandArgumentValidator.containsFlag(arguments, "/to")) {
+            throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
+                    "/to", "deadline", DEADLINE_USAGE_MESSAGE));
+        }
+    }
+
+    /**
+     * Validates the presence, uniqueness, and order of event flags.
+     *
+     * @param arguments Event command arguments.
+     * @throws OzException If required flags are missing, repeated, misplaced, or unsupported.
+     */
+    private static void validateEventFlags(String arguments) throws OzException {
         CommandArgumentValidator.validateNoDuplicateFlags(arguments, "/from", "/to");
         boolean hasFromFlag = CommandArgumentValidator.containsFlag(arguments, "/from");
         boolean hasToFlag = CommandArgumentValidator.containsFlag(arguments, "/to");
@@ -160,25 +199,6 @@ public final class TaskParser {
             throw new OzException(String.format(UNEXPECTED_FLAG_MESSAGE_FORMAT,
                     "/by", "event", EVENT_USAGE_MESSAGE));
         }
-
-        Matcher eventMatcher = EVENT_ARGUMENTS_PATTERN.matcher(arguments);
-        if (!eventMatcher.matches()) {
-            throw new OzException(EVENT_USAGE_MESSAGE);
-        }
-
-        String description = eventMatcher.group("description").trim();
-        String fromTimeArgument = eventMatcher.group("fromTime").trim();
-        String toTimeArgument = eventMatcher.group("toTime").trim();
-        if (description.isEmpty()) {
-            throw new OzException(EMPTY_EVENT_DESCRIPTION_MESSAGE);
-        }
-        if (fromTimeArgument.isEmpty() || toTimeArgument.isEmpty()) {
-            throw new OzException(EMPTY_EVENT_DATE_TIME_MESSAGE);
-        }
-
-        TaskDateTime fromTime = TaskDateTime.parse(fromTimeArgument);
-        TaskDateTime toTime = TaskDateTime.parse(toTimeArgument);
-        return new Event(description, fromTime, toTime);
     }
 
     /**
