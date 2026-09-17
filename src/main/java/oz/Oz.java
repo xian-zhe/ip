@@ -81,6 +81,14 @@ public class Oz {
     private static final String MARK_RECURRING_USAGE_MESSAGE =
             "Please specify which occurrence to mark. Use: mark <number> /on <date>.";
 
+    /** Error template shown when marking an already completed task. */
+    private static final String TASK_ALREADY_DONE_MESSAGE_FORMAT =
+            "Task %d is already marked as done.";
+
+    /** Error template shown when unmarking an incomplete task. */
+    private static final String TASK_ALREADY_NOT_DONE_MESSAGE_FORMAT =
+            "Task %d is not marked as done yet.";
+
     /** Error shown when task input contains the storage delimiter '|'. */
     private static final String RESERVED_DELIMITER_MESSAGE =
             "Task input cannot contain the '|' character because it is reserved for storage.";
@@ -432,6 +440,9 @@ public class Oz {
         if (task instanceof RecurringEvent) {
             throw new OzException(MARK_RECURRING_USAGE_MESSAGE);
         }
+        if (task.isDone()) {
+            throw new OzException(String.format(TASK_ALREADY_DONE_MESSAGE_FORMAT, index + 1));
+        }
 
         this.tasks.markAsDone(index);
         this.storage.save(this.tasks);
@@ -477,6 +488,9 @@ public class Oz {
         Task task = this.tasks.get(index);
         if (task instanceof RecurringEvent) {
             throw new OzException(UNMARK_RECURRING_USAGE_MESSAGE);
+        }
+        if (!task.isDone()) {
+            throw new OzException(String.format(TASK_ALREADY_NOT_DONE_MESSAGE_FORMAT, index + 1));
         }
 
         this.tasks.markAsNotDone(index);

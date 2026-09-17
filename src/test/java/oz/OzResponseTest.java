@@ -398,4 +398,23 @@ public class OzResponseTest {
         assertEquals("Confound it! Please provide a valid whole number for the task index.",
                 nonNumericResponse.getKey());
     }
+
+    @Test
+    public void getResponse_redundantStateTransitions_returnsError() {
+        this.oz.getResponse("todo sample task");
+
+        // Unmarking an already unmarked task
+        Pair<String, CommandType> redundantUnmark = this.oz.getResponse("unmark 1");
+        assertEquals("Confound it! Task 1 is not marked as done yet.", redundantUnmark.getKey());
+        assertEquals(CommandType.ERROR, redundantUnmark.getValue());
+
+        // Mark it once
+        Pair<String, CommandType> firstMark = this.oz.getResponse("mark 1");
+        assertEquals(CommandType.CHANGE_MARK, firstMark.getValue());
+
+        // Marking an already marked task
+        Pair<String, CommandType> redundantMark = this.oz.getResponse("mark 1");
+        assertEquals("Confound it! Task 1 is already marked as done.", redundantMark.getKey());
+        assertEquals(CommandType.ERROR, redundantMark.getValue());
+    }
 }
