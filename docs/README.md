@@ -1,151 +1,164 @@
 # Oz User Guide
 
-Oz is a task manager that accepts short text commands. It supports todos,
-deadlines, events, keyword and date searches, and weekly recurring events. Tasks
-are saved locally in `data/oz.txt` and restored the next time Oz starts.
+**Oz** is a task-management chatbot for keeping track of todos, deadlines,
+events, and weekly recurring events using short text commands. Oz saves every
+change automatically, so your tasks are ready when you return.
 
-See the [user guide](docs/README.md) for detailed instructions on recurring
-events.
+![Oz chatbot interface](Ui.png)
 
-## Prerequisites
+## Quick start
 
-- JDK 25
-- A recent version of IntelliJ IDEA
+1. Install Java 25 or later.
+2. Put `oz.jar` in the folder where you want Oz to store its data.
+3. Open a terminal in that folder and run `java -jar oz.jar`.
+4. Type a command in the box at the bottom of the window and press **Enter** or
+   click **Send**.
 
-## Running Oz
+Try `todo read chapter 1`, followed by `list`.
 
-### IntelliJ IDEA
+## Command format
 
-1. Open this repository as an IntelliJ project.
-2. Set the project SDK to JDK 25 and the project language level to `SDK default`.
-3. Allow IntelliJ to import the Gradle project.
-4. Run `oz.Launcher` to start the graphical interface, or run `oz.Oz` to use the
-   command-line interface.
+- Words in `UPPER_CASE` are values you supply. For example, replace
+  `DESCRIPTION` with `read chapter 1`.
+- Items in square brackets are optional.
+- Command words and parameter flags are case-sensitive and should be typed in
+  lowercase.
+- Parameters must appear in the order shown.
+- Descriptions cannot contain the `|` character.
 
-### Gradle
+## Features
 
-On Windows, run:
+### Add a todo: `todo`
 
-```powershell
-.\gradlew.bat run
-```
+Adds a task without a date.
 
-On macOS or Linux, run:
+Format: `todo DESCRIPTION`
 
-```bash
-./gradlew run
-```
+Example: `todo read chapter 1`
 
-The Gradle `run` task starts the command-line interface.
+### Add a deadline: `deadline`
 
-To start the graphical interface on Windows, run:
+Adds a task that must be completed by a date or date and time.
 
-```powershell
-.\gradlew.bat runGui
-```
+Format: `deadline DESCRIPTION /by DATE_TIME`
 
-On macOS or Linux, run `./gradlew runGui` instead.
+Example: `deadline submit report /by 2026-10-02 1800`
 
-## Building and running the JAR
+### Add an event: `event`
 
-Build a JAR containing Oz and its runtime dependencies with:
+Adds an event with a start and end. The start cannot be after the end.
 
-```powershell
-.\gradlew.bat shadowJar
-```
+Format: `event DESCRIPTION /from START /to END`
 
-On macOS or Linux, use `./gradlew shadowJar` instead. The generated JAR is
-located at `build/libs/oz.jar`.
+Example:
+`event project meeting /from 2026-10-02 1400 /to 2026-10-02 1600`
 
-Run the JAR using Java 25:
+### Add a recurring event: `recurring`
 
-```bash
-java -jar build/libs/oz.jar
-```
+Adds a same-day event that repeats every specified number of weeks. Omit
+`/until` to repeat indefinitely; when supplied, the end date is inclusive.
 
-The JAR starts the command-line interface and saves tasks in `data/oz.txt`
-relative to the directory from which it is run.
+Format: `recurring DESCRIPTION /on DATE /start TIME /end TIME /every NUMBER weeks [/until DATE]`
 
-## Commands
+Examples:
 
-| Command | Format | Example |
-| --- | --- | --- |
-| Add a todo | `todo <description>` | `todo read book` |
-| Add a deadline | `deadline <description> /by <date-time>` | `deadline submit report /by 2026-10-02 1800` |
-| Add an event | `event <description> /from <start> /to <end>` | `event lecture /from 2026-10-02 1400 /to 2026-10-02 1600` |
-| Add a recurring event | `recurring <description> /on <date> /start <time> /end <time> /every <interval> week\|weeks [/until <date>]` | `recurring tutorial /on 2026-10-02 /start 1000 /end 1200 /every 2 weeks` |
-| List all tasks | `list` | `list` |
-| List tasks on a date | `on <date>` | `on 2026-10-02` |
-| Find tasks | `find <keyword>` | `find report` |
-| Mark a task | `mark <number>` | `mark 1` |
-| Mark a recurring occurrence | `mark <number> /on <date>` | `mark 2 /on 2026-10-16` |
-| Unmark a task | `unmark <number>` | `unmark 1` |
-| Delete a task | `delete <number>` | `delete 1` |
-| Exit | `bye` | `bye` |
+- `recurring tutorial /on 2026-10-02 /start 1000 /end 1200 /every 1 week`
+- `recurring team sync /on 2026-10-02 /start 2pm /end 3pm /every 2 weeks /until 2026-12-31`
 
-Task numbers used by `mark`, `unmark`, and `delete` refer to the numbers shown
-by `list`.
+The end time cannot be before the start time, and `NUMBER` must be a positive
+whole number.
 
-### Date and time formats
+### View tasks: `list` and `on`
 
-Dates can use either hyphens (`-`) or slashes (`/`). The supported formats are:
+Use `list` to display every task and its task number.
 
-- `yyyy-MM-dd`, for example `2026-10-02`
-- `dd-MM-yyyy`, for example `02-10-2026`
-- `yyyy/MM/dd`, for example `2026/10/02`
-- `dd/MM/yyyy`, for example `02/10/2026`
+Use `on DATE` to display deadlines, events, and recurring occurrences on a
+particular date. An event spanning several days appears on every date it spans;
+todos do not appear because they have no date.
 
-Times use the 24-hour clock and can be written as `HHmm` or `HH:mm`, for example
-`1400` or `14:00`. When a command requires both a date and a time, separate them
-with a space, for example `2026-10-02 14:00`.
+Examples:
 
-## Testing and code quality
+- `list`
+- `on 2026-10-02`
 
-Run the test suite with:
+### Find tasks: `find`
 
-```powershell
-.\gradlew.bat test
-```
+Finds tasks whose descriptions contain the given keyword or phrase. Matching is
+case-insensitive.
 
-Generate the JaCoCo coverage report with:
+Format: `find KEYWORD`
 
-```powershell
-.\gradlew.bat test jacocoTestReport
-```
+Example: `find report`
 
-The HTML coverage report is generated at
-`build/reports/jacoco/test/html/index.html`.
+### Mark or unmark tasks
 
-Run Checkstyle with:
+Marks a task as done or not done. `NUMBER` is the task number shown by `list`.
 
-```powershell
-.\gradlew.bat checkstyleMain checkstyleTest
-```
+Formats:
 
-## Acknowledgements and third-party software
+- `mark NUMBER`
+- `unmark NUMBER`
 
-This project was created from the
-[SE-EDU Duke project](https://github.com/se-edu/duke).
+Examples: `mark 1` and `unmark 1`
 
-### AI-assisted work
+For a recurring event, include the date of the occurrence instead. The date
+must be one on which that series occurs.
 
-Google Antigravity with Gemini 3.8 Flash and OpenAI Codex with
-GPT-5.6 Sol extensively throughout the project. These tools assisted with code
-completion, implementation, testing, debugging, refactoring, documentation, and
-code-quality reviews. All AI-assisted output was reviewed, adapted, and tested
-before being included in the project.
+- `mark NUMBER /on DATE`
+- `unmark NUMBER /on DATE`
 
-### Libraries and development tools
+Example: `mark 2 /on 2026-10-16`
 
-- [JaCoCo](https://www.jacoco.org/jacoco/) is used to generate test-coverage
-  reports. Its use has been approved for this course project.
+> **Tip:** Run `list` before using `mark`, `unmark`, or `delete`. Numbers shown
+> by `find` and `on` number only those displayed results, not the master task
+> list.
 
-JUnit, JavaFX, Checkstyle, and Gradle Shadow were included as part of the course
-project setup. No other third-party libraries are currently used.
+### Delete a task: `delete`
 
-### Image Sources
-- [Professor Pig](https://static.wikia.nocookie.net/angrybirds/images/c/ce/Professor_pig_240.png/revision/latest/scale-to-width/360?cb=20130419123316)
-- [Pig](https://static.wikia.nocookie.net/angrybirds/images/c/ce/Sp.png/revision/latest?cb=20221015150751)
-- [Background](https://preview.redd.it/made-some-angry-birds-trilogy-wallpapers-v0-27txqipna3ig1.png?width=1080&crop=smart&auto=webp&s=ef1319c623782001d22704b94f7a75796aee8220)
+Deletes a task permanently. Deleting a recurring event removes the entire
+series.
 
+Format: `delete NUMBER`
 
+Example: `delete 1`
+
+### Exit Oz: `bye`
+
+Closes Oz. Your changes have already been saved automatically.
+
+Format: `bye`
+
+## Dates and times
+
+For the simplest experience, use dates in `YYYY-MM-DD` format and times in
+24-hour `HHmm` or `H:mm` format:
+
+- Date: `2026-10-02`
+- Date and time: `2026-10-02 1800` or `2026-10-02 18:00`
+- Time: `1400`, `14:00`, or `2pm`
+
+Oz also accepts dates as `D/M/YYYY`, `YYYY/M/D`, or `D-M-YYYY`, such as
+`2/10/2026`. Dates must exist on the calendar.
+
+## Command summary
+
+| Action | Command |
+| --- | --- |
+| Add a todo | `todo DESCRIPTION` |
+| Add a deadline | `deadline DESCRIPTION /by DATE_TIME` |
+| Add an event | `event DESCRIPTION /from START /to END` |
+| Add a recurring event | `recurring DESCRIPTION /on DATE /start TIME /end TIME /every NUMBER weeks [/until DATE]` |
+| List all tasks | `list` |
+| List tasks on a date | `on DATE` |
+| Find tasks | `find KEYWORD` |
+| Mark a task | `mark NUMBER` |
+| Mark a recurring occurrence | `mark NUMBER /on DATE` |
+| Unmark a task | `unmark NUMBER` |
+| Unmark a recurring occurrence | `unmark NUMBER /on DATE` |
+| Delete a task or recurring series | `delete NUMBER` |
+| Exit | `bye` |
+
+## Saving data
+
+Oz automatically saves changes to `data/oz.txt`, relative to the folder from
+which it is run. Keep a copy of this file when moving Oz to another computer.

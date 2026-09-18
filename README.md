@@ -142,3 +142,8 @@ before being included in the project.
 
 JUnit, JavaFX, Checkstyle, and Gradle Shadow were included as part of the course
 project setup. No other third-party libraries are currently used.
+
+### Image Sources
+- [Professor Pig](https://static.wikia.nocookie.net/angrybirds/images/c/ce/Professor_pig_240.png/revision/latest/scale-to-width/360?cb=20130419123316)
+- [Pig](https://static.wikia.nocookie.net/angrybirds/images/c/ce/Sp.png/revision/latest?cb=20221015150751)
+- [Background](https://preview.redd.it/made-some-angry-birds-trilogy-wallpapers-v0-27txqipna3ig1.png?width=1080&crop=smart&auto=webp&s=ef1319c623782001d22704b94f7a75796aee8220)

@@ -39,7 +39,8 @@ final class CommandArgumentValidator {
 
     /**
      * Rejects task text that would corrupt the pipe-delimited storage format.
-     *
+     * Credit to user Gnanes99 (https://github.com/Gnanes99) for the insight to forbid the storage delimiter.
+     * Link to forum discussion: (https://github.com/NUS-CS2103-AY2627-S1/forum/issues/238)
      * @param arguments Task arguments to validate.
      * @throws OzException If the arguments contain the storage delimiter.
      */
