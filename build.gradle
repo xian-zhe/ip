@@ -61,7 +61,7 @@ test {
 }
 
 application {
-    mainClass = 'oz.Oz'
+    mainClass = 'oz.Launcher'
 }
 
 jar {
