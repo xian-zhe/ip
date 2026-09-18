@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import javafx.util.Pair;
 
 /**
  * Tests the response generation logic in {@link Oz} that drives GUI interactions.
@@ -37,31 +36,31 @@ public class OzResponseTest {
 
     @Test
     public void getResponse_emptyOrBlankInput_promptsUser() {
-        Pair<String, CommandType> empty = this.oz.getResponse("");
-        assertEquals("Please enter a command.", empty.getKey());
-        assertEquals(CommandType.BLANK, empty.getValue());
+        CommandResult empty = this.oz.getResponse("");
+        assertEquals("Please enter a command.", empty.message());
+        assertEquals(ResponseType.BLANK, empty.type());
 
-        Pair<String, CommandType> blank = this.oz.getResponse("   ");
-        assertEquals("Please enter a command.", blank.getKey());
-        assertEquals(CommandType.BLANK, blank.getValue());
+        CommandResult blank = this.oz.getResponse("   ");
+        assertEquals("Please enter a command.", blank.message());
+        assertEquals(ResponseType.BLANK, blank.type());
 
-        Pair<String, CommandType> nullInput = this.oz.getResponse(null);
-        assertEquals("Please enter a command.", nullInput.getKey());
-        assertEquals(CommandType.BLANK, nullInput.getValue());
+        CommandResult nullInput = this.oz.getResponse(null);
+        assertEquals("Please enter a command.", nullInput.message());
+        assertEquals(ResponseType.BLANK, nullInput.type());
     }
 
     @Test
     public void getResponse_unknownCommand_returnsErrorMessage() {
-        Pair<String, CommandType> response = this.oz.getResponse("unknownCommand");
-        assertEquals("Confound it! Unknown command. Check your blueprint syntax.", response.getKey());
-        assertEquals(CommandType.ERROR, response.getValue());
+        CommandResult response = this.oz.getResponse("unknownCommand");
+        assertEquals("Confound it! Unknown command. Check your blueprint syntax.", response.message());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
     public void getResponse_byeCommand_returnsFarewellMessage() {
-        Pair<String, CommandType> response = this.oz.getResponse("bye");
-        assertEquals("Farewell! Back to my contraptions. *oink*", response.getKey());
-        assertEquals(CommandType.BYE, response.getValue());
+        CommandResult response = this.oz.getResponse("bye");
+        assertEquals("Farewell! Back to my contraptions. *oink*", response.message());
+        assertEquals(ResponseType.BYE, response.type());
         assertTrue(this.oz.isExit());
     }
 
@@ -74,49 +73,49 @@ public class OzResponseTest {
 
     @Test
     public void getResponse_todoCommand_taskAddedAndReported() {
-        Pair<String, CommandType> response = this.oz.getResponse("todo borrow book");
-        assertTrue(response.getKey().contains("*Snort* Added to the list:"));
-        assertTrue(response.getKey().contains("[T][ ] borrow book"));
-        assertTrue(response.getKey().contains("Now you have 1 tasks in the list."));
-        assertEquals(CommandType.ADD, response.getValue());
+        CommandResult response = this.oz.getResponse("todo borrow book");
+        assertTrue(response.message().contains("*Snort* Added to the list:"));
+        assertTrue(response.message().contains("[T][ ] borrow book"));
+        assertTrue(response.message().contains("Now you have 1 tasks in the list."));
+        assertEquals(ResponseType.ADD, response.type());
     }
 
     @Test
     public void getResponse_todoCommandWithEmptyDescription_returnsErrorMessage() {
-        Pair<String, CommandType> response = this.oz.getResponse("todo ");
-        assertEquals("Confound it! The description of a todo cannot be empty.", response.getKey());
-        assertEquals(CommandType.ERROR, response.getValue());
+        CommandResult response = this.oz.getResponse("todo ");
+        assertEquals("Confound it! The description of a todo cannot be empty.", response.message());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
     public void getResponse_deadlinesCommand_taskAddedAndReported() {
-        Pair<String, CommandType> response = this.oz.getResponse("deadline return book /by 2026-12-31");
-        assertTrue(response.getKey().contains("*Snort* Added to the list:"));
-        assertTrue(response.getKey().contains("[D][ ] return book"));
-        assertTrue(response.getKey().contains("Dec 31 2026"));
-        assertEquals(CommandType.ADD, response.getValue());
+        CommandResult response = this.oz.getResponse("deadline return book /by 2026-12-31");
+        assertTrue(response.message().contains("*Snort* Added to the list:"));
+        assertTrue(response.message().contains("[D][ ] return book"));
+        assertTrue(response.message().contains("Dec 31 2026"));
+        assertEquals(ResponseType.ADD, response.type());
     }
 
     @Test
     public void getResponse_eventCommand_taskAddedAndReported() {
-        Pair<String, CommandType> response = this.oz.getResponse(
+        CommandResult response = this.oz.getResponse(
                 "event project meeting /from 2026-10-10 14:00 /to 2026-10-10 16:00");
-        assertTrue(response.getKey().contains("*Snort* Added to the list:"));
-        assertTrue(response.getKey().contains("[E][ ] project meeting"));
-        assertEquals(CommandType.ADD, response.getValue());
+        assertTrue(response.message().contains("*Snort* Added to the list:"));
+        assertTrue(response.message().contains("[E][ ] project meeting"));
+        assertEquals(ResponseType.ADD, response.type());
     }
 
     @Test
     public void getResponse_recurringCommand_seriesAddedAndReported() {
-        Pair<String, CommandType> response = this.oz.getResponse(
+        CommandResult response = this.oz.getResponse(
                 "recurring project meeting /on 2026-10-02 /start 1400 /end 1500 "
                         + "/every 1 week /until 2026-12-31");
 
-        assertEquals(CommandType.ADD, response.getValue());
+        assertEquals(ResponseType.ADD, response.type());
         assertEquals("*Snort* Added to the list:\n"
                 + "[R] project meeting (from: Oct 02 2026, 2pm to: Oct 02 2026, 3pm; "
                 + "repeats: every 1 week until Dec 31 2026)\n"
-                + "Now you have 1 tasks in the list.", response.getKey());
+                + "Now you have 1 tasks in the list.", response.message());
     }
 
     @Test
@@ -131,11 +130,11 @@ public class OzResponseTest {
         };
 
         for (String command : invalidCommands) {
-            Pair<String, CommandType> response = this.oz.getResponse(command);
-            assertEquals(CommandType.ERROR, response.getValue(), command);
-            assertTrue(response.getKey().startsWith("Confound it! "), command);
+            CommandResult response = this.oz.getResponse(command);
+            assertEquals(ResponseType.ERROR, response.type(), command);
+            assertTrue(response.message().startsWith("Confound it! "), command);
         }
-        assertEquals("Here is the master task list:", this.oz.getResponse("list").getKey());
+        assertEquals("Here is the master task list:", this.oz.getResponse("list").message());
     }
 
     @Test
@@ -144,20 +143,20 @@ public class OzResponseTest {
                 + "/every 1 week");
 
         assertEquals("Confound it! Please specify which occurrence to mark. "
-                + "Use: mark <number> /on <date>.", this.oz.getResponse("mark 1").getKey());
+                + "Use: mark <number> /on <date>.", this.oz.getResponse("mark 1").message());
         assertEquals("Confound it! Please specify which occurrence to unmark. "
-                + "Use: unmark <number> /on <date>.", this.oz.getResponse("unmark 1").getKey());
+                + "Use: unmark <number> /on <date>.", this.oz.getResponse("unmark 1").message());
 
-        Pair<String, CommandType> marked = this.oz.getResponse("mark 1 /on 2026-10-09");
-        assertEquals(CommandType.CHANGE_MARK, marked.getValue());
-        assertTrue(marked.getKey().contains(
+        CommandResult marked = this.oz.getResponse("mark 1 /on 2026-10-09");
+        assertEquals(ResponseType.CHANGE_MARK, marked.type());
+        assertTrue(marked.message().contains(
                 "[R][X] meeting (from: Oct 09 2026, 2pm to: Oct 09 2026, 3pm)"));
-        assertTrue(this.oz.getResponse("mark 1 /on 2026-10-09").getKey()
+        assertTrue(this.oz.getResponse("mark 1 /on 2026-10-09").message()
                 .contains("already marked as done"));
 
-        Pair<String, CommandType> unmarked = this.oz.getResponse("unmark 1 /on 2026-10-09");
-        assertEquals(CommandType.CHANGE_MARK, unmarked.getValue());
-        assertTrue(unmarked.getKey().contains(
+        CommandResult unmarked = this.oz.getResponse("unmark 1 /on 2026-10-09");
+        assertEquals(ResponseType.CHANGE_MARK, unmarked.type());
+        assertTrue(unmarked.message().contains(
                 "[R][ ] meeting (from: Oct 09 2026, 2pm to: Oct 09 2026, 3pm)"));
     }
 
@@ -169,40 +168,40 @@ public class OzResponseTest {
 
         assertEquals("Tasks occurring on Oct 16 2026:\n"
                 + "1. [R][X] meeting (from: Oct 16 2026, 2pm to: Oct 16 2026, 3pm)",
-                this.oz.getResponse("on 2026-10-16").getKey());
+                this.oz.getResponse("on 2026-10-16").message());
         assertEquals("No tasks found for Oct 23 2026.",
-                this.oz.getResponse("on 2026-10-23").getKey());
+                this.oz.getResponse("on 2026-10-23").message());
     }
 
     @Test
     public void getResponse_onArgumentForOrdinaryTask_returnsError() {
         this.oz.getResponse("todo read book");
         assertEquals("Confound it! The /on argument can only be used with recurring tasks.",
-                this.oz.getResponse("mark 1 /on 2026-10-02").getKey());
+                this.oz.getResponse("mark 1 /on 2026-10-02").message());
     }
 
     @Test
     public void getResponse_markAndUnmarkCommands_updatesTaskStatus() {
         this.oz.getResponse("todo finish homework");
-        Pair<String, CommandType> markResponse = this.oz.getResponse("mark 1");
-        assertTrue(markResponse.getKey().contains("*Oink* Marked as done:"));
-        assertTrue(markResponse.getKey().contains("[T][X] finish homework"));
-        assertEquals(CommandType.CHANGE_MARK, markResponse.getValue());
+        CommandResult markResponse = this.oz.getResponse("mark 1");
+        assertTrue(markResponse.message().contains("*Oink* Marked as done:"));
+        assertTrue(markResponse.message().contains("[T][X] finish homework"));
+        assertEquals(ResponseType.CHANGE_MARK, markResponse.type());
 
-        Pair<String, CommandType> unmarkResponse = this.oz.getResponse("unmark 1");
-        assertTrue(unmarkResponse.getKey().contains("*Snort* Marked as not done yet:"));
-        assertTrue(unmarkResponse.getKey().contains("[T][ ] finish homework"));
-        assertEquals(CommandType.CHANGE_MARK, unmarkResponse.getValue());
+        CommandResult unmarkResponse = this.oz.getResponse("unmark 1");
+        assertTrue(unmarkResponse.message().contains("*Snort* Marked as not done yet:"));
+        assertTrue(unmarkResponse.message().contains("[T][ ] finish homework"));
+        assertEquals(ResponseType.CHANGE_MARK, unmarkResponse.type());
     }
 
     @Test
     public void getResponse_deleteCommand_removesTask() {
         this.oz.getResponse("todo task to remove");
-        Pair<String, CommandType> deleteResponse = this.oz.getResponse("delete 1");
-        assertTrue(deleteResponse.getKey().contains("Scrapped! Removed task:"));
-        assertTrue(deleteResponse.getKey().contains("[T][ ] task to remove"));
-        assertTrue(deleteResponse.getKey().contains("Now you have 0 tasks in the list."));
-        assertEquals(CommandType.DELETE, deleteResponse.getValue());
+        CommandResult deleteResponse = this.oz.getResponse("delete 1");
+        assertTrue(deleteResponse.message().contains("Scrapped! Removed task:"));
+        assertTrue(deleteResponse.message().contains("[T][ ] task to remove"));
+        assertTrue(deleteResponse.message().contains("Now you have 0 tasks in the list."));
+        assertEquals(ResponseType.DELETE, deleteResponse.type());
     }
 
     @Test
@@ -211,11 +210,11 @@ public class OzResponseTest {
         this.oz.getResponse("todo buy book");
         this.oz.getResponse("todo wash car");
 
-        Pair<String, CommandType> findResponse = this.oz.getResponse("find book");
-        assertTrue(findResponse.getKey().contains("Matching tasks located:"));
-        assertTrue(findResponse.getKey().contains("read book"));
-        assertTrue(findResponse.getKey().contains("buy book"));
-        assertEquals(CommandType.FIND, findResponse.getValue());
+        CommandResult findResponse = this.oz.getResponse("find book");
+        assertTrue(findResponse.message().contains("Matching tasks located:"));
+        assertTrue(findResponse.message().contains("read book"));
+        assertTrue(findResponse.message().contains("buy book"));
+        assertEquals(ResponseType.FIND, findResponse.type());
     }
 
     /** Verifies that invalid arguments are reported without changing the task list. */
@@ -227,11 +226,11 @@ public class OzResponseTest {
             "event meeting /from 2026-10-11 /to 2026-10-10"
         };
         for (String command : invalidCommands) {
-            Pair<String, CommandType> response = this.oz.getResponse(command);
-            assertEquals(CommandType.ERROR, response.getValue(), command);
-            assertTrue(response.getKey().startsWith("Confound it! "), command);
+            CommandResult response = this.oz.getResponse(command);
+            assertEquals(ResponseType.ERROR, response.type(), command);
+            assertTrue(response.message().startsWith("Confound it! "), command);
         }
-        assertEquals("Here is the master task list:", this.oz.getResponse("list").getKey());
+        assertEquals("Here is the master task list:", this.oz.getResponse("list").message());
     }
 
     /** Verifies task-number validation for all commands that select an existing task. */
@@ -242,12 +241,12 @@ public class OzResponseTest {
         String[] invalidNumbers = {"", "abc", "-1", "0", "2", "999999999999999999999"};
         for (String command : commands) {
             for (String number : invalidNumbers) {
-                Pair<String, CommandType> response = this.oz.getResponse(command + " " + number);
-                assertEquals(CommandType.ERROR, response.getValue(), command + " " + number);
+                CommandResult response = this.oz.getResponse(command + " " + number);
+                assertEquals(ResponseType.ERROR, response.type(), command + " " + number);
             }
         }
         assertEquals("Here is the master task list:\n1. [T][ ] keep task",
-                this.oz.getResponse("list").getKey());
+                this.oz.getResponse("list").message());
     }
 
     /** Verifies date filtering and local numbering when unrelated tasks precede the matches. */
@@ -256,13 +255,13 @@ public class OzResponseTest {
         this.oz.getResponse("todo unrelated task");
         this.oz.getResponse("deadline return book /by 2026-10-10");
         this.oz.getResponse("event conference /from 2026-10-09 /to 2026-10-11");
-        Pair<String, CommandType> response = this.oz.getResponse("  on  2026-10-10  ");
-        assertEquals(CommandType.LIST, response.getValue());
+        CommandResult response = this.oz.getResponse("  on  2026-10-10  ");
+        assertEquals(ResponseType.LIST, response.type());
         assertEquals("Tasks occurring on Oct 10 2026:\n"
                 + "1. [D][ ] return book (by: Oct 10 2026)\n"
-                + "2. [E][ ] conference (from: Oct 09 2026 to: Oct 11 2026)", response.getKey());
+                + "2. [E][ ] conference (from: Oct 09 2026 to: Oct 11 2026)", response.message());
         assertEquals("No tasks found for Jan 01 2027.",
-                this.oz.getResponse("on 2027-01-01").getKey());
+                this.oz.getResponse("on 2027-01-01").message());
     }
 
     /** Verifies that every add command saves its task and reports the updated count. */
@@ -274,11 +273,11 @@ public class OzResponseTest {
             "event meeting /from 2026-10-10 1400 /to 2026-10-10 1600"
         };
         for (int i = 0; i < commands.length; i++) {
-            Pair<String, CommandType> response = this.oz.getResponse(commands[i]);
-            assertEquals(CommandType.ADD, response.getValue());
-            assertTrue(response.getKey().endsWith("Now you have " + (i + 1) + " tasks in the list."));
+            CommandResult response = this.oz.getResponse(commands[i]);
+            assertEquals(ResponseType.ADD, response.type());
+            assertTrue(response.message().endsWith("Now you have " + (i + 1) + " tasks in the list."));
             Oz reloaded = new Oz(this.temporaryFolder.resolve("test_tasks.txt").toString());
-            assertEquals(this.oz.getResponse("list").getKey(), reloaded.getResponse("list").getKey());
+            assertEquals(this.oz.getResponse("list").message(), reloaded.getResponse("list").message());
         }
     }
 
@@ -290,10 +289,10 @@ public class OzResponseTest {
         this.oz.getResponse("todo buy book");
         assertEquals("Matching tasks located:\n"
                 + "1. [T][ ] read book\n2. [T][ ] buy book",
-                this.oz.getResponse("find book").getKey());
-        Pair<String, CommandType> noMatches = this.oz.getResponse("find missing");
-        assertEquals("No matching tasks found in the ledger.", noMatches.getKey());
-        assertEquals(CommandType.FIND, noMatches.getValue());
+                this.oz.getResponse("find book").message());
+        CommandResult noMatches = this.oz.getResponse("find missing");
+        assertEquals("No matching tasks found in the ledger.", noMatches.message());
+        assertEquals(ResponseType.FIND, noMatches.type());
     }
 
     @Test
@@ -301,104 +300,104 @@ public class OzResponseTest {
         String expectedMessage = "Confound it! Task input cannot contain the '|' character "
                 + "because it is reserved for storage.";
 
-        Pair<String, CommandType> todoResponse = this.oz.getResponse("todo read | book");
-        assertEquals(expectedMessage, todoResponse.getKey());
-        assertEquals(CommandType.ERROR, todoResponse.getValue());
+        CommandResult todoResponse = this.oz.getResponse("todo read | book");
+        assertEquals(expectedMessage, todoResponse.message());
+        assertEquals(ResponseType.ERROR, todoResponse.type());
 
-        Pair<String, CommandType> deadlineResponse = this.oz.getResponse(
+        CommandResult deadlineResponse = this.oz.getResponse(
                 "deadline return | book /by 2026-10-10");
-        assertEquals(expectedMessage, deadlineResponse.getKey());
-        assertEquals(CommandType.ERROR, deadlineResponse.getValue());
+        assertEquals(expectedMessage, deadlineResponse.message());
+        assertEquals(ResponseType.ERROR, deadlineResponse.type());
 
-        Pair<String, CommandType> eventResponse = this.oz.getResponse(
+        CommandResult eventResponse = this.oz.getResponse(
                 "event team | sync /from 2026-10-10 1400 /to 2026-10-10 1500");
-        assertEquals(expectedMessage, eventResponse.getKey());
-        assertEquals(CommandType.ERROR, eventResponse.getValue());
+        assertEquals(expectedMessage, eventResponse.message());
+        assertEquals(ResponseType.ERROR, eventResponse.type());
 
-        Pair<String, CommandType> recurringResponse = this.oz.getResponse(
+        CommandResult recurringResponse = this.oz.getResponse(
                 "recurring team | meeting /on 2026-10-10 /start 1000 /end 1100 /every 1 week");
-        assertEquals(expectedMessage, recurringResponse.getKey());
-        assertEquals(CommandType.ERROR, recurringResponse.getValue());
+        assertEquals(expectedMessage, recurringResponse.message());
+        assertEquals(ResponseType.ERROR, recurringResponse.type());
     }
 
     @Test
     public void getResponse_duplicateFlags_returnsErrorMessage() {
-        Pair<String, CommandType> deadlineDuplicate = this.oz.getResponse(
+        CommandResult deadlineDuplicate = this.oz.getResponse(
                 "deadline return book /by 2026-10-10 /by 2026-10-11");
         assertEquals("Confound it! Duplicate '/by' parameter detected.",
-                deadlineDuplicate.getKey());
-        assertEquals(CommandType.ERROR, deadlineDuplicate.getValue());
+                deadlineDuplicate.message());
+        assertEquals(ResponseType.ERROR, deadlineDuplicate.type());
 
-        Pair<String, CommandType> eventDuplicateFrom = this.oz.getResponse(
+        CommandResult eventDuplicateFrom = this.oz.getResponse(
                 "event meeting /from 2026-10-10 1400 /from 2026-10-10 1500 /to 2026-10-10 1600");
         assertEquals("Confound it! Duplicate '/from' parameter detected.",
-                eventDuplicateFrom.getKey());
-        assertEquals(CommandType.ERROR, eventDuplicateFrom.getValue());
+                eventDuplicateFrom.message());
+        assertEquals(ResponseType.ERROR, eventDuplicateFrom.type());
 
-        Pair<String, CommandType> eventDuplicateTo = this.oz.getResponse(
+        CommandResult eventDuplicateTo = this.oz.getResponse(
                 "event meeting /from 2026-10-10 1400 /to 2026-10-10 1500 /to 2026-10-10 1600");
         assertEquals("Confound it! Duplicate '/to' parameter detected.",
-                eventDuplicateTo.getKey());
-        assertEquals(CommandType.ERROR, eventDuplicateTo.getValue());
+                eventDuplicateTo.message());
+        assertEquals(ResponseType.ERROR, eventDuplicateTo.type());
     }
 
     @Test
     public void getResponse_misplacedOrUnexpectedFlags_returnsErrorMessage() {
-        Pair<String, CommandType> eventMisplaced = this.oz.getResponse(
+        CommandResult eventMisplaced = this.oz.getResponse(
                 "event party /to 2026-10-10 1800 /from 2026-10-10 1400");
-        assertTrue(eventMisplaced.getKey().contains("The '/from' parameter must precede '/to'"));
-        assertEquals(CommandType.ERROR, eventMisplaced.getValue());
+        assertTrue(eventMisplaced.message().contains("The '/from' parameter must precede '/to'"));
+        assertEquals(ResponseType.ERROR, eventMisplaced.type());
 
-        Pair<String, CommandType> todoUnexpected = this.oz.getResponse(
+        CommandResult todoUnexpected = this.oz.getResponse(
                 "todo read book /by tomorrow");
         assertEquals("Confound it! The todo command does not accept parameter flags like /by, /from, or /to.",
-                todoUnexpected.getKey());
-        assertEquals(CommandType.ERROR, todoUnexpected.getValue());
+                todoUnexpected.message());
+        assertEquals(ResponseType.ERROR, todoUnexpected.type());
 
-        Pair<String, CommandType> deadlineUnexpected = this.oz.getResponse(
+        CommandResult deadlineUnexpected = this.oz.getResponse(
                 "deadline submit /by 2026-10-10 /from 1000");
-        assertTrue(deadlineUnexpected.getKey().contains("Unexpected '/from' parameter in deadline command"));
-        assertEquals(CommandType.ERROR, deadlineUnexpected.getValue());
+        assertTrue(deadlineUnexpected.message().contains("Unexpected '/from' parameter in deadline command"));
+        assertEquals(ResponseType.ERROR, deadlineUnexpected.type());
     }
 
     @Test
     public void getResponse_byeWithArguments_returnsErrorMessage() {
-        Pair<String, CommandType> response = this.oz.getResponse("bye later");
-        assertEquals("Confound it! The bye command does not take arguments.", response.getKey());
-        assertEquals(CommandType.ERROR, response.getValue());
+        CommandResult response = this.oz.getResponse("bye later");
+        assertEquals("Confound it! The bye command does not take arguments.", response.message());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
     public void getResponse_descriptiveIndexErrors_returnsDetailedMessages() {
         // Empty list
-        Pair<String, CommandType> emptyListResponse = this.oz.getResponse("delete 1");
+        CommandResult emptyListResponse = this.oz.getResponse("delete 1");
         assertEquals("Confound it! Your task list is empty. Add tasks before referencing them.",
-                emptyListResponse.getKey());
+                emptyListResponse.message());
 
         // Blank task number
-        Pair<String, CommandType> blankNumberResponse = this.oz.getResponse("mark");
-        assertEquals("Confound it! Please specify a task number.", blankNumberResponse.getKey());
+        CommandResult blankNumberResponse = this.oz.getResponse("mark");
+        assertEquals("Confound it! Please specify a task number.", blankNumberResponse.message());
 
         // Non-positive task numbers
-        Pair<String, CommandType> zeroResponse = this.oz.getResponse("delete 0");
+        CommandResult zeroResponse = this.oz.getResponse("delete 0");
         assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
-                zeroResponse.getKey());
-        Pair<String, CommandType> negativeResponse = this.oz.getResponse("delete -1");
+                zeroResponse.message());
+        CommandResult negativeResponse = this.oz.getResponse("delete -1");
         assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
-                negativeResponse.getKey());
+                negativeResponse.message());
 
         // Add one task
         this.oz.getResponse("todo single task");
 
         // Out of bounds
-        Pair<String, CommandType> outOfBoundsResponse = this.oz.getResponse("delete 5");
+        CommandResult outOfBoundsResponse = this.oz.getResponse("delete 5");
         assertEquals("Confound it! Task number 5 does not exist. Please provide a number between 1 and 1.",
-                outOfBoundsResponse.getKey());
+                outOfBoundsResponse.message());
 
         // Non-numeric input
-        Pair<String, CommandType> nonNumericResponse = this.oz.getResponse("delete abc");
+        CommandResult nonNumericResponse = this.oz.getResponse("delete abc");
         assertEquals("Confound it! Please provide a valid whole number for the task index.",
-                nonNumericResponse.getKey());
+                nonNumericResponse.message());
     }
 
     @Test
@@ -406,18 +405,18 @@ public class OzResponseTest {
         this.oz.getResponse("todo sample task");
 
         // Unmarking an already unmarked task
-        Pair<String, CommandType> redundantUnmark = this.oz.getResponse("unmark 1");
-        assertEquals("Confound it! Task 1 is not marked as done yet.", redundantUnmark.getKey());
-        assertEquals(CommandType.ERROR, redundantUnmark.getValue());
+        CommandResult redundantUnmark = this.oz.getResponse("unmark 1");
+        assertEquals("Confound it! Task 1 is not marked as done yet.", redundantUnmark.message());
+        assertEquals(ResponseType.ERROR, redundantUnmark.type());
 
         // Mark it once
-        Pair<String, CommandType> firstMark = this.oz.getResponse("mark 1");
-        assertEquals(CommandType.CHANGE_MARK, firstMark.getValue());
+        CommandResult firstMark = this.oz.getResponse("mark 1");
+        assertEquals(ResponseType.CHANGE_MARK, firstMark.type());
 
         // Marking an already marked task
-        Pair<String, CommandType> redundantMark = this.oz.getResponse("mark 1");
-        assertEquals("Confound it! Task 1 is already marked as done.", redundantMark.getKey());
-        assertEquals(CommandType.ERROR, redundantMark.getValue());
+        CommandResult redundantMark = this.oz.getResponse("mark 1");
+        assertEquals("Confound it! Task 1 is already marked as done.", redundantMark.message());
+        assertEquals(ResponseType.ERROR, redundantMark.type());
     }
 
     @Test
@@ -427,12 +426,12 @@ public class OzResponseTest {
         storageFile.toFile().setReadOnly();
 
         Oz readOnlyOz = new Oz(storageFile.toString());
-        Pair<String, CommandType> response = readOnlyOz.getResponse("todo attempt task");
-        assertEquals(CommandType.ERROR, response.getValue());
-        assertTrue(response.getKey().contains("Confound it!"));
+        CommandResult response = readOnlyOz.getResponse("todo attempt task");
+        assertEquals(ResponseType.ERROR, response.type());
+        assertTrue(response.message().contains("Confound it!"));
 
         // Verify in-memory list rolled back to empty
-        assertEquals("Here is the master task list:", readOnlyOz.getResponse("list").getKey());
+        assertEquals("Here is the master task list:", readOnlyOz.getResponse("list").message());
 
         storageFile.toFile().setWritable(true);
     }
@@ -440,33 +439,33 @@ public class OzResponseTest {
     @Test
     public void getResponse_unmarkRecurringOccurrenceOnNonRecurring_returnsErrorMessage() {
         this.oz.getResponse("todo read book");
-        Pair<String, CommandType> response = this.oz.getResponse("unmark 1 /on 2026-10-15");
+        CommandResult response = this.oz.getResponse("unmark 1 /on 2026-10-15");
         assertEquals("Confound it! The /on argument can only be used with recurring tasks.",
-                response.getKey());
-        assertEquals(CommandType.ERROR, response.getValue());
+                response.message());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
     public void getResponse_markAndUnmarkDuplicateOrUnexpectedFlags_returnsErrorMessage() {
         this.oz.getResponse("todo dummy task");
 
-        Pair<String, CommandType> duplicateMark = this.oz.getResponse(
+        CommandResult duplicateMark = this.oz.getResponse(
                 "mark 1 /on 2026-10-10 /on 2026-10-11");
-        assertEquals("Confound it! Duplicate '/on' parameter detected.", duplicateMark.getKey());
-        assertEquals(CommandType.ERROR, duplicateMark.getValue());
+        assertEquals("Confound it! Duplicate '/on' parameter detected.", duplicateMark.message());
+        assertEquals(ResponseType.ERROR, duplicateMark.type());
 
-        Pair<String, CommandType> unexpectedMark = this.oz.getResponse("mark 1 /by 2026-10-10");
-        assertTrue(unexpectedMark.getKey().contains("Unexpected 'flag' parameter in mark command"));
-        assertEquals(CommandType.ERROR, unexpectedMark.getValue());
+        CommandResult unexpectedMark = this.oz.getResponse("mark 1 /by 2026-10-10");
+        assertTrue(unexpectedMark.message().contains("Unexpected 'flag' parameter in mark command"));
+        assertEquals(ResponseType.ERROR, unexpectedMark.type());
 
-        Pair<String, CommandType> duplicateUnmark = this.oz.getResponse(
+        CommandResult duplicateUnmark = this.oz.getResponse(
                 "unmark 1 /on 2026-10-10 /on 2026-10-11");
-        assertEquals("Confound it! Duplicate '/on' parameter detected.", duplicateUnmark.getKey());
-        assertEquals(CommandType.ERROR, duplicateUnmark.getValue());
+        assertEquals("Confound it! Duplicate '/on' parameter detected.", duplicateUnmark.message());
+        assertEquals(ResponseType.ERROR, duplicateUnmark.type());
 
-        Pair<String, CommandType> unexpectedUnmark = this.oz.getResponse("unmark 1 /from 2026-10-10");
-        assertTrue(unexpectedUnmark.getKey().contains("Unexpected 'flag' parameter in unmark command"));
-        assertEquals(CommandType.ERROR, unexpectedUnmark.getValue());
+        CommandResult unexpectedUnmark = this.oz.getResponse("unmark 1 /from 2026-10-10");
+        assertTrue(unexpectedUnmark.message().contains("Unexpected 'flag' parameter in unmark command"));
+        assertEquals(ResponseType.ERROR, unexpectedUnmark.type());
     }
 
     @Test
@@ -474,77 +473,77 @@ public class OzResponseTest {
         String expectedMessage = "Confound it! The todo command does not accept parameter "
                 + "flags like /by, /from, or /to.";
 
-        Pair<String, CommandType> fromResponse = this.oz.getResponse("todo read book /from 2pm");
-        assertEquals(expectedMessage, fromResponse.getKey());
-        assertEquals(CommandType.ERROR, fromResponse.getValue());
+        CommandResult fromResponse = this.oz.getResponse("todo read book /from 2pm");
+        assertEquals(expectedMessage, fromResponse.message());
+        assertEquals(ResponseType.ERROR, fromResponse.type());
 
-        Pair<String, CommandType> toResponse = this.oz.getResponse("todo read book /to 4pm");
-        assertEquals(expectedMessage, toResponse.getKey());
-        assertEquals(CommandType.ERROR, toResponse.getValue());
+        CommandResult toResponse = this.oz.getResponse("todo read book /to 4pm");
+        assertEquals(expectedMessage, toResponse.message());
+        assertEquals(ResponseType.ERROR, toResponse.type());
 
-        Pair<String, CommandType> onResponse = this.oz.getResponse("todo read book /on 2026-10-10");
-        assertEquals(expectedMessage, onResponse.getKey());
-        assertEquals(CommandType.ERROR, onResponse.getValue());
+        CommandResult onResponse = this.oz.getResponse("todo read book /on 2026-10-10");
+        assertEquals(expectedMessage, onResponse.message());
+        assertEquals(ResponseType.ERROR, onResponse.type());
     }
 
     @Test
     public void getResponse_deadlineUnexpectedFlagsAndMissingFields_returnsErrorMessage() {
-        Pair<String, CommandType> unexpectedTo = this.oz.getResponse(
+        CommandResult unexpectedTo = this.oz.getResponse(
                 "deadline submit /by 2026-10-10 /to 1000");
-        assertTrue(unexpectedTo.getKey().contains("Unexpected '/to' parameter in deadline command"));
-        assertEquals(CommandType.ERROR, unexpectedTo.getValue());
+        assertTrue(unexpectedTo.message().contains("Unexpected '/to' parameter in deadline command"));
+        assertEquals(ResponseType.ERROR, unexpectedTo.type());
 
-        Pair<String, CommandType> emptyDescription = this.oz.getResponse("deadline /by 2026-10-10");
-        assertEquals(CommandType.ERROR, emptyDescription.getValue());
+        CommandResult emptyDescription = this.oz.getResponse("deadline /by 2026-10-10");
+        assertEquals(ResponseType.ERROR, emptyDescription.type());
 
-        Pair<String, CommandType> missingBy = this.oz.getResponse("deadline return book /by");
-        assertEquals(CommandType.ERROR, missingBy.getValue());
+        CommandResult missingBy = this.oz.getResponse("deadline return book /by");
+        assertEquals(ResponseType.ERROR, missingBy.type());
     }
 
     @Test
     public void getResponse_eventMissingOrUnexpectedFlags_returnsErrorMessage() {
-        Pair<String, CommandType> missingFrom = this.oz.getResponse(
+        CommandResult missingFrom = this.oz.getResponse(
                 "event meeting /to 2026-10-10 1600");
-        assertTrue(missingFrom.getKey().contains("Missing required '/from' parameter"));
-        assertEquals(CommandType.ERROR, missingFrom.getValue());
+        assertTrue(missingFrom.message().contains("Missing required '/from' parameter"));
+        assertEquals(ResponseType.ERROR, missingFrom.type());
 
-        Pair<String, CommandType> missingTo = this.oz.getResponse(
+        CommandResult missingTo = this.oz.getResponse(
                 "event meeting /from 2026-10-10 1400");
-        assertTrue(missingTo.getKey().contains("Missing required '/to' parameter"));
-        assertEquals(CommandType.ERROR, missingTo.getValue());
+        assertTrue(missingTo.message().contains("Missing required '/to' parameter"));
+        assertEquals(ResponseType.ERROR, missingTo.type());
 
-        Pair<String, CommandType> unexpectedBy = this.oz.getResponse(
+        CommandResult unexpectedBy = this.oz.getResponse(
                 "event meeting /from 2026-10-10 1400 /to 2026-10-10 1600 /by 2026-10-10");
-        assertTrue(unexpectedBy.getKey().contains("Unexpected '/by' parameter in event command"));
-        assertEquals(CommandType.ERROR, unexpectedBy.getValue());
+        assertTrue(unexpectedBy.message().contains("Unexpected '/by' parameter in event command"));
+        assertEquals(ResponseType.ERROR, unexpectedBy.type());
     }
 
     @Test
     public void getResponse_recurringDuplicateAndOrderFlags_returnsErrorMessage() {
-        Pair<String, CommandType> dupOn = this.oz.getResponse(
+        CommandResult dupOn = this.oz.getResponse(
                 "recurring team sync /on 2026-10-02 /on 2026-10-09 /start 1400 /end 1500 /every 1 week");
-        assertEquals("Confound it! Duplicate '/on' parameter detected.", dupOn.getKey());
+        assertEquals("Confound it! Duplicate '/on' parameter detected.", dupOn.message());
 
-        Pair<String, CommandType> dupStart = this.oz.getResponse(
+        CommandResult dupStart = this.oz.getResponse(
                 "recurring team sync /on 2026-10-02 /start 1400 /start 1500 /end 1500 /every 1 week");
-        assertEquals("Confound it! Duplicate '/start' parameter detected.", dupStart.getKey());
+        assertEquals("Confound it! Duplicate '/start' parameter detected.", dupStart.message());
 
-        Pair<String, CommandType> dupEnd = this.oz.getResponse(
+        CommandResult dupEnd = this.oz.getResponse(
                 "recurring team sync /on 2026-10-02 /start 1400 /end 1500 /end 1600 /every 1 week");
-        assertEquals("Confound it! Duplicate '/end' parameter detected.", dupEnd.getKey());
+        assertEquals("Confound it! Duplicate '/end' parameter detected.", dupEnd.message());
 
-        Pair<String, CommandType> dupEvery = this.oz.getResponse(
+        CommandResult dupEvery = this.oz.getResponse(
                 "recurring team sync /on 2026-10-02 /start 1400 /end 1500 /every 1 week /every 2 weeks");
-        assertEquals("Confound it! Duplicate '/every' parameter detected.", dupEvery.getKey());
+        assertEquals("Confound it! Duplicate '/every' parameter detected.", dupEvery.message());
 
-        Pair<String, CommandType> dupUntil = this.oz.getResponse(
+        CommandResult dupUntil = this.oz.getResponse(
                 "recurring team sync /on 2026-10-02 /start 1400 /end 1500 /every 1 week "
                         + "/until 2026-12-31 /until 2026-12-30");
-        assertEquals("Confound it! Duplicate '/until' parameter detected.", dupUntil.getKey());
+        assertEquals("Confound it! Duplicate '/until' parameter detected.", dupUntil.message());
 
-        Pair<String, CommandType> outOfOrder = this.oz.getResponse(
+        CommandResult outOfOrder = this.oz.getResponse(
                 "recurring team sync /start 1400 /on 2026-10-02 /end 1500 /every 1 week");
-        assertTrue(outOfOrder.getKey().contains("Recurring parameters are out of order"));
+        assertTrue(outOfOrder.message().contains("Recurring parameters are out of order"));
     }
 
     @Test
@@ -554,24 +553,24 @@ public class OzResponseTest {
         Path storageFile = temporaryFolder.resolve("test_tasks.txt");
         storageFile.toFile().setReadOnly();
 
-        Pair<String, CommandType> response = this.oz.getResponse("delete 1");
-        assertEquals(CommandType.ERROR, response.getValue());
-        assertTrue(response.getKey().contains("Confound it!"));
+        CommandResult response = this.oz.getResponse("delete 1");
+        assertEquals(ResponseType.ERROR, response.type());
+        assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
 
         // Verify that the task was restored into the task list upon rollback
-        Pair<String, CommandType> listResponse = this.oz.getResponse("list");
-        assertTrue(listResponse.getKey().contains("1. [T][ ] task to delete"));
+        CommandResult listResponse = this.oz.getResponse("list");
+        assertTrue(listResponse.message().contains("1. [T][ ] task to delete"));
     }
 
     @Test
     public void getResponse_parseTaskIndexNegativeOverflow_returnsNonPositiveError() {
         this.oz.getResponse("todo sample");
-        Pair<String, CommandType> response = this.oz.getResponse("delete -999999999999999999999");
+        CommandResult response = this.oz.getResponse("delete -999999999999999999999");
         assertEquals("Confound it! Task number must be a positive whole number starting from 1.",
-                response.getKey());
-        assertEquals(CommandType.ERROR, response.getValue());
+                response.message());
+        assertEquals(ResponseType.ERROR, response.type());
     }
 
     @Test
@@ -581,14 +580,14 @@ public class OzResponseTest {
         Path storageFile = temporaryFolder.resolve("test_tasks.txt");
         storageFile.toFile().setReadOnly();
 
-        Pair<String, CommandType> response = this.oz.getResponse("mark 1");
-        assertEquals(CommandType.ERROR, response.getValue());
-        assertTrue(response.getKey().contains("Confound it!"));
+        CommandResult response = this.oz.getResponse("mark 1");
+        assertEquals(ResponseType.ERROR, response.type());
+        assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
 
-        Pair<String, CommandType> listResponse = this.oz.getResponse("list");
-        assertTrue(listResponse.getKey().contains("1. [T][ ] task to mark"));
+        CommandResult listResponse = this.oz.getResponse("list");
+        assertTrue(listResponse.message().contains("1. [T][ ] task to mark"));
     }
 
     @Test
@@ -599,14 +598,14 @@ public class OzResponseTest {
         Path storageFile = temporaryFolder.resolve("test_tasks.txt");
         storageFile.toFile().setReadOnly();
 
-        Pair<String, CommandType> response = this.oz.getResponse("unmark 1");
-        assertEquals(CommandType.ERROR, response.getValue());
-        assertTrue(response.getKey().contains("Confound it!"));
+        CommandResult response = this.oz.getResponse("unmark 1");
+        assertEquals(ResponseType.ERROR, response.type());
+        assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
 
-        Pair<String, CommandType> listResponse = this.oz.getResponse("list");
-        assertTrue(listResponse.getKey().contains("1. [T][X] task to unmark"));
+        CommandResult listResponse = this.oz.getResponse("list");
+        assertTrue(listResponse.message().contains("1. [T][X] task to unmark"));
     }
 
     @Test
@@ -617,14 +616,14 @@ public class OzResponseTest {
         Path storageFile = temporaryFolder.resolve("test_tasks.txt");
         storageFile.toFile().setReadOnly();
 
-        Pair<String, CommandType> response = this.oz.getResponse("mark 1 /on 2026-10-09");
-        assertEquals(CommandType.ERROR, response.getValue());
-        assertTrue(response.getKey().contains("Confound it!"));
+        CommandResult response = this.oz.getResponse("mark 1 /on 2026-10-09");
+        assertEquals(ResponseType.ERROR, response.type());
+        assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
 
-        Pair<String, CommandType> onResponse = this.oz.getResponse("on 2026-10-09");
-        assertTrue(onResponse.getKey().contains("[R][ ] sync"));
+        CommandResult onResponse = this.oz.getResponse("on 2026-10-09");
+        assertTrue(onResponse.message().contains("[R][ ] sync"));
     }
 
     @Test
@@ -636,26 +635,26 @@ public class OzResponseTest {
         Path storageFile = temporaryFolder.resolve("test_tasks.txt");
         storageFile.toFile().setReadOnly();
 
-        Pair<String, CommandType> response = this.oz.getResponse("unmark 1 /on 2026-10-09");
-        assertEquals(CommandType.ERROR, response.getValue());
-        assertTrue(response.getKey().contains("Confound it!"));
+        CommandResult response = this.oz.getResponse("unmark 1 /on 2026-10-09");
+        assertEquals(ResponseType.ERROR, response.type());
+        assertTrue(response.message().contains("Confound it!"));
 
         storageFile.toFile().setWritable(true);
 
-        Pair<String, CommandType> onResponse = this.oz.getResponse("on 2026-10-09");
-        assertTrue(onResponse.getKey().contains("[R][X] sync"));
+        CommandResult onResponse = this.oz.getResponse("on 2026-10-09");
+        assertTrue(onResponse.message().contains("[R][X] sync"));
     }
 
     @Test
     public void getResponse_recurringIntervalEdgeCases_returnsErrorMessage() {
-        Pair<String, CommandType> nonNumeric = this.oz.getResponse(
+        CommandResult nonNumeric = this.oz.getResponse(
                 "recurring sync /on 2026-10-02 /start 1400 /end 1500 /every abc week");
-        assertEquals(CommandType.ERROR, nonNumeric.getValue());
-        assertTrue(nonNumeric.getKey().contains("The recurrence interval must be a positive whole number."));
+        assertEquals(ResponseType.ERROR, nonNumeric.type());
+        assertTrue(nonNumeric.message().contains("The recurrence interval must be a positive whole number."));
 
-        Pair<String, CommandType> overflow = this.oz.getResponse(
+        CommandResult overflow = this.oz.getResponse(
                 "recurring sync /on 2026-10-02 /start 1400 /end 1500 /every 99999999999999999 week");
-        assertEquals(CommandType.ERROR, overflow.getValue());
-        assertTrue(overflow.getKey().contains("The recurrence interval must be a positive whole number."));
+        assertEquals(ResponseType.ERROR, overflow.type());
+        assertTrue(overflow.message().contains("The recurrence interval must be a positive whole number."));
     }
 }

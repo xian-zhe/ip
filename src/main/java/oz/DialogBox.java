@@ -39,6 +39,9 @@ public class DialogBox extends HBox {
     /** Classpath location of the dialog box layout. */
     private static final String DIALOG_BOX_FXML_PATH = "/view/DialogBox.fxml";
 
+    /** Error raised when the dialog layout cannot be loaded. */
+    private static final String DIALOG_BOX_LOAD_ERROR = "Unable to load the dialog box layout.";
+
     /** CSS class applied to every Oz reply. */
     private static final String REPLY_LABEL_STYLE_CLASS = "reply-label";
 
@@ -69,53 +72,72 @@ public class DialogBox extends HBox {
      * @param image Avatar image of the speaker.
      */
     private DialogBox(String text, Image image) {
+        loadLayout();
+        configureContent(text, image);
+        configureAutomaticHeight();
+        configureCopyMenu();
+    }
+
+    /** Loads and connects this control to its FXML layout. */
+    private void loadLayout() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(DialogBox.class.getResource(DIALOG_BOX_FXML_PATH));
             fxmlLoader.setController(this);
             fxmlLoader.setRoot(this);
             fxmlLoader.load();
         } catch (IOException exception) {
-            exception.printStackTrace();
+            throw new IllegalStateException(DIALOG_BOX_LOAD_ERROR, exception);
         }
+    }
 
+    /**
+     * Populates the loaded dialog controls.
+     *
+     * @param text Message text to display.
+     * @param image Avatar image of the speaker.
+     */
+    private void configureContent(String text, Image image) {
         this.dialog.setText(text);
         this.displayPicture.setImage(image);
+    }
+
+    /** Wires size changes to automatic message-bubble height updates. */
+    private void configureAutomaticHeight() {
         this.dialog.maxWidthProperty().bind(this.widthProperty().multiply(DIALOG_WIDTH_RATIO));
         this.dialog.widthProperty().addListener((observable, oldWidth, newWidth) -> updateDialogHeight());
         this.dialog.fontProperty().addListener((observable, oldFont, newFont) -> updateDialogHeight());
-        configureCopyMenu();
     }
 
     /** Updates the message area height to display all wrapped text without an inner scrollbar. */
     private void updateDialogHeight() {
-        double availableTextWidth = dialog.getWidth() - DIALOG_CONTENT_PADDING;
+        double availableTextWidth = this.dialog.getWidth() - DIALOG_CONTENT_PADDING;
         if (availableTextWidth <= 0) {
             return;
         }
 
-        Text textMeasurement = new Text(dialog.getText());
-        textMeasurement.setFont(dialog.getFont());
+        Text textMeasurement = new Text(this.dialog.getText());
+        textMeasurement.setFont(this.dialog.getFont());
         textMeasurement.setWrappingWidth(availableTextWidth);
         double requiredHeight = textMeasurement.getLayoutBounds().getHeight() + DIALOG_CONTENT_PADDING;
-        dialog.setPrefHeight(Math.max(MINIMUM_DIALOG_HEIGHT, Math.ceil(requiredHeight)));
+        this.dialog.setPrefHeight(Math.max(MINIMUM_DIALOG_HEIGHT, Math.ceil(requiredHeight)));
     }
 
     /** Adds a context-menu action that copies this dialog's complete text. */
     private void configureCopyMenu() {
         MenuItem copyMessageItem = new MenuItem(COPY_MESSAGE_MENU_TEXT);
-        copyMessageItem.setOnAction((event) -> {
-            ClipboardContent clipboardContent = new ClipboardContent();
-            clipboardContent.putString(dialog.getText());
-            Clipboard.getSystemClipboard().setContent(clipboardContent);
-        });
-        dialog.setContextMenu(new ContextMenu(copyMessageItem));
+        copyMessageItem.setOnAction((event) -> copyDialogTextToClipboard());
+        this.dialog.setContextMenu(new ContextMenu(copyMessageItem));
     }
 
-    /**
-     * Flips the dialog box such that the ImageView is on the left and text on the
-     * right.
-     */
-    private void flip() {
+    /** Copies the complete message, rather than only selected text, to the clipboard. */
+    private void copyDialogTextToClipboard() {
+        ClipboardContent clipboardContent = new ClipboardContent();
+        clipboardContent.putString(this.dialog.getText());
+        Clipboard.getSystemClipboard().setContent(clipboardContent);
+    }
+
+    /** Aligns an Oz reply with the avatar on the left and message on the right. */
+    private void alignAsOzReply() {
         this.setAlignment(Pos.TOP_LEFT);
         ObservableList<Node> temporaryChildren = FXCollections.observableArrayList(this.getChildren());
         FXCollections.reverse(temporaryChildren);
@@ -144,7 +166,7 @@ public class DialogBox extends HBox {
      * @return DialogBox for Oz.
      */
     public static DialogBox getOzDialog(String text, Image image) {
-        return getOzDialog(text, image, CommandType.DEFAULT);
+        return getOzDialog(text, image, ResponseType.DEFAULT);
     }
 
     /**
@@ -153,28 +175,28 @@ public class DialogBox extends HBox {
      *
      * @param text        Text of Oz's response message.
      * @param image       Oz's avatar image.
-     * @param commandType Type of command used to style the dialog bubble.
+     * @param responseType Response category used to style the dialog bubble.
      * @return DialogBox for Oz.
      */
-    public static DialogBox getOzDialog(String text, Image image, CommandType commandType) {
+    public static DialogBox getOzDialog(String text, Image image, ResponseType responseType) {
         DialogBox dialogBox = new DialogBox(text, image);
-        dialogBox.flip();
-        dialogBox.changeDialogStyle(commandType);
+        dialogBox.alignAsOzReply();
+        dialogBox.applyResponseStyle(responseType);
         return dialogBox;
     }
 
     /**
      * Applies a command-specific style class to the dialog bubble.
      *
-     * @param commandType The command type indicating which CSS style class to
-     *                    apply.
+     * @param responseType Response category indicating which CSS style class to
+     *                     apply.
      */
-    private void changeDialogStyle(CommandType commandType) {
-        if (commandType == null) {
+    private void applyResponseStyle(ResponseType responseType) {
+        if (responseType == null) {
             return;
         }
 
-        switch (commandType) {
+        switch (responseType) {
             case ADD:
                 this.dialog.getStyleClass().add(ADD_LABEL_STYLE_CLASS);
                 break;

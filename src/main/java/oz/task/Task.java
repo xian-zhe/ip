@@ -1,6 +1,7 @@
 package oz.task;
 
 import java.time.LocalDate;
+import java.util.Locale;
 
 /**
  * Represents a general task in the task list.
@@ -13,9 +14,10 @@ public class Task {
     public static final String STORAGE_NOT_DONE = "0";
 
     /** Description text of the task. */
-    protected String description;
+    protected final String description;
+
     /** Whether the task has been marked as completed. */
-    protected boolean isDone;
+    private boolean isDone;
 
     /**
      * Constructs a Task with the specified description.
@@ -81,7 +83,9 @@ public class Task {
         if (keyword == null || keyword.isBlank()) {
             return false;
         }
-        return this.description.toLowerCase().contains(keyword.toLowerCase().trim());
+        String normalizedDescription = this.description.toLowerCase(Locale.ROOT);
+        String normalizedKeyword = keyword.trim().toLowerCase(Locale.ROOT);
+        return normalizedDescription.contains(normalizedKeyword);
     }
 
     /**
@@ -89,7 +93,6 @@ public class Task {
      *
      * @return Formatted string for writing to file.
      */
-
     public String toFileFormat() {
         return String.format("%s | %s", (this.isDone ? STORAGE_DONE : STORAGE_NOT_DONE), this.description);
     }

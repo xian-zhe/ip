@@ -31,6 +31,13 @@ public class TaskDateTimeTest {
         assertFalse(dateOnly.isAfter(midnight));
     }
 
+    /** Verifies standalone dates use the same display format as task values. */
+    @Test
+    public void formatDate_validDate_returnsTaskDisplayFormat() {
+        assertEquals("Oct 15 2019", TaskDateTime.formatDate(
+                LocalDate.of(2019, 10, 15)));
+    }
+
     /** Verifies explicit time construction retains midnight and nonzero minutes. */
     @Test
     public void fromDateTime_midnightAndAfternoon_preservesExplicitTime() {

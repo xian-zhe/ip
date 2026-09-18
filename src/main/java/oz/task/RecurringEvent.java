@@ -20,9 +20,6 @@ public class RecurringEvent extends Task {
     /** Value representing an omitted optional storage field. */
     public static final String STORAGE_NONE = "-";
 
-    /** Number of days in one week. */
-    private static final int DAYS_PER_WEEK = 7;
-
     /** Error shown when an occurrence ends before it starts. */
     private static final String START_AFTER_END_MESSAGE =
             "The start date/time (/from) cannot be after the end date/time (/to).";
@@ -30,14 +27,6 @@ public class RecurringEvent extends Task {
     /** Error shown when a recurring event spans more than one date. */
     private static final String DIFFERENT_DATE_MESSAGE =
             "A recurring event must start and end on the same date.";
-
-    /** Error shown when a recurrence interval is not positive. */
-    private static final String INVALID_INTERVAL_MESSAGE =
-            "The recurrence interval must be a positive whole number.";
-
-    /** Error shown when the recurrence ends before its first occurrence. */
-    private static final String UNTIL_BEFORE_FIRST_MESSAGE =
-            "The recurrence end date (/until) cannot be before the first occurrence.";
 
     /** Template used when an occurrence is already completed. */
     private static final String ALREADY_MARKED_MESSAGE_FORMAT =
@@ -57,11 +46,8 @@ public class RecurringEvent extends Task {
     /** End of the first occurrence. */
     private final TaskDateTime firstEndDateTime;
 
-    /** Number of weeks between occurrence start dates. */
-    private final int weekInterval;
-
-    /** Last permitted occurrence start date, or null for an indefinite series. */
-    private final LocalDate untilDate;
+    /** Weekly recurrence rule governing occurrence dates. */
+    private final WeeklyRecurrence recurrence;
 
     /** Start dates of occurrences marked as completed. */
     private final TreeSet<LocalDate> completedOccurrenceDates = new TreeSet<>();
@@ -88,17 +74,11 @@ public class RecurringEvent extends Task {
         if (!firstStartDateTime.toLocalDate().equals(firstEndDateTime.toLocalDate())) {
             throw new OzException(DIFFERENT_DATE_MESSAGE);
         }
-        if (weekInterval <= 0) {
-            throw new OzException(INVALID_INTERVAL_MESSAGE);
-        }
-        if (untilDate != null && untilDate.isBefore(firstStartDateTime.toLocalDate())) {
-            throw new OzException(UNTIL_BEFORE_FIRST_MESSAGE);
-        }
 
         this.firstStartDateTime = firstStartDateTime;
         this.firstEndDateTime = firstEndDateTime;
-        this.weekInterval = weekInterval;
-        this.untilDate = untilDate;
+        this.recurrence = new WeeklyRecurrence(
+                firstStartDateTime.toLocalDate(), weekInterval, untilDate);
     }
 
     /**
@@ -109,17 +89,7 @@ public class RecurringEvent extends Task {
      */
     @Override
     public boolean occursOn(LocalDate date) {
-        if (date == null || date.isBefore(this.firstStartDateTime.toLocalDate())) {
-            return false;
-        }
-        if (this.untilDate != null && date.isAfter(this.untilDate)) {
-            return false;
-        }
-
-        long daysFromFirstOccurrence = ChronoUnit.DAYS.between(
-                this.firstStartDateTime.toLocalDate(), date);
-        long recurrenceIntervalDays = (long) this.weekInterval * DAYS_PER_WEEK;
-        return daysFromFirstOccurrence % recurrenceIntervalDays == 0;
+        return this.recurrence.occursOn(date);
     }
 
     /**
@@ -173,9 +143,10 @@ public class RecurringEvent extends Task {
      */
     @Override
     public String toFileFormat() {
-        String storedUntilDate = this.untilDate == null
+        LocalDate untilDate = this.recurrence.getUntilDate();
+        String storedUntilDate = untilDate == null
                 ? STORAGE_NONE
-                : this.untilDate.toString();
+                : untilDate.toString();
         String storedCompletedDates = this.completedOccurrenceDates.isEmpty()
                 ? STORAGE_NONE
                 : this.completedOccurrenceDates.stream()
@@ -184,19 +155,14 @@ public class RecurringEvent extends Task {
         return String.format(TYPE_CODE + " | %s | %s | %s | %s | %d | %s | %s",
                 STORAGE_SERIES_STATUS, this.description,
                 this.firstStartDateTime.toStorageString(), this.firstEndDateTime.toStorageString(),
-                this.weekInterval, storedUntilDate, storedCompletedDates);
+                this.recurrence.getWeekInterval(), storedUntilDate, storedCompletedDates);
     }
 
     @Override
     public String toString() {
-        String recurrence = "every " + this.weekInterval + " "
-                + (this.weekInterval == 1 ? "week" : "weeks");
-        if (this.untilDate != null) {
-            recurrence += " until " + formatDate(this.untilDate);
-        }
         return String.format("[" + TYPE_CODE + "] %s (from: %s to: %s; repeats: %s)",
                 this.description, this.firstStartDateTime.toDisplayString(),
-                this.firstEndDateTime.toDisplayString(), recurrence);
+                this.firstEndDateTime.toDisplayString(), this.recurrence.toDisplayString());
     }
 
     /**
@@ -219,6 +185,6 @@ public class RecurringEvent extends Task {
      * @return User-facing date string.
      */
     private static String formatDate(LocalDate date) {
-        return date.format(TaskDateTime.DISPLAY_DATE_FORMAT);
+        return TaskDateTime.formatDate(date);
     }
 }

@@ -30,30 +30,39 @@ public class Main extends Application {
     private static final double MINIMUM_STAGE_HEIGHT = 400;
 
     /** The Oz chatbot instance handling application logic. */
-    private Oz oz = new Oz(Oz.DEFAULT_STORAGE_PATH);
+    private final Oz oz = new Oz(Oz.DEFAULT_STORAGE_PATH);
 
     /**
      * Initializes and configures the main GUI layout and displays the primary
      * stage.
      *
      * @param stage Primary stage for this JavaFX application.
+     * @throws IOException If the main window layout cannot be loaded.
      */
     @Override
-    public void start(Stage stage) {
-        try {
-            FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource(MAIN_WINDOW_FXML_PATH));
-            AnchorPane mainLayout = fxmlLoader.load();
-            Scene scene = new Scene(mainLayout);
-            stage.setTitle(APP_TITLE);
-            stage.getIcons().add(new Image(Main.class.getResourceAsStream(APP_ICON_IMAGE_PATH)));
-            stage.setScene(scene);
-            stage.setMinWidth(MINIMUM_STAGE_WIDTH);
-            stage.setMinHeight(MINIMUM_STAGE_HEIGHT);
-            stage.setResizable(true);
-            fxmlLoader.<MainWindow>getController().setOz(oz); // Injects the Oz instance
-            stage.show();
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
+    public void start(Stage stage) throws IOException {
+        FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource(MAIN_WINDOW_FXML_PATH));
+        AnchorPane mainLayout = fxmlLoader.load();
+        configureStage(stage, mainLayout);
+
+        MainWindow mainWindow = fxmlLoader.getController();
+        mainWindow.setOz(this.oz);
+        stage.show();
+    }
+
+    /**
+     * Applies the application scene and window settings to the primary stage.
+     *
+     * @param stage Primary application stage.
+     * @param mainLayout Loaded main window layout.
+     */
+    private void configureStage(Stage stage, AnchorPane mainLayout) {
+        Scene scene = new Scene(mainLayout);
+        stage.setTitle(APP_TITLE);
+        stage.getIcons().add(new Image(Main.class.getResourceAsStream(APP_ICON_IMAGE_PATH)));
+        stage.setScene(scene);
+        stage.setMinWidth(MINIMUM_STAGE_WIDTH);
+        stage.setMinHeight(MINIMUM_STAGE_HEIGHT);
+        stage.setResizable(true);
     }
 }

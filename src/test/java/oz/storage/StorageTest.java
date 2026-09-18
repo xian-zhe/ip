@@ -53,7 +53,7 @@ public class StorageTest {
                     task.markAsDone();
                 }
             }
-            storage.save(tasks);
+            storage.save(tasks.getTasks());
             String expectedStatus = isDone ? "1" : "0";
             assertEquals(List.of(
                     "T | " + expectedStatus + " | read book",
@@ -67,7 +67,7 @@ public class StorageTest {
                 assertEquals(tasks.get(i).toString(), loaded.get(i).toString());
             }
         }
-        storage.save(new TaskList());
+        storage.save(new TaskList().getTasks());
         assertTrue(Files.readAllLines(storageFile).isEmpty());
     }
 
@@ -124,7 +124,7 @@ public class StorageTest {
         recurringEvent.markOccurrence(TaskDateTime.parseDate("2026-10-16"));
         tasks.add(recurringEvent);
 
-        storage.save(tasks);
+        storage.save(tasks.getTasks());
 
         String expected = "R | 0 | project meeting | 2026-10-02 1400 | "
                 + "2026-10-02 1500 | 2 | 2026-12-31 | 2026-10-16";
@@ -145,7 +145,7 @@ public class StorageTest {
                 TaskDateTime.parse("2026-10-02 1400"),
                 TaskDateTime.parse("2026-10-02 1500"), 1, null));
 
-        storage.save(tasks);
+        storage.save(tasks.getTasks());
 
         String expected = "R | 0 | weekly meeting | 2026-10-02 1400 | "
                 + "2026-10-02 1500 | 1 | - | -";
@@ -179,7 +179,7 @@ public class StorageTest {
         tasks.add(new ToDo("test task"));
 
         OzException exception = org.junit.jupiter.api.Assertions.assertThrows(
-                OzException.class, () -> storage.save(tasks));
+                OzException.class, () -> storage.save(tasks.getTasks()));
         assertTrue(exception.getMessage().contains("read-only")
                 || exception.getMessage().contains("Access denied")
                 || exception.getMessage().contains("permission"));
@@ -205,13 +205,11 @@ public class StorageTest {
     }
 
     @Test
-    public void save_taskListOverload_persistsTasksSuccessfully() throws OzException, IOException {
-        Path storageFile = this.temporaryFolder.resolve("tasklist_save.txt");
+    public void save_listImplementation_persistsTasksSuccessfully() throws OzException, IOException {
+        Path storageFile = this.temporaryFolder.resolve("list_save.txt");
         Storage storage = new Storage(storageFile.toString());
-        TaskList taskList = new TaskList();
-        taskList.add(new ToDo("test todo"));
 
-        storage.save(taskList);
+        storage.save(List.of(new ToDo("test todo")));
         assertEquals(List.of("T | 0 | test todo"), Files.readAllLines(storageFile));
     }
 }
