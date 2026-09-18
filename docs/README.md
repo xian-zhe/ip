@@ -1,86 +1,151 @@
 # Oz User Guide
 
-Oz is a task manager operated through short text commands. In addition to todos,
-deadlines, and events, Oz supports same-day events that repeat at weekly intervals.
+Oz is a task manager that accepts short text commands. It supports todos,
+deadlines, events, keyword and date searches, and weekly recurring events. Tasks
+are saved locally in `data/oz.txt` and restored the next time Oz starts.
 
-## Adding a recurring event
+See the [user guide](docs/README.md) for detailed instructions on recurring
+events.
 
-Use the `recurring` command to add a same-day event that repeats every specified
-number of weeks:
+## Prerequisites
 
-```text
-recurring <description> /on <date> /start <time> /end <time> /every <interval> week|weeks
+- JDK 25
+- A recent version of IntelliJ IDEA
+
+## Running Oz
+
+### IntelliJ IDEA
+
+1. Open this repository as an IntelliJ project.
+2. Set the project SDK to JDK 25 and the project language level to `SDK default`.
+3. Allow IntelliJ to import the Gradle project.
+4. Run `oz.Launcher` to start the graphical interface, or run `oz.Oz` to use the
+   command-line interface.
+
+### Gradle
+
+On Windows, run:
+
+```powershell
+.\gradlew.bat run
 ```
 
-The interval number is mandatory and must be positive:
+On macOS or Linux, run:
 
-```text
-recurring project meeting /on 2026-10-02 /start 1400 /end 1500 /every 1 week
+```bash
+./gradlew run
 ```
 
-An optional inclusive `/until` date limits the series:
+The Gradle `run` task starts the command-line interface.
 
-```text
-recurring tutorial /on 2026-10-02 /start 1000 /end 1200 /every 2 weeks /until 2026-12-31
+To start the graphical interface on Windows, run:
+
+```powershell
+.\gradlew.bat runGui
 ```
 
-The date is supplied once with `/on`; `/start` and `/end` accept times without dates.
-Only weekly recurrence is supported. Commands such as `/every week`,
-`/every 0 weeks`, and `/every 1 month` are rejected.
+On macOS or Linux, run `./gradlew runGui` instead.
 
-## Viewing recurring events
+## Building and running the JAR
 
-`list` displays each recurring series once together with its recurrence rule:
+Build a JAR containing Oz and its runtime dependencies with:
 
-```text
-1. [R] project meeting (from: Oct 02 2026, 2pm to: Oct 02 2026, 3pm; repeats: every 1 week)
+```powershell
+.\gradlew.bat shadowJar
 ```
 
-Use `on <date>` to view the calculated occurrence on a particular date:
+On macOS or Linux, use `./gradlew shadowJar` instead. The generated JAR is
+located at `build/libs/oz.jar`.
 
-```text
-on 2026-10-09
+Run the JAR using Java 25:
+
+```bash
+java -jar build/libs/oz.jar
 ```
 
-```text
-Here are the tasks occurring on Oct 09 2026:
-1. [R][ ] project meeting (from: Oct 09 2026, 2pm to: Oct 09 2026, 3pm)
+The JAR starts the command-line interface and saves tasks in `data/oz.txt`
+relative to the directory from which it is run.
+
+## Commands
+
+| Command | Format | Example |
+| --- | --- | --- |
+| Add a todo | `todo <description>` | `todo read book` |
+| Add a deadline | `deadline <description> /by <date-time>` | `deadline submit report /by 2026-10-02 1800` |
+| Add an event | `event <description> /from <start> /to <end>` | `event lecture /from 2026-10-02 1400 /to 2026-10-02 1600` |
+| Add a recurring event | `recurring <description> /on <date> /start <time> /end <time> /every <interval> week\|weeks [/until <date>]` | `recurring tutorial /on 2026-10-02 /start 1000 /end 1200 /every 2 weeks` |
+| List all tasks | `list` | `list` |
+| List tasks on a date | `on <date>` | `on 2026-10-02` |
+| Find tasks | `find <keyword>` | `find report` |
+| Mark a task | `mark <number>` | `mark 1` |
+| Mark a recurring occurrence | `mark <number> /on <date>` | `mark 2 /on 2026-10-16` |
+| Unmark a task | `unmark <number>` | `unmark 1` |
+| Delete a task | `delete <number>` | `delete 1` |
+| Exit | `bye` | `bye` |
+
+Task numbers used by `mark`, `unmark`, and `delete` refer to the numbers shown
+by `list`.
+
+### Date and time formats
+
+Dates can use either hyphens (`-`) or slashes (`/`). The supported formats are:
+
+- `yyyy-MM-dd`, for example `2026-10-02`
+- `dd-MM-yyyy`, for example `02-10-2026`
+- `yyyy/MM/dd`, for example `2026/10/02`
+- `dd/MM/yyyy`, for example `02/10/2026`
+
+Times use the 24-hour clock and can be written as `HHmm` or `HH:mm`, for example
+`1400` or `14:00`. When a command requires both a date and a time, separate them
+with a space, for example `2026-10-02 14:00`.
+
+## Testing and code quality
+
+Run the test suite with:
+
+```powershell
+.\gradlew.bat test
 ```
 
-Numbers shown by `on` and `find` are local to those results. Use the task number
-shown by `list` when marking, unmarking, or deleting a recurring series.
+Generate the JaCoCo coverage report with:
 
-## Marking a recurring occurrence
-
-Recurring events do not have a single completion state. Specify the start date of
-the occurrence to mark or unmark:
-
-```text
-mark 1 /on 2026-10-09
-unmark 1 /on 2026-10-09
+```powershell
+.\gradlew.bat test jacocoTestReport
 ```
 
-Using `mark 1` or `unmark 1` without `/on <date>` is rejected for a recurring
-event. The supplied date must be an actual occurrence in the series.
+The HTML coverage report is generated at
+`build/reports/jacoco/test/html/index.html`.
 
-## Deleting a recurring series
+Run Checkstyle with:
 
-Use the normal `delete` command with the number shown by `list`:
-
-```text
-delete 1
+```powershell
+.\gradlew.bat checkstyleMain checkstyleTest
 ```
 
-This deletes the entire recurring series, including its saved occurrence
-completion states. Deleting or rescheduling only one occurrence is not supported.
+## Acknowledgements and third-party software
 
-## Supported date formats
+This project was created from the
+[SE-EDU Duke project](https://github.com/se-edu/duke).
 
-The `/on` and `/until` arguments accept dates without times, such as `2026-12-31`
-or `31/12/2026`. The `/start` and `/end` arguments accept times in formats such as:
+### AI-assisted work
 
-```text
-1400
-14:00
-2pm
-```
+Google Antigravity with Gemini 3.8 Flash and OpenAI Codex with
+GPT-5.6 Sol extensively throughout the project. These tools assisted with code
+completion, implementation, testing, debugging, refactoring, documentation, and
+code-quality reviews. All AI-assisted output was reviewed, adapted, and tested
+before being included in the project.
+
+### Libraries and development tools
+
+- [JaCoCo](https://www.jacoco.org/jacoco/) is used to generate test-coverage
+  reports. Its use has been approved for this course project.
+
+JUnit, JavaFX, Checkstyle, and Gradle Shadow were included as part of the course
+project setup. No other third-party libraries are currently used.
+
+### Image Sources
+- [Professor Pig](https://static.wikia.nocookie.net/angrybirds/images/c/ce/Professor_pig_240.png/revision/latest/scale-to-width/360?cb=20130419123316)
+- [Pig](https://static.wikia.nocookie.net/angrybirds/images/c/ce/Sp.png/revision/latest?cb=20221015150751)
+- [Background](https://preview.redd.it/made-some-angry-birds-trilogy-wallpapers-v0-27txqipna3ig1.png?width=1080&crop=smart&auto=webp&s=ef1319c623782001d22704b94f7a75796aee8220)
+
+

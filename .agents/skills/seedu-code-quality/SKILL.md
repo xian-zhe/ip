@@ -17,11 +17,13 @@ Production code must be of high quality. Readability and understandability are p
 ## 1. Guideline: Maximize Readability
 
 ### Avoid Long Methods
-* Keep methods focused and short. Consider refactoring or decomposing any method that exceeds **30 lines of code**.
+* Keep methods focused and short. Treat **30 lines of code** as a prompt to check whether a method can be
+  shortened, not as an automatic failure threshold.
 * A long method often contains more cognitive load than a reader can process at once: *"The bigger the haystack, the harder it is to find a needle."*
 
 ### Avoid Deep Nesting
-* Avoid deep indentation levels. If you need more than **3 levels of indentation**, refactor the method.
+* Avoid deep indentation levels. More than **3 levels of indentation** is a strong signal to simplify the
+  control flow or extract a method.
 * Avoid "arrowhead style" code (`if` inside `if` inside `if`...):
   ```java
   // Bad: Arrowhead indentation
@@ -54,8 +56,8 @@ Production code must be of high quality. Readability and understandability are p
 
   // Good
   boolean isWithinSizeLimit = length < MAX_LENGTH;
-  boolean isSameSize = previousSize != length;
-  boolean isValidCode = isWithinSizeLimit || isSameSize;
+  boolean hasSizeChanged = previousSize != length;
+  boolean isValidCode = isWithinSizeLimit || hasSizeChanged;
   boolean isUrgent = typeCode == URGENT;
 
   return isValidCode && isUrgent;
@@ -93,17 +95,17 @@ Production code must be of high quality. Readability and understandability are p
   * Avoid data flow anomalies (such as assigning a value to a variable, then overwriting it before it is ever used).
 
 ### Practice KISSing (Keep It Simple, Stupid)
-* Do not write "clever" code or over-engineer solutions for hypothetical future requirements:
-  * *"Debugging is twice as hard as writing the code in the first place. Therefore, if you write the code as cleverly as possible, you are, by definition, not smart enough to debug it."* — Brian W. Kernighan
-  * *"Programs must be written for people to read, and only incidentally for machines to execute."* — Abelson and Sussman
+* Do not write "clever" code or over-engineer for hypothetical future requirements. Prefer a simple brute-force
+  solution unless a more complex design has a strong, demonstrated benefit.
 
 ### Avoid Premature Optimizations
-* *"Premature optimization is the root of all evil in programming."* — Donald Knuth
 * Prioritize clarity and correctness first: **"Make it work, make it right, make it fast."**
-* Hand-optimizing source code often complicates the program and hinders compiler optimizations. Profile before optimizing.
+* Profile before optimizing so effort targets measured bottlenecks. Optimization can reduce readability and make
+  compiler optimization harder, but it may take priority when requirements or resource constraints demand it.
 
 ### SLAP Hard (Single Level of Abstraction Principle)
-* **Single Level of Abstraction per Method**: Every statement within a method should operate at the same level of abstraction.
+* Keep each method or coherent code fragment at one level of abstraction. Statements that appear together should
+  describe either the high-level workflow or its lower-level implementation details, not both.
 * Do not mix high-level orchestration with low-level details:
   ```java
   // Bad: Mixing high-level steps with low-level arithmetic and conditional logic
@@ -121,8 +123,11 @@ Production code must be of high quality. Readability and understandability are p
       displayResult();
   }
   ```
-* **Write at the Highest Level of Abstraction Possible**: Prefer expressing logic in terms of domain concepts rather than low-level manipulation.
-* **Separating Packed Abstractions**: If two levels of abstraction are temporarily kept in one method, mark each high-level step with a clear comment and separate it from adjacent steps with a blank line.
+* Write at the highest useful level of abstraction, expressing logic in domain concepts rather than low-level
+  manipulation where possible.
+* If keeping two levels together remains more readable than extraction, make each high-level step explicit with a
+  concise comment and separate adjacent steps with blank lines. Treat this as a deliberate exception to SLAP, not
+  the default structure.
 
 ### Make the Happy Path Prominent
 * The "happy path" (the execution path when everything succeeds) should be prominent, unindented, and clear.
@@ -245,11 +250,13 @@ Production code must be of high quality. Readability and understandability are p
 * Do not keep dead code "just in case" — revision control (Git) retains all history.
 
 ### Minimize Scope of Variables
+* Avoid global or broadly shared mutable state because it creates implicit links between otherwise separate code.
 * Declare variables in the smallest possible scope.
 * Declare local variables at the point where they are first used, rather than grouping declarations at the top of a method.
 
 ### Minimize Code Duplication (DRY Principle)
-* Do not copy-paste logic with minor variations. Extract shared logic into helper methods or reusable abstractions.
+* Think twice before copy-paste-modifying logic. Zero duplication is not always practical; extract shared logic
+  when doing so makes the code clearer and does not introduce a forced abstraction.
 
 ---
 
@@ -265,7 +272,8 @@ Production code must be of high quality. Readability and understandability are p
 
 ### Write to the Reader
 * Write comments for fellow engineers maintaining the code, not private personal reminders.
-* Use structured header comments (Javadoc) for classes, public interfaces, and non-trivial methods.
+* Use header comments to explain the purpose of classes and operations when the purpose is not already clear, and
+  follow the project's documentation standard for required Javadoc.
 
 ### Explain WHAT and WHY, Not HOW
 * **WHAT**: High-level specification of what the code achieves, enabling the reader to verify if the implementation matches intent.

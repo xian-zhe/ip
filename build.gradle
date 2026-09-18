@@ -78,3 +78,10 @@ shadowJar {
 run {
     standardInput = System.in
 }
+
+tasks.register('runGui', JavaExec) {
+    group = 'application'
+    description = 'Runs the Oz graphical interface.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'oz.Launcher'
+}
